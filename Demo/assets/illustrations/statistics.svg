@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" fill="none">
+  <ellipse cx="100" cy="145" rx="50" ry="7" fill="#E8EEF2"/>
+  <!-- Bars -->
+  <rect x="40" y="90" width="22" height="40" rx="6" fill="#A5D6A7"/>
+  <rect x="72" y="65" width="22" height="65" rx="6" fill="#81C784"/>
+  <rect x="104" y="45" width="22" height="85" rx="6" fill="#4CAF50"/>
+  <rect x="136" y="75" width="22" height="55" rx="6" fill="#66BB6A"/>
+  <!-- Trend line -->
+  <path d="M45 85 L85 60 L115 40 L150 65" stroke="#26A69A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="45" cy="85" r="5" fill="#26A69A"/>
+  <circle cx="85" cy="60" r="5" fill="#26A69A"/>
+  <circle cx="115" cy="40" r="5" fill="#26A69A"/>
+  <circle cx="150" cy="65" r="5" fill="#26A69A"/>
+</svg>
