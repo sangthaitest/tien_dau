@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../application/home_query.dart';
 import '../application/transaction_service.dart';
 import '../domain/security/sensitive_access_port.dart';
+import 'home/home_controller.dart';
+import 'home/home_page.dart';
+import 'theme/app_theme.dart';
 
-/// Phase 02 placeholder only. Product screens start in later phases.
-class TienDayApp extends StatelessWidget {
+class TienDayApp extends StatefulWidget {
   const TienDayApp({
     super.key,
     required this.transactionService,
@@ -15,29 +18,35 @@ class TienDayApp extends StatelessWidget {
   final SensitiveAccessPort sensitiveAccess;
 
   @override
-  Widget build(BuildContext context) {
-    assert(() {
-      transactionService.list;
-      sensitiveAccess.lock;
-      return true;
-    }());
-    return const MaterialApp(
-      title: 'Tiền Đây',
-      debugShowCheckedModeBanner: false,
-      home: _FoundationPlaceholder(),
-    );
-  }
+  State<TienDayApp> createState() => _TienDayAppState();
 }
 
-class _FoundationPlaceholder extends StatelessWidget {
-  const _FoundationPlaceholder();
+class _TienDayAppState extends State<TienDayApp> {
+  late final HomeController _homeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _homeController = HomeController(HomeQuery(widget.transactionService));
+  }
+
+  @override
+  void dispose() {
+    _homeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Tiền Đây — production foundation'),
-      ),
+    assert(() {
+      widget.sensitiveAccess.lock;
+      return true;
+    }());
+    return MaterialApp(
+      title: 'Tiền Đây',
+      debugShowCheckedModeBanner: false,
+      theme: buildAppTheme(),
+      home: HomePage(controller: _homeController),
     );
   }
 }
