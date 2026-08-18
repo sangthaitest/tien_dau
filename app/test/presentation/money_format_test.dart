@@ -8,6 +8,12 @@ void main() {
     expect(formatVnd(18500000), '18.500.000 ₫');
   });
 
+  test('formats compact VND like V3 summaries', () {
+    expect(formatVndShort(0), '0 ₫');
+    expect(formatVndShort(50000), '50k');
+    expect(formatVndShort(1000000), '1tr');
+  });
+
   test('greeting follows time of day', () {
     expect(greetingFor(DateTime(2026, 8, 18, 8)), 'Chào buổi sáng');
     expect(greetingFor(DateTime(2026, 8, 18, 15)), 'Chào buổi chiều');

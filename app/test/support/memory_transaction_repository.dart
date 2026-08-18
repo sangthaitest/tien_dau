@@ -9,10 +9,12 @@ class MemoryTransactionRepository implements TransactionRepository {
   MemoryTransactionRepository({
     List<Transaction>? seed,
     this.failCreate = false,
+    this.failList = false,
   }) : _items = [...?seed];
 
   final List<Transaction> _items;
   bool failCreate;
+  bool failList;
 
   List<Transaction> get items => List.unmodifiable(_items);
 
@@ -54,7 +56,12 @@ class MemoryTransactionRepository implements TransactionRepository {
   }
 
   @override
-  Future<Result<List<Transaction>>> getAll() async => Ok(List.of(_items));
+  Future<Result<List<Transaction>>> getAll() async {
+    if (failList) {
+      return const Err(PersistenceFailure('read failed'));
+    }
+    return Ok(List.of(_items));
+  }
 
   @override
   Future<Result<Transaction>> getById(String id) async {

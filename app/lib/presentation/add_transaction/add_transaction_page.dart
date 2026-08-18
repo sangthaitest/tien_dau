@@ -38,7 +38,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     _amountFocus = FocusNode();
     _c.addListener(_syncFields);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _amountFocus.requestFocus();
+      if (mounted && !_c.isEditing) _amountFocus.requestFocus();
     });
   }
 
@@ -115,9 +115,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
               onPressed: () => Navigator.of(context).pop(false),
             ),
             centerTitle: true,
-            title: const Text(
-              AddTransactionCopy.title,
-              style: TextStyle(
+            title: Text(
+              _c.isEditing ? AddTransactionCopy.editTitle : AddTransactionCopy.title,
+              style: const TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 18,
                 color: AppColors.text,
@@ -246,7 +246,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             ),
                           ),
                           child: Text(
-                            AddTransactionCopy.save,
+                            _c.isEditing ? AddTransactionCopy.update : AddTransactionCopy.save,
                             style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 16,

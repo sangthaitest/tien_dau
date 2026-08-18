@@ -2,7 +2,9 @@ import '../../domain/failures/app_failure.dart';
 
 abstract final class AddTransactionCopy {
   static const title = 'Thêm giao dịch';
+  static const editTitle = 'Sửa giao dịch';
   static const save = 'Lưu giao dịch';
+  static const update = 'Cập nhật';
   static const amountLabel = 'Số tiền';
   static const chiCho = 'Chi cho';
   static const detail = 'Chi tiết';

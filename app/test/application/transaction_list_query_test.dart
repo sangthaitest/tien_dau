@@ -1,0 +1,189 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:tien_day/application/transaction_list_query.dart';
+import 'package:tien_day/application/transaction_service.dart';
+import 'package:tien_day/domain/entities/payment_method_kind.dart';
+import 'package:tien_day/domain/entities/transaction.dart';
+import 'package:tien_day/domain/entities/transaction_type.dart';
+import 'package:tien_day/domain/failures/app_failure.dart';
+import 'package:tien_day/domain/failures/result.dart';
+import 'package:tien_day/presentation/add_transaction/add_transaction_controller.dart';
+import 'package:tien_day/presentation/home/home_controller.dart';
+import 'package:tien_day/application/home_query.dart';
+import 'package:tien_day/presentation/transactions/transaction_detail_controller.dart';
+import 'package:tien_day/presentation/transactions/transaction_list_controller.dart';
+
+import '../support/memory_transaction_repository.dart';
+
+Transaction _tx({
+  required String id,
+  required int amount,
+  required DateTime date,
+  String? time,
+  String category = 'cafe',
+  String? detail,
+  TransactionType type = TransactionType.expense,
+}) {
+  final now = DateTime.utc(2026, 8, 1);
+  return Transaction(
+    id: id,
+    amount: amount,
+    type: type,
+    categoryId: category,
+    detail: detail,
+    occurredOn: date,
+    occurredTime: time,
+    paymentSourceId: 'momo',
+    paymentSourceName: 'MoMo',
+    paymentMethod: PaymentMethodKind.eWallet,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
+void main() {
+  final now = DateTime(2026, 8, 18, 10);
+
+  test('empty list snapshot', () {
+    const query = TransactionListQuery();
+    final snap = query.apply(
+      all: const [],
+      now: now,
+      filter: const TransactionListFilter(),
+    );
+    expect(snap.isEmpty, isTrue);
+    expect(snap.expenseSum, 0);
+  });
+
+  test('newest-first ordering and grouping', () {
+    const query = TransactionListQuery();
+    final snap = query.apply(
+      all: [
+        _tx(id: 'a', amount: 10000, date: DateTime(2026, 8, 10), time: '09:00'),
+        _tx(id: 'b', amount: 20000, date: DateTime(2026, 8, 18), time: '08:00'),
+        _tx(id: 'c', amount: 30000, date: DateTime(2026, 8, 18), time: '11:00'),
+      ],
+      now: now,
+      filter: const TransactionListFilter(),
+    );
+    expect(snap.items.map((e) => e.id), ['c', 'b', 'a']);
+    expect(snap.groups.first.label, 'Hôm nay');
+    expect(snap.groups.first.items.map((e) => e.id), ['c', 'b']);
+  });
+
+  test('month filtering this vs last', () {
+    const query = TransactionListQuery();
+    final all = [
+      _tx(id: 'aug', amount: 10000, date: DateTime(2026, 8, 2)),
+      _tx(id: 'jul', amount: 50000, date: DateTime(2026, 7, 20)),
+    ];
+    final thisMonth = query.apply(
+      all: all,
+      now: now,
+      filter: const TransactionListFilter(),
+    );
+    expect(thisMonth.items.map((e) => e.id), ['aug']);
+    final last = query.apply(
+      all: all,
+      now: now,
+      filter: const TransactionListFilter(date: TxDateFilter.lastMonth),
+    );
+    expect(last.items.map((e) => e.id), ['jul']);
+    expect(last.expenseSum, 50000);
+  });
+
+  test('category filter and income excluded', () {
+    const query = TransactionListQuery();
+    final snap = query.apply(
+      all: [
+        _tx(id: 'cafe', amount: 10000, date: DateTime(2026, 8, 2), category: 'cafe'),
+        _tx(id: 'grab', amount: 20000, date: DateTime(2026, 8, 2), category: 'transport'),
+        _tx(
+          id: 'pay',
+          amount: 99999,
+          date: DateTime(2026, 8, 2),
+          type: TransactionType.income,
+        ),
+      ],
+      now: now,
+      filter: const TransactionListFilter(categoryId: 'transport'),
+    );
+    expect(snap.items.single.id, 'grab');
+  });
+
+  test('list controller loads then filters without refetching', () async {
+    final repo = MemoryTransactionRepository(
+      seed: [
+        _tx(id: '1', amount: 10000, date: DateTime(2026, 8, 2), category: 'cafe'),
+        _tx(id: '2', amount: 20000, date: DateTime(2026, 7, 2), category: 'market'),
+      ],
+    );
+    final controller = TransactionListController(
+      TransactionService(repo),
+      clock: () => now,
+    );
+    await controller.load();
+    expect(controller.snapshot.items.single.id, '1');
+    controller.setDateFilter(TxDateFilter.lastMonth);
+    expect(controller.snapshot.items.single.id, '2');
+  });
+
+  test('list controller surfaces repository errors', () async {
+    final controller = TransactionListController(
+      TransactionService(MemoryTransactionRepository(failList: true)),
+      clock: () => now,
+    );
+    await controller.load();
+    expect(controller.error, isNotNull);
+    expect(controller.snapshot.isEmpty, isTrue);
+  });
+
+  test('detail loads a transaction and reports not found', () async {
+    final repo = MemoryTransactionRepository(
+      seed: [_tx(id: '1', amount: 45000, date: DateTime(2026, 8, 7), detail: 'Highlands')],
+    );
+    final service = TransactionService(repo);
+    final found = TransactionDetailController(service);
+    await found.load('1');
+    expect(found.transaction?.detail, 'Highlands');
+
+    final missing = TransactionDetailController(service);
+    await missing.load('nope');
+    expect(missing.transaction, isNull);
+    expect(missing.error, 'Không tìm thấy giao dịch');
+  });
+
+  test('edit and delete go through the service and refresh Home', () async {
+    final repo = MemoryTransactionRepository(
+      seed: [_tx(id: '1', amount: 10000, date: DateTime(2026, 8, 18), detail: 'Highlands')],
+    );
+    final service = TransactionService(repo);
+    final home = HomeController(HomeQuery(service, clock: () => now));
+    await home.load();
+    expect(home.snapshot.recent.single.amount, 10000);
+
+    final add = AddTransactionController(
+      service: service,
+      clock: () => now,
+      existing: repo.items.single,
+    );
+    add.applyShortcut(20000);
+    expect((await add.save()).isOk, isTrue);
+    await home.load();
+    expect(home.snapshot.recent.single.amount, 20000);
+    expect(home.snapshot.recent.single.detail, 'Highlands');
+    expect(home.snapshot.monthExpense, 20000);
+
+    final detail = TransactionDetailController(service);
+    await detail.load('1');
+    expect((await detail.delete()).isOk, isTrue);
+    await home.load();
+    expect(home.snapshot.recent, isEmpty);
+    expect(repo.items, isEmpty);
+  });
+
+  test('delete missing id is not found', () async {
+    final result = await TransactionService(MemoryTransactionRepository()).remove('nope');
+    expect(result, isA<Err>());
+    expect((result as Err).failure, isA<NotFoundFailure>());
+  });
+}

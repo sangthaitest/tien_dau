@@ -2,6 +2,7 @@ import '../domain/amount/amount_input.dart';
 import '../domain/catalog/chi_cho_catalog.dart';
 import '../domain/catalog/payment_option_catalog.dart';
 import '../domain/entities/new_transaction.dart';
+import '../domain/entities/transaction.dart';
 import '../domain/entities/transaction_type.dart';
 import '../domain/failures/app_failure.dart';
 import '../domain/time/clock_format.dart';
@@ -14,6 +15,17 @@ class AddTransactionDraft {
         occurredTime = formatHHmm(now),
         categoryId = ChiChoCatalog.defaultId,
         paymentSourceId = PaymentOptionCatalog.defaultId;
+
+  factory AddTransactionDraft.fromTransaction(Transaction tx) {
+    return AddTransactionDraft(now: tx.occurredOn)
+      ..amount = tx.amount
+      ..categoryId = tx.categoryId
+      ..detail = tx.detail
+      ..paymentSourceId = tx.paymentSourceId
+      ..occurredOn = dateOnly(tx.occurredOn)
+      ..occurredTime = tx.occurredTime ?? formatHHmm(tx.occurredOn)
+      ..note = tx.note ?? '';
+  }
 
   int amount = 0;
   String categoryId;

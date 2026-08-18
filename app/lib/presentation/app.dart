@@ -4,7 +4,7 @@ import '../application/home_query.dart';
 import '../application/transaction_service.dart';
 import '../domain/security/sensitive_access_port.dart';
 import 'home/home_controller.dart';
-import 'home/home_page.dart';
+import 'shell/main_shell.dart';
 import 'theme/app_theme.dart';
 
 class TienDayApp extends StatefulWidget {
@@ -46,9 +46,9 @@ class _TienDayAppState extends State<TienDayApp> {
       title: 'Tiền Đây',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: HomePage(
-        controller: _homeController,
+      home: MainShell(
         transactionService: widget.transactionService,
+        homeController: _homeController,
       ),
     );
   }

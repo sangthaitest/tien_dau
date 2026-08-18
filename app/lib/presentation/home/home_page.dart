@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../application/transaction_service.dart';
+import '../../domain/entities/transaction.dart';
 import '../add_transaction/add_transaction_controller.dart';
 import '../add_transaction/add_transaction_page.dart';
 import '../format/money_format.dart';
 import '../theme/app_colors.dart';
+import '../transactions/transaction_detail_controller.dart';
+import '../transactions/transaction_detail_sheet.dart';
+import '../transactions/transaction_list_controller.dart';
+import '../transactions/transaction_list_page.dart';
 import 'home_controller.dart';
 import 'widgets/home_bottom_nav.dart';
 import 'widgets/home_transaction_tile.dart';
@@ -18,6 +23,10 @@ class HomePage extends StatefulWidget {
     this.clock = DateTime.now,
     this.userName = 'Minh Khuê',
     this.userInitials = 'MK',
+    this.embedNavigation = true,
+    this.onSeeAll,
+    this.onTransactionTap,
+    this.onTabSelected,
   });
 
   final HomeController controller;
@@ -25,6 +34,10 @@ class HomePage extends StatefulWidget {
   final DateTime Function() clock;
   final String userName;
   final String userInitials;
+  final bool embedNavigation;
+  final VoidCallback? onSeeAll;
+  final ValueChanged<Transaction>? onTransactionTap;
+  final ValueChanged<AppTab>? onTabSelected;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -55,6 +68,55 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _openList(BuildContext context) async {
+    if (widget.onSeeAll != null) {
+      widget.onSeeAll!();
+      return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TransactionListPage(
+          controller: TransactionListController(
+            widget.transactionService,
+            clock: widget.clock,
+          ),
+          clock: widget.clock,
+          onAddPressed: () => _openAdd(context),
+          onTabSelected: (tab) {
+            if (tab == AppTab.home) Navigator.of(context).pop();
+          },
+          onTransactionTap: (tx) => _openDetail(context, tx.id),
+        ),
+      ),
+    );
+    if (context.mounted) await widget.controller.load();
+  }
+
+  Future<void> _openDetail(BuildContext context, String id) async {
+    if (widget.onTransactionTap != null) {
+      final match = widget.controller.snapshot.recent.where((e) => e.id == id);
+      if (match.isNotEmpty) widget.onTransactionTap!(match.first);
+      return;
+    }
+    final changed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => TransactionDetailSheet(
+        controller: TransactionDetailController(widget.transactionService),
+        transactionService: widget.transactionService,
+        clock: widget.clock,
+        transactionId: id,
+      ),
+    );
+    if (changed == true && context.mounted) {
+      await widget.controller.load();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -71,11 +133,28 @@ class _HomePageState extends State<HomePage> {
                   child: CustomScrollView(
                     slivers: [
                       SliverToBoxAdapter(child: _Header(controller: c, page: widget)),
-                      SliverToBoxAdapter(child: _Recent(controller: c)),
+                      SliverToBoxAdapter(
+                        child: _Recent(
+                          controller: c,
+                          onSeeAll: () => _openList(context),
+                          onTransactionTap: (tx) => _openDetail(context, tx.id),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                HomeBottomNav(onAddPressed: () => _openAdd(context)),
+                if (widget.embedNavigation)
+                  HomeBottomNav(
+                    tab: AppTab.home,
+                    onAddPressed: () => _openAdd(context),
+                    onTabSelected: (tab) {
+                      if (widget.onTabSelected != null) {
+                        widget.onTabSelected!(tab);
+                        return;
+                      }
+                      if (tab == AppTab.transactions) _openList(context);
+                    },
+                  ),
               ],
             );
           },
@@ -253,9 +332,15 @@ class _Blob extends StatelessWidget {
 }
 
 class _Recent extends StatelessWidget {
-  const _Recent({required this.controller});
+  const _Recent({
+    required this.controller,
+    required this.onSeeAll,
+    required this.onTransactionTap,
+  });
 
   final HomeController controller;
+  final VoidCallback onSeeAll;
+  final ValueChanged<Transaction> onTransactionTap;
 
   @override
   Widget build(BuildContext context) {
@@ -279,7 +364,8 @@ class _Recent extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                key: const Key('see-all'),
+                onPressed: onSeeAll,
                 child: const Text(
                   'Xem tất cả',
                   style: TextStyle(
@@ -314,7 +400,10 @@ class _Recent extends StatelessWidget {
             ...recent.map(
               (tx) => Padding(
                 padding: const EdgeInsets.only(bottom: 6),
-                child: HomeTransactionTile(transaction: tx),
+                child: HomeTransactionTile(
+                  transaction: tx,
+                  onTap: () => onTransactionTap(tx),
+                ),
               ),
             ),
         ],

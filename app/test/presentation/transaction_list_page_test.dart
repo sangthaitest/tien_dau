@@ -1,0 +1,163 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:tien_day/application/home_query.dart';
+import 'package:tien_day/application/transaction_service.dart';
+import 'package:tien_day/domain/entities/payment_method_kind.dart';
+import 'package:tien_day/domain/entities/transaction.dart';
+import 'package:tien_day/domain/entities/transaction_type.dart';
+import 'package:tien_day/presentation/home/home_controller.dart';
+import 'package:tien_day/presentation/shell/main_shell.dart';
+import 'package:tien_day/presentation/transactions/transaction_detail_controller.dart';
+import 'package:tien_day/presentation/transactions/transaction_detail_sheet.dart';
+
+import '../support/memory_transaction_repository.dart';
+
+void _phone(WidgetTester tester) {
+  tester.view.physicalSize = const Size(390, 844);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+}
+
+Transaction _tx({
+  required String id,
+  required int amount,
+  required DateTime date,
+  String category = 'cafe',
+  String? detail,
+}) {
+  final now = DateTime.utc(2026, 8, 1);
+  return Transaction(
+    id: id,
+    amount: amount,
+    type: TransactionType.expense,
+    categoryId: category,
+    detail: detail,
+    occurredOn: date,
+    occurredTime: '09:15',
+    paymentSourceId: 'momo',
+    paymentSourceName: 'MoMo',
+    paymentMethod: PaymentMethodKind.eWallet,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
+Future<void> _pumpShell(
+  WidgetTester tester, {
+  required TransactionService service,
+}) async {
+  final home = HomeController(
+    HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+  );
+  await tester.pumpWidget(
+    MaterialApp(
+      home: MainShell(
+        transactionService: service,
+        homeController: home,
+        clock: () => DateTime(2026, 8, 18, 9),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+void main() {
+  setUpAll(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
+  });
+
+  testWidgets('empty transaction list copy', (tester) async {
+    _phone(tester);
+    await _pumpShell(tester, service: TransactionService(MemoryTransactionRepository()));
+    await tester.tap(find.byKey(const Key('nav-transactions')));
+    await tester.pumpAndSettle();
+    expect(find.text('Chưa có giao dịch'), findsOneWidget);
+    expect(find.text('Nhấn + để thêm giao dịch đầu tiên.'), findsOneWidget);
+  });
+
+  testWidgets('Home Xem tất cả opens Giao dịch with real rows', (tester) async {
+    _phone(tester);
+    final service = TransactionService(
+      MemoryTransactionRepository(
+        seed: [
+          _tx(id: '1', amount: 45000, date: DateTime(2026, 8, 7), detail: 'Highlands'),
+        ],
+      ),
+    );
+    await _pumpShell(tester, service: service);
+    await tester.tap(find.byKey(const Key('see-all')));
+    await tester.pumpAndSettle();
+    expect(find.text('Giao dịch'), findsWidgets);
+    expect(find.text('Highlands'), findsWidgets);
+    expect(find.textContaining('45.000'), findsWidgets);
+    expect(find.text('Cafe'), findsWidgets);
+  });
+
+  testWidgets('bottom navigation opens Giao dịch', (tester) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(
+          seed: [_tx(id: '1', amount: 10000, date: DateTime(2026, 8, 18), detail: 'Grab')],
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('nav-transactions')));
+    await tester.pumpAndSettle();
+    expect(find.text('Grab'), findsOneWidget);
+    expect(find.text('Tháng này'), findsOneWidget);
+  });
+
+  testWidgets('row tap opens detail', (tester) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(
+          seed: [_tx(id: '1', amount: 45000, date: DateTime(2026, 8, 7), detail: 'Highlands')],
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('nav-transactions')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('tx-tile-1')));
+    await tester.pumpAndSettle();
+    expect(find.text('Chi tiết'), findsWidgets);
+    expect(find.text('Highlands'), findsWidgets);
+    expect(find.text('Chi cho'), findsOneWidget);
+    expect(find.text('MoMo'), findsOneWidget);
+  });
+
+  testWidgets('detail not found', (tester) async {
+    _phone(tester);
+    final service = TransactionService(MemoryTransactionRepository());
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TransactionDetailSheet(
+            controller: TransactionDetailController(service),
+            transactionService: service,
+            clock: DateTime.now,
+            transactionId: 'missing',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Không tìm thấy giao dịch'), findsOneWidget);
+  });
+
+  testWidgets('list surfaces a load error', (tester) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(MemoryTransactionRepository(failList: true)),
+    );
+    await tester.tap(find.byKey(const Key('nav-transactions')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tx-list-error')), findsOneWidget);
+  });
+}

@@ -2,10 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 
+enum AppTab { home, transactions }
+
 class HomeBottomNav extends StatelessWidget {
-  const HomeBottomNav({super.key, this.onAddPressed});
+  const HomeBottomNav({
+    super.key,
+    this.onAddPressed,
+    this.tab = AppTab.home,
+    this.onTabSelected,
+  });
 
   final VoidCallback? onAddPressed;
+  final AppTab tab;
+  final ValueChanged<AppTab>? onTabSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -19,8 +28,20 @@ class HomeBottomNav extends StatelessWidget {
           padding: EdgeInsets.only(bottom: bottom),
           child: Row(
             children: [
-              _NavItem(icon: Icons.home_rounded, label: 'Trang chủ', active: true),
-              const _NavItem(icon: Icons.receipt_long_outlined, label: 'Giao dịch'),
+              _NavItem(
+                key: const Key('nav-home'),
+                icon: Icons.home_rounded,
+                label: 'Trang chủ',
+                active: tab == AppTab.home,
+                onTap: () => onTabSelected?.call(AppTab.home),
+              ),
+              _NavItem(
+                key: const Key('nav-transactions'),
+                icon: Icons.receipt_long_outlined,
+                label: 'Giao dịch',
+                active: tab == AppTab.transactions,
+                onTap: () => onTabSelected?.call(AppTab.transactions),
+              ),
               Expanded(
                 child: Align(
                   alignment: const Alignment(0, -0.35),
@@ -36,8 +57,14 @@ class HomeBottomNav extends StatelessWidget {
                   ),
                 ),
               ),
-              const _NavItem(icon: Icons.bar_chart_outlined, label: 'Thống kê'),
-              const _NavItem(icon: Icons.settings_outlined, label: 'Cài đặt'),
+              _NavItem(
+                icon: Icons.bar_chart_outlined,
+                label: 'Thống kê',
+              ),
+              _NavItem(
+                icon: Icons.settings_outlined,
+                label: 'Cài đặt',
+              ),
             ],
           ),
         ),
@@ -48,20 +75,25 @@ class HomeBottomNav extends StatelessWidget {
 
 class _NavItem extends StatelessWidget {
   const _NavItem({
+    super.key,
     required this.icon,
     required this.label,
     this.active = false,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
   final bool active;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final color = active ? AppColors.primary : AppColors.textTertiary;
     return Expanded(
-      child: Column(
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (active)
@@ -88,6 +120,7 @@ class _NavItem extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }

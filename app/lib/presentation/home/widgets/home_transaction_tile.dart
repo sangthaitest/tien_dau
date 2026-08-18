@@ -2,23 +2,33 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/transaction.dart';
 import '../../../domain/entities/transaction_type.dart';
+import '../../../domain/transaction_display.dart';
 import '../../format/money_format.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/category_look.dart';
 
 class HomeTransactionTile extends StatelessWidget {
-  const HomeTransactionTile({super.key, required this.transaction});
+  const HomeTransactionTile({
+    super.key,
+    required this.transaction,
+    this.onTap,
+  });
 
   final Transaction transaction;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final look = categoryLook(transaction.categoryId);
-    final title = (transaction.detail?.trim().isNotEmpty ?? false)
-        ? transaction.detail!.trim()
-        : look.name;
+    final title = transactionTitle(transaction);
     final sign = transaction.type == TransactionType.income ? '+' : '−';
-    return Container(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: Key('tx-tile-${transaction.id}'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.card,
@@ -77,6 +87,8 @@ class HomeTransactionTile extends StatelessWidget {
             style: moneyStyle(size: 14, color: AppColors.expense, weight: FontWeight.w700),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

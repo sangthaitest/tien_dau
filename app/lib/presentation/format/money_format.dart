@@ -14,6 +14,22 @@ String formatVnd(int amount, {bool withSymbol = true}) {
   return '$buffer ₫';
 }
 
+/// V3 compact amounts for list summary / day totals (50k, 1.2tr).
+String formatVndShort(int amount) {
+  final abs = amount.abs();
+  if (abs >= 1000000) {
+    final tr = amount / 1000000;
+    final text = tr.truncateToDouble() == tr
+        ? tr.toStringAsFixed(0)
+        : tr.toStringAsFixed(1).replaceFirst(RegExp(r'\.0$'), '');
+    return '${text}tr';
+  }
+  if (abs >= 1000) {
+    return '${(amount / 1000).round()}k';
+  }
+  return formatVnd(amount);
+}
+
 String monthLabel(DateTime month) => 'Tháng ${month.month} · ${month.year}';
 
 String greetingFor(DateTime now) {

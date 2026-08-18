@@ -12,11 +12,18 @@ class AddTransactionController extends ChangeNotifier {
     required TransactionService service,
     required DateTime Function() clock,
     AddTransactionDraft? draft,
+    this.existing,
   })  : _service = service,
-        draft = draft ?? AddTransactionDraft(now: clock());
+        draft = draft ??
+            (existing != null
+                ? AddTransactionDraft.fromTransaction(existing)
+                : AddTransactionDraft(now: clock()));
 
   final TransactionService _service;
   final AddTransactionDraft draft;
+  final Transaction? existing;
+
+  bool get isEditing => existing != null;
 
   bool saving = false;
   String? error;
@@ -79,7 +86,25 @@ class AddTransactionController extends ChangeNotifier {
     error = null;
     notifyListeners();
 
-    final result = await _service.add(draft.toNewTransaction());
+    final input = draft.toNewTransaction();
+    final result = existing == null
+        ? await _service.add(input)
+        : await _service.update(
+            existing!.copyWith(
+              amount: input.amount,
+              type: input.type,
+              categoryId: input.categoryId,
+              detail: input.detail,
+              clearDetail: input.detail == null,
+              occurredOn: input.occurredOn,
+              occurredTime: input.occurredTime,
+              paymentSourceId: input.paymentSourceId,
+              paymentSourceName: input.paymentSourceName,
+              paymentMethod: input.paymentMethod,
+              note: input.note,
+              clearNote: input.note == null,
+            ),
+          );
     saving = false;
     switch (result) {
       case Ok():
