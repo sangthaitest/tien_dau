@@ -12,6 +12,8 @@ class AppColors {
   static const textSecondary = Color(0xFF5C6470);
   static const textTertiary = Color(0xFF8B93A0);
   static const expense = Color(0xFFFF6B6B);
+  static const income = Color(0xFF00A3A1);
+  static const warning = Color(0xFFFFB020);
   static const divider = Color(0xFFE4E8EE);
   static const onPrimary = Color(0xFFFFFFFF);
 }

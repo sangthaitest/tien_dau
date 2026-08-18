@@ -7,11 +7,11 @@ import 'package:tien_day/domain/entities/payment_method_kind.dart';
 import 'package:tien_day/domain/entities/transaction.dart';
 import 'package:tien_day/domain/entities/transaction_type.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
-import 'package:tien_day/presentation/shell/main_shell.dart';
 import 'package:tien_day/presentation/transactions/transaction_detail_controller.dart';
 import 'package:tien_day/presentation/transactions/transaction_detail_sheet.dart';
 
 import '../support/memory_transaction_repository.dart';
+import '../support/shell_harness.dart';
 
 void _phone(WidgetTester tester) {
   tester.view.physicalSize = const Size(390, 844);
@@ -53,14 +53,15 @@ Future<void> _pumpShell(
   );
   await tester.pumpWidget(
     MaterialApp(
-      home: MainShell(
-        transactionService: service,
-        homeController: home,
+      home: buildShell(
+        transactions: service,
+        home: home,
         clock: () => DateTime(2026, 8, 18, 9),
-      ),
+      ).shell,
     ),
   );
-  await tester.pumpAndSettle();
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 50));
 }
 
 void main() {
@@ -72,7 +73,8 @@ void main() {
     _phone(tester);
     await _pumpShell(tester, service: TransactionService(MemoryTransactionRepository()));
     await tester.tap(find.byKey(const Key('nav-transactions')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('Chưa có giao dịch'), findsOneWidget);
     expect(find.text('Nhấn + để thêm giao dịch đầu tiên.'), findsOneWidget);
   });
@@ -88,7 +90,8 @@ void main() {
     );
     await _pumpShell(tester, service: service);
     await tester.tap(find.byKey(const Key('see-all')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('Giao dịch'), findsWidgets);
     expect(find.text('Highlands'), findsWidgets);
     expect(find.textContaining('45.000'), findsWidgets);
@@ -106,7 +109,8 @@ void main() {
       ),
     );
     await tester.tap(find.byKey(const Key('nav-transactions')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('Grab'), findsOneWidget);
     expect(find.text('Tháng này'), findsOneWidget);
   });
@@ -122,9 +126,11 @@ void main() {
       ),
     );
     await tester.tap(find.byKey(const Key('nav-transactions')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
     await tester.tap(find.byKey(const Key('tx-tile-1')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.text('Chi tiết'), findsWidgets);
     expect(find.text('Highlands'), findsWidgets);
     expect(find.text('Chi cho'), findsOneWidget);
@@ -146,7 +152,8 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('Không tìm thấy giao dịch'), findsOneWidget);
   });
 
@@ -157,7 +164,8 @@ void main() {
       service: TransactionService(MemoryTransactionRepository(failList: true)),
     );
     await tester.tap(find.byKey(const Key('nav-transactions')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
     expect(find.byKey(const Key('tx-list-error')), findsOneWidget);
   });
 }

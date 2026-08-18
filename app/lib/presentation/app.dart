@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../application/finance_service.dart';
 import '../application/home_query.dart';
 import '../application/transaction_service.dart';
 import '../domain/security/sensitive_access_port.dart';
@@ -11,10 +12,12 @@ class TienDayApp extends StatefulWidget {
   const TienDayApp({
     super.key,
     required this.transactionService,
+    required this.financeService,
     required this.sensitiveAccess,
   });
 
   final TransactionService transactionService;
+  final FinanceService financeService;
   final SensitiveAccessPort sensitiveAccess;
 
   @override
@@ -38,10 +41,6 @@ class _TienDayAppState extends State<TienDayApp> {
 
   @override
   Widget build(BuildContext context) {
-    assert(() {
-      widget.sensitiveAccess.lock;
-      return true;
-    }());
     return MaterialApp(
       title: 'Tiền Đây',
       debugShowCheckedModeBanner: false,
@@ -49,6 +48,8 @@ class _TienDayAppState extends State<TienDayApp> {
       home: MainShell(
         transactionService: widget.transactionService,
         homeController: _homeController,
+        financeService: widget.financeService,
+        sensitiveAccess: widget.sensitiveAccess,
       ),
     );
   }

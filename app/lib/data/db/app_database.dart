@@ -10,7 +10,7 @@ class AppDatabase {
   Database get raw => _db;
 
   static const _fileName = 'tien_day.db';
-  static const _version = 1;
+  static const _version = 2;
 
   static Future<AppDatabase> openFile() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -23,7 +23,20 @@ class AppDatabase {
       path,
       version: _version,
       onCreate: (db, version) async {
-        await db.execute('''
+        await _createTransactions(db);
+        await _createFinance(db);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await _createFinance(db);
+        }
+      },
+    );
+    return AppDatabase._(db);
+  }
+
+  static Future<void> _createTransactions(Database db) async {
+    await db.execute('''
 CREATE TABLE transactions (
   id TEXT PRIMARY KEY,
   amount INTEGER NOT NULL,
@@ -40,9 +53,25 @@ CREATE TABLE transactions (
   updated_at TEXT NOT NULL
 )
 ''');
-      },
-    );
-    return AppDatabase._(db);
+  }
+
+  static Future<void> _createFinance(Database db) async {
+    await db.execute('''
+CREATE TABLE app_prefs (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+)
+''');
+    await db.execute('''
+CREATE TABLE savings_goals (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  target_amount INTEGER NOT NULL,
+  current_amount INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+)
+''');
   }
 
   Future<void> close() => _db.close();

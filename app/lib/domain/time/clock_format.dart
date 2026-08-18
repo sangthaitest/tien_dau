@@ -14,6 +14,11 @@ DateTime dateOnly(DateTime value) => DateTime(value.year, value.month, value.day
 
 DateTime monthStart(DateTime value) => DateTime(value.year, value.month);
 
+String monthKey(DateTime value) {
+  final month = value.month.toString().padLeft(2, '0');
+  return '${value.year}-$month';
+}
+
 DateTime previousMonthStart(DateTime value) {
   if (value.month == 1) return DateTime(value.year - 1, 12);
   return DateTime(value.year, value.month - 1);

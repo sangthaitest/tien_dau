@@ -18,3 +18,7 @@ final class PersistenceFailure extends AppFailure {
   const PersistenceFailure(super.message, {this.cause});
   final Object? cause;
 }
+
+final class AuthFailure extends AppFailure {
+  const AuthFailure(super.message);
+}
