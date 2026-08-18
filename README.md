@@ -16,6 +16,8 @@ HTML UX prototype in `Demo/`. GitHub Pages for this repo: [https://sangthaitest.
 | `Demo/assets/` | Icons and illustrations |
 | Root `index.html` | Redirects to `Demo/` (GitHub Pages) |
 
-Do not add v4 or a second HTML app. Flutter implementation has not started.
+Do not add v4 or a second HTML app.
+
+Production Flutter app (Phase 02 foundation) lives in `app/`. `Demo/` stays the UX/UI source of truth and must not be edited for production architecture.
 
 The user Pages repo `sangthaitest.github.io` is **hosting only** for the live `?v=3` URL. Edit this repo, then deploy a copy there when the live site needs an update.
