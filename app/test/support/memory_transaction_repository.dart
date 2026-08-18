@@ -6,12 +6,21 @@ import 'package:tien_day/domain/repositories/transaction_repository.dart';
 import 'package:tien_day/domain/validation/transaction_validator.dart';
 
 class MemoryTransactionRepository implements TransactionRepository {
-  MemoryTransactionRepository({List<Transaction>? seed}) : _items = [...?seed];
+  MemoryTransactionRepository({
+    List<Transaction>? seed,
+    this.failCreate = false,
+  }) : _items = [...?seed];
 
   final List<Transaction> _items;
+  bool failCreate;
+
+  List<Transaction> get items => List.unmodifiable(_items);
 
   @override
   Future<Result<Transaction>> create(NewTransaction input) async {
+    if (failCreate) {
+      return const Err(PersistenceFailure('write failed'));
+    }
     final invalid = validateNewTransaction(input);
     if (invalid != null) return Err(invalid);
     final now = DateTime.utc(2026, 8, 18);

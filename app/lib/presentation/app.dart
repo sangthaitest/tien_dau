@@ -46,7 +46,10 @@ class _TienDayAppState extends State<TienDayApp> {
       title: 'Tiền Đây',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: HomePage(controller: _homeController),
+      home: HomePage(
+        controller: _homeController,
+        transactionService: widget.transactionService,
+      ),
     );
   }
 }

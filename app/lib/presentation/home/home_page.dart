@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../application/transaction_service.dart';
+import '../add_transaction/add_transaction_controller.dart';
+import '../add_transaction/add_transaction_page.dart';
 import '../format/money_format.dart';
 import '../theme/app_colors.dart';
 import 'home_controller.dart';
@@ -11,11 +14,15 @@ class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
     required this.controller,
+    required this.transactionService,
+    this.clock = DateTime.now,
     this.userName = 'Minh Khuê',
     this.userInitials = 'MK',
   });
 
   final HomeController controller;
+  final TransactionService transactionService;
+  final DateTime Function() clock;
   final String userName;
   final String userInitials;
 
@@ -28,6 +35,24 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     widget.controller.load();
+  }
+
+  Future<void> _openAdd(BuildContext context) async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => AddTransactionPage(
+          controller: AddTransactionController(
+            service: widget.transactionService,
+            clock: widget.clock,
+          ),
+        ),
+      ),
+    );
+    if (!context.mounted) return;
+    if (saved == true) {
+      await widget.controller.load();
+    }
   }
 
   @override
@@ -50,11 +75,7 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                 ),
-                HomeBottomNav(
-                  onAddPressed: () {
-                    // Add Transaction is Phase 04. FAB is the V3 primary control.
-                  },
-                ),
+                HomeBottomNav(onAddPressed: () => _openAdd(context)),
               ],
             );
           },

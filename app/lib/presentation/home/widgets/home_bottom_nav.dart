@@ -25,7 +25,9 @@ class HomeBottomNav extends StatelessWidget {
                 child: Align(
                   alignment: const Alignment(0, -0.35),
                   child: FloatingActionButton(
+                    key: const Key('fab-add'),
                     onPressed: onAddPressed,
+                    tooltip: 'Thêm giao dịch',
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.onPrimary,
                     elevation: 6,

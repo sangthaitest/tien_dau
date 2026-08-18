@@ -22,15 +22,15 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    final service = TransactionService(MemoryTransactionRepository());
     final controller = HomeController(
-      HomeQuery(
-        TransactionService(MemoryTransactionRepository()),
-        clock: () => DateTime(2026, 8, 18, 9),
-      ),
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
     );
 
     await tester.pumpWidget(
-      MaterialApp(home: HomePage(controller: controller)),
+      MaterialApp(
+        home: HomePage(controller: controller, transactionService: service),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -52,33 +52,33 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final now = DateTime.utc(2026, 8, 18);
-    final controller = HomeController(
-      HomeQuery(
-        TransactionService(
-          MemoryTransactionRepository(
-            seed: [
-              Transaction(
-                id: '1',
-                amount: 45000,
-                type: TransactionType.expense,
-                categoryId: 'cafe',
-                detail: 'Highlands',
-                occurredOn: DateTime(2026, 8, 7),
-                paymentSourceId: 'momo',
-                paymentSourceName: 'MoMo',
-                paymentMethod: PaymentMethodKind.eWallet,
-                createdAt: now,
-                updatedAt: now,
-              ),
-            ],
+    final service = TransactionService(
+      MemoryTransactionRepository(
+        seed: [
+          Transaction(
+            id: '1',
+            amount: 45000,
+            type: TransactionType.expense,
+            categoryId: 'cafe',
+            detail: 'Highlands',
+            occurredOn: DateTime(2026, 8, 7),
+            paymentSourceId: 'momo',
+            paymentSourceName: 'MoMo',
+            paymentMethod: PaymentMethodKind.eWallet,
+            createdAt: now,
+            updatedAt: now,
           ),
-        ),
-        clock: () => DateTime(2026, 8, 18, 9),
+        ],
       ),
+    );
+    final controller = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
     );
 
     await tester.pumpWidget(
-      MaterialApp(home: HomePage(controller: controller)),
+      MaterialApp(
+        home: HomePage(controller: controller, transactionService: service),
+      ),
     );
     await tester.pumpAndSettle();
 
