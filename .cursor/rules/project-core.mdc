@@ -11,7 +11,9 @@ alwaysApply: true
 - Keep the product calm, simple, fast, and non-judgmental.
 
 ## Baseline
-- The approved UX/UI baseline is the current v3 prototype.
+- `Demo/` is the current V3 UX/UI source of truth.
+- When documentation conflicts with `Demo/`, `Demo/` wins until explicitly changed.
+- The approved UX/UI baseline is the current v3 prototype in `Demo/` (`index.html`, `style.css`, `script.js`, `assets/`).
 - Treat the current v3 UX/UI as the source of truth unless the user explicitly approves a change.
 - Do not create v4, v5, duplicate prototypes, or parallel product versions.
 

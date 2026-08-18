@@ -5,6 +5,10 @@ alwaysApply: true
 
 # Tiền Đây — UX/UI Rules
 
+## Source of truth
+- `Demo/` is the current V3 UX/UI source of truth.
+- When documentation conflicts with `Demo/`, `Demo/` wins until explicitly changed.
+
 ## Visual direction
 - Preserve the approved v3 visual language.
 - Do not introduce a new visual system unless explicitly requested.
@@ -33,11 +37,12 @@ Primary:
 Secondary information such as payment method, date/time, and note may remain available without competing with the primary flow.
 
 ## Quick amount shortcuts
-Approved shortcuts:
+Current V3 baseline shortcuts (in `Demo/`):
+- 10k
+- 20k
 - 50k
 - 100k
 - 200k
-- 500k
 
 Behavior:
 - Selecting a shortcut updates the amount field.

@@ -11,17 +11,26 @@ alwaysApply: true
 - Avoid premature abstraction.
 - Keep UI, state/business logic, and persistence/data access reasonably separated.
 
+## Source of truth
+- `Demo/` is the current V3 UX/UI source of truth.
+- When documentation conflicts with `Demo/`, `Demo/` wins until explicitly changed.
+
 ## Data model
-A transaction should support at minimum:
+Current V3 prototype transaction field for how the user paid:
+- `account`
+
+This is the documented V3 baseline field. It is not automatically the final production data model.
+
+A V3 transaction object also includes at minimum:
 - id
 - amount
 - category
 - detail
 - date
-- paymentMethod
+- account
 - note
 
-Additional fields require a clear product reason.
+Additional fields require a clear product reason. Do not redesign this model in later phases until that phase is approved.
 
 ## Persistence
 - User-created transaction data must persist using the project's approved persistence layer.

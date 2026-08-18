@@ -4,8 +4,9 @@ Personal finance app. One Git repository: `sangthaitest/tien_dau`.
 
 ## Current prototype (single source)
 
-HTML UX prototype — the same Version C currently hosted at
-[https://sangthaitest.github.io/?v=3](https://sangthaitest.github.io/?v=3).
+**Demo/ is the current V3 UX/UI source of truth. When documentation conflicts with Demo/, Demo/ wins until explicitly changed.**
+
+HTML UX prototype in `Demo/`. GitHub Pages for this repo: [https://sangthaitest.github.io/tien_dau/](https://sangthaitest.github.io/tien_dau/).
 
 | Path | Role |
 |------|------|
