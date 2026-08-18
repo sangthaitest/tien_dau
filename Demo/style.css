@@ -598,12 +598,13 @@ button.dot.active::before { width: 28px; background: var(--primary); }
   font-family: var(--font-display);
   font-size: 36px; font-weight: 800; letter-spacing: -1.2px;
   margin: 4px 0 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
 .btn-eye {
-  width: 42px; height: 42px; border-radius: 50%;
+  width: 44px; height: 44px; border-radius: 50%;
   background: rgba(255, 255, 255, 0.2); color: #fff;
   display: inline-flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
+  flex-shrink: 0; position: relative; z-index: 2;
   transition: background var(--duration-fast) var(--ease);
 }
 .btn-eye:hover { background: rgba(255, 255, 255, 0.3); }
@@ -678,7 +679,8 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 .tx-list { display: flex; flex-direction: column; gap: 6px; }
 .tx-item {
   display: flex; align-items: center; gap: 14px;
-  padding: 14px;
+  padding: 12px 14px;
+  min-height: 64px;
   border-radius: var(--radius-sm);
   background: var(--card);
   box-shadow: var(--shadow-sm);
@@ -686,16 +688,20 @@ button.dot.active::before { width: 28px; background: var(--primary); }
   transition: transform var(--duration-fast) var(--ease), box-shadow var(--duration) var(--ease);
   cursor: pointer; position: relative; overflow: hidden;
   animation: fade-up 400ms var(--ease-out) both;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-y;
+  user-select: none;
 }
 .tx-item:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .tx-item:active { transform: scale(0.985); }
 .tx-icon {
   width: 48px; height: 48px; border-radius: 16px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  pointer-events: none;
 }
 .tx-icon img { width: 28px; height: 28px; }
 .tx-icon .ms { font-size: 22px; }
-.tx-info { flex: 1; min-width: 0; }
+.tx-info { flex: 1; min-width: 0; pointer-events: none; }
 .tx-info .title {
   font-weight: 800; font-size: 14px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -703,9 +709,22 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 .tx-info .meta { font-size: 12px; color: var(--text-secondary); margin-top: 3px; font-weight: 600; }
 .tx-amount {
   font-family: var(--font-display); font-weight: 700; font-size: 14px; white-space: nowrap;
+  flex-shrink: 0; pointer-events: none; max-width: 42%;
+  overflow: hidden; text-overflow: ellipsis;
 }
 .tx-amount.income { color: var(--income); }
 .tx-amount.expense { color: var(--expense); }
+.tx-item.is-breakfast .tx-icon {
+  width: 48px; height: 48px;
+}
+.tx-item.is-breakfast .tx-emoji {
+  font-size: 26px; line-height: 1;
+}
+.tx-item.is-breakfast .tx-info .title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.15px;
+}
 
 .tx-summary {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
@@ -799,6 +818,7 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 .tx-swipe-wrap .tx-item {
   position: relative; z-index: 1;
   transition: transform var(--duration) var(--ease); margin: 0;
+  touch-action: pan-x pan-y;
 }
 .tx-swipe-wrap.open .tx-item { transform: translateX(-76px); }
 .tx-item.swipeable::after { display: none; }
@@ -817,6 +837,23 @@ button.dot.active::before { width: 28px; background: var(--primary); }
   background: rgba(255, 255, 255, 0.12);
 }
 .budget-summary .label { font-size: 13px; opacity: 0.9; font-weight: 600; }
+.budget-lede {
+  font-size: 13px; font-weight: 600; opacity: 0.92;
+  line-height: 1.45; margin-bottom: 16px; max-width: 280px;
+}
+.budget-facts {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-bottom: 16px; position: relative; z-index: 1;
+}
+.budget-fact {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+}
+.budget-fact .fact-label { font-size: 13px; font-weight: 600; opacity: 0.9; }
+.budget-fact .fact-val {
+  font-family: var(--font-display); font-size: 16px; font-weight: 800;
+  letter-spacing: -0.4px; white-space: nowrap;
+}
+.budget-fact.emphasis .fact-val { font-size: 22px; letter-spacing: -0.6px; }
 .budget-summary .big {
   font-family: var(--font-display); font-size: 24px; font-weight: 800;
   margin: 6px 0 14px; letter-spacing: -0.5px;
@@ -1380,4 +1417,7 @@ select.form-input {
     height: calc(100% - var(--safe-top));
     min-height: 0;
   }
+  .balance-amount { font-size: 30px; letter-spacing: -0.8px; }
+  .budget-fact .fact-val { font-size: 15px; }
+  .budget-fact.emphasis .fact-val { font-size: 20px; }
 }

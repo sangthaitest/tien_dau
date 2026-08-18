@@ -124,29 +124,12 @@
                 <button class="avatar" id="btn-avatar" aria-label="Mở hồ sơ">MA</button>
               </div>
               <div class="month-chip"><span class="ms">calendar_month</span> Tháng 8 · 2026</div>
-              <div class="balance-label">Số dư hiện tại</div>
+              <div class="balance-label">Chi tiêu tháng này</div>
               <div class="balance-row" id="balance-row">
-                <div class="balance-amount" id="current-balance" aria-live="polite">24.850.000 ₫</div>
-                <button class="btn-eye" id="btn-hide-balance" aria-label="Ẩn số dư" aria-pressed="false">
+                <div class="balance-amount" id="current-balance" aria-live="polite">7.276.000 ₫</div>
+                <button class="btn-eye" id="btn-hide-balance" aria-label="Ẩn số tiền nhạy cảm" aria-pressed="false">
                   <span class="ms" id="eye-icon">visibility</span>
                 </button>
-              </div>
-              <div class="balance-stats">
-                <div class="stat-pill">
-                  <div class="stat-icon"><span class="ms">south</span></div>
-                  <div class="tiny">Thu nhập</div>
-                  <span class="amount" id="monthly-income">+18.5tr</span>
-                </div>
-                <div class="stat-pill">
-                  <div class="stat-icon"><span class="ms">north</span></div>
-                  <div class="tiny">Chi tiêu</div>
-                  <span class="amount" id="monthly-expense">−8.2tr</span>
-                </div>
-                <div class="stat-pill">
-                  <div class="stat-icon"><span class="ms">savings</span></div>
-                  <div class="tiny">Tiết kiệm</div>
-                  <span class="amount" id="monthly-savings">+10.3tr</span>
-                </div>
               </div>
             </header>
 
@@ -169,28 +152,12 @@
               </button>
             </div>
 
-            <div class="insight-banner">
-              <span class="ms fill">trending_up</span>
-              <div>
-                <div class="title">Bạn đang làm rất tốt 💚</div>
-                <div class="body">Tháng này tiết kiệm <strong>55%</strong> thu nhập — cao hơn tháng trước. Tiếp tục phát huy nhé!</div>
-              </div>
-            </div>
-
             <section class="section">
               <div class="section-header">
-                <span class="section-title">Giao dịch gần đây</span>
+                <span class="section-title">Chi tiêu gần đây</span>
                 <button class="link-btn" data-nav="transactions">Xem tất cả</button>
               </div>
               <div class="tx-list" id="home-tx-list"><!-- filled by JS --></div>
-            </section>
-
-            <section class="section">
-              <div class="section-header">
-                <span class="section-title">Ngân sách tháng</span>
-                <button class="link-btn" data-nav="budget">Chi tiết</button>
-              </div>
-              <div class="budget-row" id="home-budget-list"><!-- filled by JS --></div>
             </section>
 
             <section class="section">
@@ -264,12 +231,24 @@
               </button>
             </header>
             <div class="budget-summary">
-              <div class="label">Tổng ngân sách tháng 8</div>
-              <div class="big" id="budget-total-spent">6.450.000 / 10.000.000 ₫</div>
+              <p class="budget-lede">Số tiền bạn cho phép mình chi trong tháng này.</p>
+              <div class="budget-facts">
+                <div class="budget-fact">
+                  <span class="fact-label">Ngân sách tháng</span>
+                  <span class="fact-val" id="budget-limit">10.000.000 ₫</span>
+                </div>
+                <div class="budget-fact">
+                  <span class="fact-label">Đã dùng</span>
+                  <span class="fact-val" id="budget-spent">6.057.000 ₫</span>
+                </div>
+                <div class="budget-fact emphasis">
+                  <span class="fact-label">Còn lại</span>
+                  <span class="fact-val" id="budget-remaining">3.943.000 ₫</span>
+                </div>
+              </div>
               <div class="budget-summary-bar"><div class="fill" id="budget-total-bar" style="width:0%"></div></div>
               <div class="meta">
-                <span>Đã dùng 64.5%</span>
-                <span>Còn 3.550.000 ₫</span>
+                <span id="budget-pct-label">Đã dùng 61%</span>
               </div>
             </div>
             <div class="budget-context">
@@ -479,11 +458,6 @@
           <span class="nav-indicator"></span>
           <span class="ms">receipt_long</span>
           <span class="label">Giao dịch</span>
-        </button>
-        <button class="nav-item" data-nav="budget">
-          <span class="nav-indicator"></span>
-          <span class="ms">pie_chart</span>
-          <span class="label">Ngân sách</span>
         </button>
         <button class="nav-item" data-nav="statistics">
           <span class="nav-indicator"></span>
