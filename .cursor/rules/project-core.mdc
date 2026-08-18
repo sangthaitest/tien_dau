@@ -1,0 +1,44 @@
+---
+description: Core product rules for Tiền Đây. Always apply.
+alwaysApply: true
+---
+
+# Tiền Đây — Project Core Rules
+
+## Product direction
+- Tiền Đây is a lightweight expense-tracking product.
+- The core promise is: help users know where their money went without making them feel like they are doing accounting.
+- Keep the product calm, simple, fast, and non-judgmental.
+
+## Baseline
+- The approved UX/UI baseline is the current v3 prototype.
+- Treat the current v3 UX/UI as the source of truth unless the user explicitly approves a change.
+- Do not create v4, v5, duplicate prototypes, or parallel product versions.
+
+## Scope discipline
+- Implement only the requested task.
+- Do not redesign unrelated screens.
+- Do not add features, cards, banners, dashboards, AI tips, or extra flows without explicit approval.
+- Before changing code, inspect the existing implementation and reuse it where appropriate.
+
+## Home
+- Home prioritizes monthly spending, recent transactions, and the primary "+" action.
+- Do not expose salary, budget, savings, or other sensitive financial information on Home.
+
+## Core transaction flow
+- The primary flow is: Home → + → amount → category → save → Home.
+- Adding an expense should feel fast and require minimal thought.
+
+## Sensitive financial information
+- Salary, budget, savings, and similar sensitive financial information belong in the Financial area.
+- Do not move sensitive financial data onto Home.
+
+## Data integrity
+- Do not hard-code production transaction data into UI.
+- UI must consume the application data/model layer.
+- Changes must preserve existing data unless migration is explicitly required and approved.
+
+## Quality
+- Do not silently break existing flows.
+- After implementation, run the relevant build/test/checks.
+- Report what changed, what was tested, and any remaining issue.

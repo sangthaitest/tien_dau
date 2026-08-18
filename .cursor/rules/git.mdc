@@ -1,0 +1,30 @@
+---
+description: Git rules for Tiền Đây.
+alwaysApply: true
+---
+
+# Tiền Đây — Git Rules
+
+## Single repository
+- Tiền Đây has exactly ONE Git repository.
+- Always work in the existing Tiền Đây repository.
+- Never create a second repository for a phase, feature, prototype, platform, or experiment.
+- Never create a duplicate codebase as a workaround.
+
+## Versioning
+- Do not create v4/v5 as separate projects or repositories.
+- Use Git history, branches, tags, or commits to represent milestones when appropriate.
+
+## Before changes
+- Inspect git status before significant work.
+- Do not overwrite unrelated user changes.
+- If the working tree contains unexpected changes, stop and report them before destructive actions.
+
+## After changes
+- Review the diff.
+- Remove generated junk and temporary files that do not belong in the repository.
+- Run relevant tests/build checks before declaring the task complete.
+
+## Safety
+- Never force-push, reset, delete branches, or discard user changes unless explicitly instructed.
+- Never change remote configuration unless explicitly instructed.

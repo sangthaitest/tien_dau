@@ -1,0 +1,56 @@
+---
+description: Approved UX/UI rules for Tiền Đây.
+alwaysApply: true
+---
+
+# Tiền Đây — UX/UI Rules
+
+## Visual direction
+- Preserve the approved v3 visual language.
+- Do not introduce a new visual system unless explicitly requested.
+- Preserve typography hierarchy, spacing rhythm, corner radius, icon language, and interaction states.
+
+## Simplicity
+- Prefer fewer visible controls over more controls.
+- Do not make Home feel like a financial dashboard.
+- Avoid unnecessary cards, explanations, banners, tips, and decorative UI.
+
+## Home hierarchy
+Primary:
+1. Monthly spending
+2. Recent transactions
+3. "+" add transaction action
+
+Secondary navigation may expose other areas, but Home must remain focused.
+
+## Add Transaction
+Primary:
+1. Amount
+2. Category
+3. Detail when useful
+4. Save
+
+Secondary information such as payment method, date/time, and note may remain available without competing with the primary flow.
+
+## Quick amount shortcuts
+Approved shortcuts:
+- 50k
+- 100k
+- 200k
+- 500k
+
+Behavior:
+- Selecting a shortcut updates the amount field.
+- Manual editing remains possible.
+- If the amount no longer matches a shortcut, its selected state is cleared.
+- If manual entry matches a shortcut, that shortcut becomes selected.
+- Do not add more shortcut values without explicit approval.
+
+## Privacy
+- Do not visually surface salary, budget, savings, or similar sensitive information on Home.
+- Financial information should feel intentionally separated, not accidentally hidden.
+
+## Interaction quality
+- Touch targets must be comfortable on mobile.
+- Avoid unnecessary confirmation dialogs for simple actions.
+- Preserve clear selected, pressed, disabled, loading, empty, and error states.

@@ -1,0 +1,44 @@
+---
+description: Architecture and engineering rules for Tiền Đây.
+alwaysApply: true
+---
+
+# Tiền Đây — Architecture Rules
+
+## General
+- Inspect the existing project structure before introducing new files or patterns.
+- Prefer the simplest architecture that supports the current product and foreseeable MVP growth.
+- Avoid premature abstraction.
+- Keep UI, state/business logic, and persistence/data access reasonably separated.
+
+## Data model
+A transaction should support at minimum:
+- id
+- amount
+- category
+- detail
+- date
+- paymentMethod
+- note
+
+Additional fields require a clear product reason.
+
+## Persistence
+- User-created transaction data must persist using the project's approved persistence layer.
+- Do not rely on UI-local mock arrays for production behavior.
+- Avoid destructive schema changes.
+
+## State
+- Keep a single source of truth for transaction data.
+- When a transaction is created, edited, or deleted, dependent screens must update consistently.
+
+## Reuse
+- Reuse existing components and utilities before creating duplicates.
+- Do not create parallel versions of the same screen/component unless there is a real platform requirement.
+
+## Error handling
+- Handle invalid input and persistence failures gracefully.
+- Never silently discard user-entered transaction data.
+
+## Technology discipline
+- Do not change the app framework, language, build system, or architecture direction unless explicitly approved by the user.

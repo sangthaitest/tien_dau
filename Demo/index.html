@@ -2,10 +2,11 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#00B67A" />
-  <meta name="description" content="Tiền Đây — Quản lý tài chính cá nhân hiện đại" />
-  <title>Tiền Đây — Personal Finance</title>
+  <meta name="description" content="Tiền Đây — Version C — Add Transaction" />
+  <title>Tiền Đây — Version C</title>
   <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,7 +17,6 @@
 <body>
   <div class="app-shell">
     <div class="phone" id="phone">
-      <!-- Status bar -->
       <div class="phone-notch" aria-hidden="true"></div>
       <div class="phone-status">
         <span id="status-time">9:41</span>
@@ -27,10 +27,9 @@
         </div>
       </div>
 
-      <!-- Screens -->
       <div class="screens" id="screens">
 
-        <!-- ===== SPLASH ===== -->
+        <!-- SPLASH -->
         <section class="screen fullscreen active" id="screen-splash" data-screen="splash">
           <div class="splash-content">
             <img class="splash-logo" src="assets/illustrations/logo.svg" alt="Tiền Đây" />
@@ -40,43 +39,34 @@
           </div>
         </section>
 
-        <!-- ===== ONBOARDING ===== -->
+        <!-- ONBOARDING -->
         <section class="screen fullscreen" id="screen-onboarding" data-screen="onboarding">
           <div class="onboarding">
             <div class="onboarding-top">
-              <span class="onboarding-progress" id="onboarding-progress">1 / 3</span>
+              <span class="onboarding-progress" id="onboarding-progress">1 / 2</span>
               <button class="btn btn-ghost" id="btn-skip-onboarding" aria-label="Bỏ qua giới thiệu">Bỏ qua</button>
             </div>
             <div class="onboarding-slides" id="onboarding-slides">
               <div class="onboarding-slide active" data-slide="0">
                 <div class="onboarding-illust">
-                  <img src="assets/illustrations/onboarding-1.svg" alt="Theo dõi chi tiêu trên điện thoại" />
+                  <img src="assets/illustrations/onboarding-1.svg" alt="" />
                 </div>
-                <p class="onboarding-step">Bước 1 · Ghi chép</p>
+                <p class="onboarding-step">Bước 1</p>
                 <h1 class="h1">Biết tiền đi đâu<br/>mỗi ngày</h1>
-                <p class="caption">Một lần chạm để ghi nhận. Không phán xét — chỉ giúp bạn hiểu thói quen chi tiêu của chính mình.</p>
+                <p class="caption">Một lần chạm để ghi nhận chi tiêu — đơn giản, không phán xét.</p>
               </div>
               <div class="onboarding-slide" data-slide="1">
                 <div class="onboarding-illust" style="background:transparent">
-                  <img src="assets/illustrations/onboarding-2.svg" alt="Mục tiêu tiết kiệm" />
+                  <img src="assets/illustrations/onboarding-2.svg" alt="" />
                 </div>
-                <p class="onboarding-step">Bước 2 · Mục tiêu</p>
-                <h1 class="h1">Tiết kiệm có<br/>cảm xúc</h1>
-                <p class="caption">Đặt mục tiêu thật — quỹ khẩn cấp, chuyến đi, căn hộ. Tiến độ hiện rõ, động lực mỗi ngày.</p>
-              </div>
-              <div class="onboarding-slide" data-slide="2">
-                <div class="onboarding-illust" style="background:transparent">
-                  <img src="assets/illustrations/onboarding-3.svg" alt="Biểu đồ thống kê" />
-                </div>
-                <p class="onboarding-step">Bước 3 · Thấu hiểu</p>
-                <h1 class="h1">Thấy rõ, quyết<br/>định đúng</h1>
-                <p class="caption">Biểu đồ đẹp, insight ngắn gọn — để bạn tự tin hơn với từng đồng tiền.</p>
+                <p class="onboarding-step">Bước 2</p>
+                <h1 class="h1">Thấy rõ,<br/>quyết định đúng</h1>
+                <p class="caption">Số dư, chi tiêu tháng, ngân sách và mục tiêu — ngay trên Trang chủ.</p>
               </div>
             </div>
-            <div class="onboarding-dots" id="onboarding-dots" role="tablist" aria-label="Tiến trình giới thiệu">
+            <div class="onboarding-dots" id="onboarding-dots" role="tablist">
               <button type="button" class="dot active" data-step="0" aria-label="Trang 1" aria-current="true"></button>
               <button type="button" class="dot" data-step="1" aria-label="Trang 2"></button>
-              <button type="button" class="dot" data-step="2" aria-label="Trang 3"></button>
             </div>
             <div class="onboarding-actions">
               <button class="btn btn-primary btn-block" id="btn-next-onboarding">Tiếp tục</button>
@@ -84,7 +74,7 @@
           </div>
         </section>
 
-        <!-- ===== LOGIN ===== -->
+        <!-- LOGIN -->
         <section class="screen fullscreen" id="screen-login" data-screen="login">
           <div class="login">
             <div class="login-hero">
@@ -94,7 +84,7 @@
                 <span>Tiền Đây</span>
               </div>
               <h1 class="h1">Rất vui được gặp bạn</h1>
-              <p class="caption">Đăng nhập để ví của bạn luôn đồng bộ — an toàn và riêng tư</p>
+              <p class="caption">Bắt đầu ghi chép ngay — không cần thiết lập phức tạp</p>
             </div>
             <div class="login-actions">
               <button class="btn btn-social btn-block" id="btn-google" data-ripple>
@@ -107,347 +97,226 @@
               </button>
               <div class="btn-divider">hoặc</div>
               <button class="btn btn-outline btn-block" id="btn-guest">Tiếp tục không cần tài khoản</button>
-              <p class="login-privacy">Bằng việc tiếp tục, bạn đồng ý với Điều khoản dịch vụ & Chính sách bảo mật. Dữ liệu được mã hóa trên thiết bị.</p>
+              <p class="login-privacy">Prototype UX — dữ liệu lưu trên thiết bị. Không có xác thực thật.</p>
             </div>
           </div>
         </section>
 
-        <!-- ===== HOME ===== -->
+        <!-- HOME -->
         <section class="screen" id="screen-home" data-screen="home">
           <div class="screen-scroll">
-            <header class="home-header">
+            <header class="home-header home-header-b">
               <div class="home-top">
                 <div class="home-greeting">
-                  <div class="caption">Chào buổi sáng ☀️</div>
-                  <div class="h3" id="user-name">Minh Anh</div>
+                  <div class="caption" id="home-greeting-text">Xin chào</div>
+                  <div class="h3" id="user-name">Minh Khuê</div>
                 </div>
-                <button class="avatar" id="btn-avatar" aria-label="Mở hồ sơ">MA</button>
+                <button class="avatar" id="btn-avatar" aria-label="Mở hồ sơ">MK</button>
               </div>
-              <div class="month-chip"><span class="ms">calendar_month</span> Tháng 8 · 2026</div>
-              <div class="balance-label">Chi tiêu tháng này</div>
-              <div class="balance-row" id="balance-row">
-                <div class="balance-amount" id="current-balance" aria-live="polite">7.276.000 ₫</div>
-                <button class="btn-eye" id="btn-hide-balance" aria-label="Ẩn số tiền nhạy cảm" aria-pressed="false">
-                  <span class="ms" id="eye-icon">visibility</span>
-                </button>
+              <button type="button" class="month-chip" id="btn-home-month" aria-label="Chọn tháng">
+                <span class="ms">calendar_month</span> <span id="home-month-label">Tháng này</span>
+              </button>
+
+              <div class="home-metrics">
+                <div class="home-metric">
+                  <div class="tiny">Chi tiêu tháng này</div>
+                  <div class="amount" id="home-month-spend">0 ₫</div>
+                </div>
               </div>
             </header>
 
-            <div class="quick-actions-card">
-              <button class="quick-action" data-action="add" aria-label="Thêm giao dịch">
-                <div class="icon-wrap"><span class="ms">add</span></div>
-                <span class="label">Thêm</span>
-              </button>
-              <button class="quick-action" data-action="transfer" aria-label="Chuyển khoản">
-                <div class="icon-wrap" style="color:var(--income)"><span class="ms">swap_horiz</span></div>
-                <span class="label">Chuyển</span>
-              </button>
-              <button class="quick-action" data-action="budget" aria-label="Ngân sách">
-                <div class="icon-wrap" style="color:var(--warning)"><span class="ms">savings</span></div>
-                <span class="label">Ngân sách</span>
-              </button>
-              <button class="quick-action" data-action="scan" aria-label="Quét mã QR">
-                <div class="icon-wrap" style="color:#7E57C2"><span class="ms">qr_code_scanner</span></div>
-                <span class="label">Quét QR</span>
-              </button>
-            </div>
-
             <section class="section">
               <div class="section-header">
-                <span class="section-title">Chi tiêu gần đây</span>
+                <span class="section-title">Gần đây</span>
                 <button class="link-btn" data-nav="transactions">Xem tất cả</button>
               </div>
-              <div class="tx-list" id="home-tx-list"><!-- filled by JS --></div>
-            </section>
-
-            <section class="section">
-              <div class="section-header">
-                <span class="section-title">Hóa đơn sắp tới</span>
-                <span class="tiny">4 hóa đơn</span>
-              </div>
-              <div id="upcoming-bills"><!-- filled by JS --></div>
-            </section>
-
-            <section class="section">
-              <div class="tip-card">
-                <span class="ms fill">lightbulb</span>
-                <div>
-                  <div class="title">Mẹo nhỏ cho ví lớn ✨</div>
-                  <div class="body" id="financial-tip">Thử quy tắc 50/30/20: 50% nhu cầu thiết yếu, 30% mong muốn, 20% tiết kiệm & đầu tư.</div>
-                </div>
-              </div>
+              <div class="tx-list" id="home-tx-list"></div>
             </section>
           </div>
         </section>
 
-        <!-- ===== TRANSACTIONS ===== -->
+        <!-- TRANSACTIONS -->
         <section class="screen" id="screen-transactions" data-screen="transactions">
           <div class="screen-scroll">
             <header class="page-header">
               <h2 class="h2">Giao dịch</h2>
-              <button class="btn-icon" id="btn-tx-filter" aria-label="Bộ lọc nâng cao">
-                <span class="ms">tune</span>
-              </button>
             </header>
             <div class="tx-summary">
-              <div class="tx-summary-card income">
-                <div class="label">Thu nhập</div>
-                <div class="val" id="tx-sum-income">+21.0tr</div>
-              </div>
               <div class="tx-summary-card expense">
                 <div class="label">Chi tiêu</div>
-                <div class="val" id="tx-sum-expense">−8.2tr</div>
+                <div class="val" id="tx-sum-expense">−0</div>
               </div>
             </div>
-            <div class="search-bar">
-              <span class="ms" aria-hidden="true">search</span>
-              <input type="search" id="tx-search" placeholder="Tìm theo tên, danh mục..." autocomplete="off" aria-label="Tìm giao dịch" />
+            <div class="chips" id="tx-type-chips" role="tablist" aria-label="Loại giao dịch">
+              <button class="chip active" data-type-filter="all" role="tab" aria-selected="true">Tất cả</button>
+              <button class="chip" data-type-filter="expense" role="tab">Chi tiêu</button>
             </div>
-            <div class="chips" id="tx-chips" role="tablist" aria-label="Lọc danh mục">
-              <button class="chip active" data-filter="all" role="tab" aria-selected="true">Tất cả</button>
-              <button class="chip" data-filter="expense" role="tab" aria-selected="false"><span class="ms sm">north</span> Chi tiêu</button>
-              <button class="chip" data-filter="income" role="tab" aria-selected="false"><span class="ms sm">south</span> Thu nhập</button>
-              <button class="chip" data-filter="food" role="tab" aria-selected="false">Ăn uống</button>
-              <button class="chip" data-filter="transport" role="tab" aria-selected="false">Di chuyển</button>
-              <button class="chip" data-filter="shopping" role="tab" aria-selected="false">Mua sắm</button>
+            <div class="chips" id="tx-cat-chips" role="tablist" aria-label="Danh mục"></div>
+            <div class="chips" id="tx-date-chips" role="tablist" aria-label="Thời gian">
+              <button class="chip active" data-date-filter="thisMonth">Tháng này</button>
+              <button class="chip" data-date-filter="lastMonth">Tháng trước</button>
+              <button class="chip" data-date-filter="custom">Tùy chọn</button>
             </div>
-            <div id="tx-list-full"><!-- filled by JS --></div>
+            <div class="custom-date-row hidden" id="custom-date-row">
+              <input class="form-input" type="date" id="tx-date-from" aria-label="Từ ngày" />
+              <input class="form-input" type="date" id="tx-date-to" aria-label="Đến ngày" />
+            </div>
+            <div id="tx-list-full"></div>
             <div class="empty-state hidden" id="tx-empty">
               <img src="assets/illustrations/empty-wallet.svg" alt="" />
               <h3 class="h3">Chưa có giao dịch</h3>
-              <p class="caption">Thêm giao dịch đầu tiên để bắt đầu theo dõi tài chính của bạn.</p>
+              <p class="caption">Nhấn + để thêm giao dịch đầu tiên.</p>
               <button class="btn btn-primary btn-sm mt-md" data-action="add">Thêm giao dịch</button>
             </div>
           </div>
         </section>
 
-        <!-- ===== BUDGET ===== -->
+        <!-- BUDGET -->
         <section class="screen" id="screen-budget" data-screen="budget">
           <div class="screen-scroll">
             <header class="page-header">
-              <h2 class="h2">Ngân sách</h2>
-              <button class="btn-icon" id="btn-add-budget" aria-label="Thêm ngân sách">
-                <span class="ms">add</span>
+              <button class="btn-icon" id="btn-budget-back" aria-label="Quay lại Cài đặt">
+                <span class="ms">arrow_back</span>
+              </button>
+              <h2 class="h2">Tài chính</h2>
+              <button class="btn-icon" id="btn-edit-budget" aria-label="Đặt ngân sách">
+                <span class="ms">edit</span>
               </button>
             </header>
-            <div class="budget-summary">
-              <p class="budget-lede">Số tiền bạn cho phép mình chi trong tháng này.</p>
-              <div class="budget-facts">
-                <div class="budget-fact">
-                  <span class="fact-label">Ngân sách tháng</span>
-                  <span class="fact-val" id="budget-limit">10.000.000 ₫</span>
-                </div>
-                <div class="budget-fact">
-                  <span class="fact-label">Đã dùng</span>
-                  <span class="fact-val" id="budget-spent">6.057.000 ₫</span>
-                </div>
-                <div class="budget-fact emphasis">
-                  <span class="fact-label">Còn lại</span>
-                  <span class="fact-val" id="budget-remaining">3.943.000 ₫</span>
-                </div>
-              </div>
-              <div class="budget-summary-bar"><div class="fill" id="budget-total-bar" style="width:0%"></div></div>
-              <div class="meta">
-                <span id="budget-pct-label">Đã dùng 61%</span>
-              </div>
-            </div>
-            <div class="budget-context">
-              <div class="context-chip"><span class="ms">schedule</span> Còn 24 ngày</div>
-              <div class="context-chip"><span class="ms">speed</span> ~147k/ngày an toàn</div>
-            </div>
-            <div class="warning-banner" id="budget-warning" role="status">
-              <span class="ms fill">warning</span>
-              <span>Danh mục <strong>Ăn uống</strong> đã dùng 91% ngân sách. Còn 220.000 ₫ trong tháng.</span>
-            </div>
             <section class="section">
               <div class="section-header">
-                <span class="section-title">Theo danh mục</span>
-                <span class="tiny">8 danh mục</span>
+                <span class="section-title">Lương</span>
+                <button class="link-btn" id="btn-edit-salary" type="button">Sửa</button>
               </div>
-              <div class="budget-row" id="budget-list-full"><!-- filled by JS --></div>
+              <div class="finance-salary-card">
+                <div class="label" id="salary-month-label">Lương tháng</div>
+                <div class="big" id="salary-amount">0 ₫</div>
+              </div>
             </section>
+            <div class="budget-summary">
+              <div class="label" id="budget-month-label">Ngân sách tháng</div>
+              <div class="big" id="budget-limit-amount">0 ₫</div>
+              <div class="budget-summary-bar"><div class="fill" id="budget-total-bar" style="width:0%"></div></div>
+              <div class="budget-kpi">
+                <div class="budget-kpi-item">
+                  <div class="label">Đã dùng</div>
+                  <div class="val" id="budget-used-amount">0 ₫</div>
+                </div>
+                <div class="budget-kpi-item">
+                  <div class="label">Còn lại</div>
+                  <div class="val" id="budget-remaining-amount">0 ₫</div>
+                </div>
+              </div>
+            </div>
             <section class="section">
               <div class="section-header">
                 <span class="section-title">Mục tiêu tiết kiệm</span>
                 <button class="link-btn" id="btn-create-goal">+ Tạo mới</button>
               </div>
-              <div id="goals-list">
-                <div class="goal-card">
-                  <div class="goal-icon"><img src="assets/illustrations/piggy-bank.svg" alt="" /></div>
-                  <div class="goal-body">
-                    <div class="title">Quỹ khẩn cấp</div>
-                    <div class="meta">Mục tiêu 50.000.000 ₫ · 62%</div>
-                    <div class="progress-bar"><div class="progress-fill" data-pct="62" style="width:0%"></div></div>
-                    <div class="goal-amounts">
-                      <span class="amount income" style="font-size:12px">31.000.000 ₫</span>
-                      <span class="tiny">còn 19tr</span>
-                    </div>
-                  </div>
-                </div>
-                <div class="goal-card">
-                  <div class="goal-icon" style="background:var(--warning-container)"><img src="assets/illustrations/goal.svg" alt="" /></div>
-                  <div class="goal-body">
-                    <div class="title">Du lịch Đà Nẵng</div>
-                    <div class="meta">Mục tiêu 12.000.000 ₫ · 38%</div>
-                    <div class="progress-bar"><div class="progress-fill" data-pct="38" style="width:0%;background:var(--warning)"></div></div>
-                    <div class="goal-amounts">
-                      <span class="amount" style="font-size:12px;color:var(--warning)">4.560.000 ₫</span>
-                      <span class="tiny">còn 7.4tr</span>
-                    </div>
-                  </div>
-                </div>
+              <div id="goals-list"></div>
+              <div class="empty-inline hidden" id="goals-empty">
+                <p class="caption">Chưa có mục tiêu. Tạo một mục tiêu nhỏ để bắt đầu.</p>
               </div>
             </section>
           </div>
         </section>
 
-        <!-- ===== STATISTICS ===== -->
+        <!-- STATISTICS -->
         <section class="screen" id="screen-statistics" data-screen="statistics">
           <div class="screen-scroll">
             <header class="page-header">
               <h2 class="h2">Thống kê</h2>
               <div class="trend-meta">
-                <span class="trend-badge down" id="trend-badge">
-                  <span class="ms sm">trending_down</span> −12%
+                <span class="trend-badge" id="trend-badge">
+                  <span class="ms sm" id="trend-icon">trending_flat</span>
+                  <span id="trend-text">0%</span>
                 </span>
                 <span class="tiny">so với tháng trước</span>
               </div>
             </header>
             <div class="stats-insight">
-              <div class="label">Tổng chi tiêu tháng 8</div>
-              <div class="big">8.240.000 ₫</div>
-              <div class="sub"><span class="ms">emoji_events</span> Bạn chi tiêu thông minh hơn 3 tháng gần đây</div>
+              <div class="label" id="stats-month-label">Chi tiêu tháng này</div>
+              <div class="big" id="stats-expense-total">0 ₫</div>
             </div>
-            <div class="period-tabs" id="period-tabs" role="tablist">
-              <button class="period-tab" data-period="week" role="tab">Tuần</button>
-              <button class="period-tab active" data-period="month" role="tab" aria-selected="true">Tháng</button>
-              <button class="period-tab" data-period="year" role="tab">Năm</button>
-            </div>
-            <div class="compare-row">
-              <div class="compare-card income">
-                <div class="label">Thu nhập</div>
-                <div class="val">21.0tr</div>
-                <div class="delta">+2.5tr vs T7</div>
-              </div>
-              <div class="compare-card expense">
-                <div class="label">Chi tiêu</div>
-                <div class="val">8.2tr</div>
-                <div class="delta">−1.1tr vs T7</div>
-              </div>
-            </div>
-
             <div class="chart-card">
               <div class="title">Chi tiêu theo danh mục</div>
               <div class="pie-wrap">
-                <div class="pie-chart" id="pie-chart" role="img" aria-label="Biểu đồ tròn chi tiêu theo danh mục">
+                <div class="pie-chart" id="pie-chart" role="img" aria-label="Biểu đồ tròn">
                   <div class="pie-center">
                     <span class="tiny">Tổng chi</span>
-                    <span class="amount" id="pie-total">8.2tr</span>
+                    <span class="amount" id="pie-total">0</span>
                   </div>
                 </div>
-                <div class="pie-legend" id="pie-legend"><!-- filled by JS --></div>
+                <div class="pie-legend" id="pie-legend"></div>
               </div>
             </div>
-
-            <div class="chart-card">
-              <div class="flex justify-between items-center mb-lg">
-                <div class="title" style="margin:0">Xu hướng chi tiêu</div>
-                <span class="caption" id="bar-period-label">Tháng 8</span>
-              </div>
-              <div class="bar-chart" id="bar-chart" role="img" aria-label="Biểu đồ cột xu hướng chi tiêu"><!-- filled by JS --></div>
-            </div>
-
             <section class="section">
               <div class="section-header">
-                <span class="section-title">Chi tiêu nhiều nhất</span>
+                <span class="section-title">Danh mục chi nhiều nhất</span>
               </div>
-              <div class="card" id="top-spending"><!-- filled by JS --></div>
+              <div class="card" id="top-spending"></div>
             </section>
           </div>
         </section>
 
-        <!-- ===== SETTINGS ===== -->
+        <!-- SETTINGS -->
         <section class="screen" id="screen-settings" data-screen="settings">
           <div class="screen-scroll">
             <header class="page-header">
               <h2 class="h2">Cài đặt</h2>
             </header>
-
-            <div class="profile-card" id="profile-card" role="button" tabindex="0" aria-label="Chỉnh sửa hồ sơ">
-              <div class="profile-avatar">MA</div>
+            <div class="profile-card" id="profile-card" role="button" tabindex="0">
+              <div class="profile-avatar">MK</div>
               <div class="profile-info">
-                <div class="name">Minh Anh</div>
+                <div class="name">Minh Khuê</div>
                 <div class="email">minhanh@email.com</div>
-                <div class="edit-hint">Chỉnh sửa hồ sơ</div>
+                <div class="edit-hint">Hồ sơ (UI)</div>
               </div>
-              <span class="ms chevron" style="color:var(--text-tertiary)" aria-hidden="true">chevron_right</span>
+              <span class="ms chevron" style="color:var(--text-tertiary)">chevron_right</span>
             </div>
-
+            <div class="settings-group">
+              <div class="settings-group-title">Quản lý tài chính</div>
+              <div class="settings-item" data-setting="budget" role="button" tabindex="0">
+                <div class="settings-icon si-green"><span class="ms">account_balance_wallet</span></div>
+                <span class="label">Tài chính</span>
+                <span class="ms chevron">chevron_right</span>
+              </div>
+              <div class="settings-item" data-setting="finance-pin" role="button" tabindex="0">
+                <div class="settings-icon si-indigo"><span class="ms">lock</span></div>
+                <span class="label">Mật khẩu quản lý</span>
+                <span class="ms chevron">chevron_right</span>
+              </div>
+            </div>
             <div class="settings-group">
               <div class="settings-group-title">Tùy chọn</div>
               <div class="settings-item" data-setting="currency" role="button" tabindex="0">
                 <div class="settings-icon si-green"><span class="ms">payments</span></div>
                 <span class="label">Tiền tệ</span>
                 <span class="value">VND (₫)</span>
-                <span class="ms chevron" aria-hidden="true">chevron_right</span>
-              </div>
-              <div class="settings-item" data-setting="language" role="button" tabindex="0">
-                <div class="settings-icon si-blue"><span class="ms">language</span></div>
-                <span class="label">Ngôn ngữ</span>
-                <span class="value">Tiếng Việt</span>
-                <span class="ms chevron" aria-hidden="true">chevron_right</span>
-              </div>
-              <div class="settings-item" data-setting="darkmode">
-                <div class="settings-icon si-purple"><span class="ms">dark_mode</span></div>
-                <span class="label">Chế độ tối</span>
-                <div class="toggle" id="toggle-dark" role="switch" aria-checked="false" tabindex="0" aria-label="Bật chế độ tối"></div>
+                <span class="ms chevron">chevron_right</span>
               </div>
               <div class="settings-item" data-setting="notification">
                 <div class="settings-icon si-orange"><span class="ms">notifications</span></div>
                 <span class="label">Thông báo</span>
-                <div class="toggle on" id="toggle-notif" role="switch" aria-checked="true" tabindex="0" aria-label="Bật thông báo"></div>
+                <div class="toggle on" id="toggle-notif" role="switch" aria-checked="true" tabindex="0"></div>
               </div>
-              <div class="settings-item" data-setting="biometric" role="button" tabindex="0">
-                <div class="settings-icon si-teal"><span class="ms">fingerprint</span></div>
-                <span class="label">Xác thực sinh trắc</span>
-                <span class="value">Tắt</span>
-                <span class="ms chevron" aria-hidden="true">chevron_right</span>
+              <div class="settings-item" data-setting="privacy" role="button" tabindex="0">
+                <div class="settings-icon si-teal"><span class="ms">visibility</span></div>
+                <span class="label">Riêng tư</span>
+                <span class="value" id="privacy-value">Hiện số</span>
+                <span class="ms chevron">chevron_right</span>
               </div>
-            </div>
-
-            <div class="settings-group">
-              <div class="settings-group-title">Dữ liệu</div>
-              <div class="settings-item" data-setting="export" role="button" tabindex="0">
-                <div class="settings-icon si-teal"><span class="ms">download</span></div>
-                <span class="label">Xuất dữ liệu</span>
-                <span class="ms chevron" aria-hidden="true">chevron_right</span>
-              </div>
-              <div class="settings-item" data-setting="backup" role="button" tabindex="0">
-                <div class="settings-icon si-indigo"><span class="ms">cloud_upload</span></div>
-                <span class="label">Sao lưu & khôi phục</span>
-                <span class="ms chevron" aria-hidden="true">chevron_right</span>
+              <div class="settings-item" data-setting="darkmode">
+                <div class="settings-icon si-purple"><span class="ms">dark_mode</span></div>
+                <span class="label">Giao diện tối</span>
+                <div class="toggle" id="toggle-dark" role="switch" aria-checked="false" tabindex="0"></div>
               </div>
             </div>
-
-            <div class="settings-group">
-              <div class="settings-group-title">Thông tin</div>
-              <div class="settings-item" data-setting="about" role="button" tabindex="0">
-                <div class="settings-icon si-pink"><span class="ms">info</span></div>
-                <span class="label">Về Tiền Đây</span>
-                <span class="value">v1.0.0</span>
-                <span class="ms chevron" aria-hidden="true">chevron_right</span>
-              </div>
-            </div>
-
-            <button class="btn-logout" id="btn-logout" type="button">Đăng xuất</button>
-            <div style="padding:0 20px 24px;text-align:center">
-              <p class="tiny">Made with ♥ for better money habits</p>
-            </div>
+            <button class="btn-logout" id="btn-logout" type="button">Đăng xuất (prototype)</button>
           </div>
         </section>
       </div>
 
-      <!-- Bottom Navigation -->
       <nav class="bottom-nav" id="bottom-nav" aria-label="Điều hướng chính">
         <button class="nav-item active" data-nav="home">
           <span class="nav-indicator"></span>
@@ -459,6 +328,11 @@
           <span class="ms">receipt_long</span>
           <span class="label">Giao dịch</span>
         </button>
+        <div class="nav-fab-slot">
+          <button class="nav-fab" id="fab" type="button" aria-label="Thêm giao dịch">
+            <span class="ms">add</span>
+          </button>
+        </div>
         <button class="nav-item" data-nav="statistics">
           <span class="nav-indicator"></span>
           <span class="ms">bar_chart</span>
@@ -471,82 +345,66 @@
         </button>
       </nav>
 
-      <!-- FAB -->
-      <button class="fab" id="fab" aria-label="Thêm giao dịch">
-        <span class="ms">add</span>
-      </button>
-
-      <!-- Add Transaction Bottom Sheet -->
+      <!-- Add / Edit Transaction Sheet -->
       <div class="sheet-overlay" id="sheet-overlay"></div>
-      <div class="bottom-sheet" id="add-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
-        <div class="sheet-handle"></div>
-        <div class="sheet-header">
-          <h3 class="h3" id="sheet-title">Thêm giao dịch</h3>
-          <button class="btn-icon" id="btn-close-sheet" aria-label="Đóng">
-            <span class="ms">close</span>
+      <div class="bottom-sheet add-sheet-v3" id="add-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+        <div class="sheet-header sheet-header-back">
+          <button class="btn-icon" id="btn-close-sheet" aria-label="Quay lại">
+            <span class="ms">arrow_back</span>
           </button>
+          <h3 class="h3" id="sheet-title">Thêm giao dịch</h3>
+          <span class="header-spacer"></span>
         </div>
         <div class="sheet-body">
-          <div class="type-toggle">
-            <button class="type-btn active expense" data-type="expense">Chi tiêu</button>
-            <button class="type-btn income" data-type="income">Thu nhập</button>
-          </div>
-
-          <div class="form-group">
+          <div class="form-group amount-hero">
             <label class="form-label" for="input-amount">Số tiền</label>
             <div class="amount-input-wrap">
               <span class="currency" aria-hidden="true">₫</span>
-              <input class="form-input" type="text" id="input-amount" inputmode="numeric" placeholder="0" aria-describedby="quick-amounts" />
+              <input class="form-input" type="text" id="input-amount" inputmode="numeric" placeholder="0" autocomplete="off" />
             </div>
-            <div class="quick-amounts" id="quick-amounts">
+            <div class="quick-amounts" id="quick-amounts" role="group" aria-label="Mức tiền nhanh">
+              <button type="button" class="quick-amt" data-amt="10000">10k</button>
+              <button type="button" class="quick-amt" data-amt="20000">20k</button>
               <button type="button" class="quick-amt" data-amt="50000">50k</button>
               <button type="button" class="quick-amt" data-amt="100000">100k</button>
               <button type="button" class="quick-amt" data-amt="200000">200k</button>
-              <button type="button" class="quick-amt" data-amt="500000">500k</button>
             </div>
           </div>
-
           <div class="form-group">
-            <label class="form-label">Danh mục</label>
-            <div class="category-grid" id="category-grid"><!-- filled by JS --></div>
+            <div class="label-row">
+              <label class="form-label">Chi cho</label>
+              <button type="button" class="link-btn" id="btn-manage-chicho">Quản lý →</button>
+            </div>
+            <div class="category-grid" id="category-grid"></div>
           </div>
-
+          <div class="form-group" id="detail-group">
+            <div class="label-row">
+              <label class="form-label">Chi tiết</label>
+              <button type="button" class="link-btn" id="btn-manage-details">Quản lý →</button>
+            </div>
+            <div class="chips detail-chips" id="detail-chips"></div>
+          </div>
           <div class="form-group">
-            <label class="form-label">Tài khoản</label>
-            <select class="form-input" id="input-account">
-              <option>Tiền mặt</option>
-              <option selected>Vietcombank</option>
-              <option>MoMo</option>
-              <option>Techcombank</option>
-            </select>
+            <label class="form-label">Thanh toán bằng</label>
+            <button type="button" class="pay-select" id="pay-select" aria-haspopup="listbox" aria-expanded="false">
+              <span id="pay-select-label">MoMo</span>
+              <span class="ms">expand_more</span>
+            </button>
+            <div class="pay-menu hidden" id="pay-menu" role="listbox"></div>
           </div>
-
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Ngày</label>
+              <label class="form-label" for="input-date">Ngày</label>
               <input class="form-input" type="date" id="input-date" />
             </div>
             <div class="form-group">
-              <label class="form-label">Giờ</label>
+              <label class="form-label" for="input-time">Giờ</label>
               <input class="form-input" type="time" id="input-time" />
             </div>
           </div>
-
           <div class="form-group">
-            <label class="form-label">Ghi chú</label>
+            <label class="form-label" for="input-note">Ghi chú (tuỳ chọn)</label>
             <input class="form-input" type="text" id="input-note" placeholder="Thêm ghi chú..." />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Đính kèm</label>
-            <div class="attach-row">
-              <button class="attach-btn" id="btn-photo" type="button">
-                <span class="ms">photo_camera</span> Hóa đơn
-              </button>
-              <button class="attach-btn" id="btn-voice" type="button">
-                <span class="ms">mic</span> Ghi âm
-              </button>
-            </div>
           </div>
         </div>
         <div class="sheet-footer">
@@ -554,17 +412,256 @@
         </div>
       </div>
 
-      <!-- Toast -->
+      <!-- Payment method sheet -->
+      <div class="bottom-sheet nested-sheet" id="pay-edit-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3" id="pay-edit-title">Thêm phương thức</h3>
+          <button class="btn-icon" id="btn-close-pay-edit" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body">
+          <div class="form-group">
+            <label class="form-label" for="input-pay-name">Tên</label>
+            <input class="form-input" type="text" id="input-pay-name" placeholder="VD: MB Bank" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="input-pay-type">Loại</label>
+            <select class="form-input" id="input-pay-type">
+              <option>Thẻ tín dụng</option>
+              <option>Thẻ ghi nợ</option>
+              <option>Tài khoản ngân hàng</option>
+              <option>Ví điện tử</option>
+              <option>Tiền mặt</option>
+            </select>
+          </div>
+        </div>
+        <div class="sheet-footer sheet-footer-row">
+          <button class="btn btn-outline flex-1 hidden" id="btn-delete-pay">Xóa</button>
+          <button class="btn btn-primary flex-1" id="btn-save-pay">Lưu</button>
+        </div>
+      </div>
+
+      <!-- Manage Chi cho sheet -->
+      <div class="bottom-sheet nested-sheet" id="chicho-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3">Quản lý khoản chi</h3>
+          <button class="btn-icon" id="btn-close-chicho" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body">
+          <div id="chicho-manage-list"></div>
+          <button type="button" class="btn btn-outline btn-block mt-lg" id="btn-add-chicho">＋ Thêm khoản mới</button>
+        </div>
+      </div>
+
+      <!-- Add / edit Chi cho item -->
+      <div class="bottom-sheet nested-sheet" id="chicho-edit-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3" id="chicho-edit-title">Thêm khoản chi</h3>
+          <button class="btn-icon" id="btn-close-chicho-edit" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body">
+          <div class="form-group">
+            <label class="form-label" for="input-chicho-name">Tên</label>
+            <input class="form-input" type="text" id="input-chicho-name" placeholder="VD: Cafe" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Icon</label>
+            <div class="icon-picker" id="chicho-icon-picker"></div>
+          </div>
+        </div>
+        <div class="sheet-footer sheet-footer-row">
+          <button class="btn btn-outline flex-1 hidden" id="btn-delete-chicho">Xóa</button>
+          <button class="btn btn-primary flex-1" id="btn-save-chicho">Lưu</button>
+        </div>
+      </div>
+
+      <!-- Manage Chi tiết -->
+      <div class="bottom-sheet nested-sheet" id="detail-manage-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3">Quản lý chi tiết</h3>
+          <button class="btn-icon" id="btn-close-detail-manage" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body">
+          <div class="detail-manage-header" id="detail-manage-cat"></div>
+          <div id="detail-manage-list"></div>
+          <button type="button" class="btn btn-outline btn-block mt-lg" id="btn-add-detail">＋ Thêm chi tiết</button>
+        </div>
+      </div>
+
+      <!-- Add / edit Chi tiết -->
+      <div class="bottom-sheet nested-sheet" id="detail-edit-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3" id="detail-edit-title">Thêm chi tiết</h3>
+          <button class="btn-icon" id="btn-close-detail-edit" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body">
+          <div class="form-group">
+            <label class="form-label" for="input-detail-name">Tên</label>
+            <input class="form-input" type="text" id="input-detail-name" placeholder="VD: Bánh mì" />
+          </div>
+        </div>
+        <div class="sheet-footer sheet-footer-row">
+          <button class="btn btn-outline flex-1 hidden" id="btn-delete-detail">Xóa</button>
+          <button class="btn btn-primary flex-1" id="btn-save-detail">Lưu</button>
+        </div>
+      </div>
+
+      <!-- Month picker -->
+      <div class="bottom-sheet nested-sheet" id="month-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3">Chọn tháng</h3>
+          <button class="btn-icon" id="btn-close-month" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body">
+          <div id="month-picker-list"></div>
+        </div>
+      </div>
+
+      <!-- Detail Sheet -->
+      <div class="bottom-sheet" id="detail-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3">Chi tiết</h3>
+          <button class="btn-icon" id="btn-close-detail" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body" id="detail-body"></div>
+        <div class="sheet-footer sheet-footer-row">
+          <button class="btn btn-outline flex-1" id="btn-detail-delete">Xóa</button>
+          <button class="btn btn-primary flex-1" id="btn-detail-edit">Sửa</button>
+        </div>
+      </div>
+
+      <!-- Finance PIN -->
+      <div class="bottom-sheet" id="finance-pin-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3">Mật khẩu quản lý tài chính</h3>
+          <button class="btn-icon" id="btn-close-finance-pin" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body">
+          <p class="caption" id="finance-pin-hint">Nhập mật khẩu 4 số để xem Tài chính.</p>
+          <div class="form-group">
+            <label class="form-label" for="input-finance-pin">Mật khẩu</label>
+            <input class="form-input pin-input" type="password" id="input-finance-pin" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off" />
+          </div>
+        </div>
+        <div class="sheet-footer">
+          <button class="btn btn-primary btn-block" id="btn-submit-finance-pin">Xác nhận</button>
+        </div>
+      </div>
+
+      <!-- Finance PIN change -->
+      <div class="bottom-sheet" id="finance-pin-change-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3">Đổi mật khẩu</h3>
+          <button class="btn-icon" id="btn-close-finance-pin-change" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body">
+          <div class="form-group">
+            <label class="form-label" for="input-finance-pin-old">Mật khẩu hiện tại</label>
+            <input class="form-input pin-input" type="password" id="input-finance-pin-old" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="input-finance-pin-new">Mật khẩu mới</label>
+            <input class="form-input pin-input" type="password" id="input-finance-pin-new" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off" />
+          </div>
+        </div>
+        <div class="sheet-footer">
+          <button class="btn btn-primary btn-block" id="btn-save-finance-pin">Lưu mật khẩu</button>
+        </div>
+      </div>
+
+      <!-- Salary Sheet -->
+      <div class="bottom-sheet" id="salary-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3">Lương tháng</h3>
+          <button class="btn-icon" id="btn-close-salary-sheet" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body">
+          <div class="form-group">
+            <label class="form-label" for="input-salary-amount">Số tiền lương (₫)</label>
+            <div class="amount-input-wrap">
+              <span class="currency">₫</span>
+              <input class="form-input" type="text" id="input-salary-amount" inputmode="numeric" placeholder="0" />
+            </div>
+          </div>
+        </div>
+        <div class="sheet-footer">
+          <button class="btn btn-primary btn-block" id="btn-save-salary">Lưu lương</button>
+        </div>
+      </div>
+
+      <!-- Budget Sheet -->
+      <div class="bottom-sheet" id="budget-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3" id="budget-sheet-title">Đặt ngân sách tháng</h3>
+          <button class="btn-icon" id="btn-close-budget-sheet" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body">
+          <div class="form-group">
+            <label class="form-label" for="input-budget-limit">Hạn mức tháng (₫)</label>
+            <div class="amount-input-wrap">
+              <span class="currency">₫</span>
+              <input class="form-input" type="text" id="input-budget-limit" inputmode="numeric" placeholder="0" />
+            </div>
+          </div>
+        </div>
+        <div class="sheet-footer">
+          <button class="btn btn-primary btn-block" id="btn-save-budget">Lưu ngân sách</button>
+        </div>
+      </div>
+
+      <!-- Goal Sheet -->
+      <div class="bottom-sheet" id="goal-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3" id="goal-sheet-title">Tạo mục tiêu</h3>
+          <button class="btn-icon" id="btn-close-goal-sheet" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body">
+          <div class="form-group" id="goal-name-group">
+            <label class="form-label" for="input-goal-name">Tên mục tiêu</label>
+            <input class="form-input" type="text" id="input-goal-name" placeholder="VD: Quỹ khẩn cấp" />
+          </div>
+          <div class="form-group" id="goal-target-group">
+            <label class="form-label" for="input-goal-target">Mục tiêu (₫)</label>
+            <div class="amount-input-wrap">
+              <span class="currency">₫</span>
+              <input class="form-input" type="text" id="input-goal-target" inputmode="numeric" placeholder="0" />
+            </div>
+          </div>
+          <div class="form-group" id="goal-current-group">
+            <label class="form-label" for="input-goal-current" id="goal-current-label">Số hiện có (₫)</label>
+            <div class="amount-input-wrap">
+              <span class="currency">₫</span>
+              <input class="form-input" type="text" id="input-goal-current" inputmode="numeric" placeholder="0" />
+            </div>
+            <p class="tiny mt-sm" id="goal-hint">Không trừ vào số dư — chỉ theo dõi tiến độ.</p>
+          </div>
+        </div>
+        <div class="sheet-footer">
+          <button class="btn btn-primary btn-block" id="btn-save-goal">Lưu</button>
+        </div>
+      </div>
+
       <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-      <!-- Dialog -->
       <div class="dialog-overlay" id="dialog-overlay">
         <div class="dialog" id="dialog">
           <span class="ms xl fill" id="dialog-icon">check_circle</span>
           <h3 class="h3" id="dialog-title">Thành công</h3>
           <p class="caption" id="dialog-msg">Thao tác đã hoàn tất.</p>
-          <div class="dialog-actions">
-            <button class="btn btn-primary btn-block" id="dialog-ok">OK</button>
+          <div class="dialog-actions" id="dialog-actions">
+            <button class="btn btn-outline flex-1 hidden" id="dialog-cancel">Hủy</button>
+            <button class="btn btn-primary flex-1" id="dialog-ok">OK</button>
           </div>
         </div>
       </div>
