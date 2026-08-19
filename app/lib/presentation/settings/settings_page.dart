@@ -128,7 +128,7 @@ class SettingsPage extends StatelessWidget {
                 backgroundColor: AppColors.expenseContainer,
                 side: BorderSide(color: AppColors.expenseContainer, width: 1.5),
                 shape: const StadiumBorder(),
-                textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
               ),
               child: const Text('Đăng xuất (prototype)'),
             ),
@@ -224,7 +224,7 @@ class _ProfileCard extends StatelessWidget {
                   'MK',
                   style: TextStyle(
                     color: Colors.white,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     fontSize: 22,
                   ),
                 ),
@@ -237,7 +237,7 @@ class _ProfileCard extends StatelessWidget {
                     Text(
                       'Minh Khuê',
                       style: TextStyle(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         fontSize: 17,
                         color: AppColors.text,
                       ),
@@ -256,7 +256,7 @@ class _ProfileCard extends StatelessWidget {
                       'Hồ sơ (UI)',
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: AppColors.primary,
                       ),
                     ),
@@ -294,7 +294,7 @@ class _SettingsGroup extends StatelessWidget {
               title.toUpperCase(),
               style: TextStyle(
                 fontSize: 11,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 color: AppColors.textTertiary,
                 letterSpacing: 0.7,
               ),
@@ -356,7 +356,7 @@ class _SettingsRow extends StatelessWidget {
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     fontSize: 14,
                     color: AppColors.text,
                   ),

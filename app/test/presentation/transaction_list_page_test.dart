@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:tien_day/application/home_query.dart';
 import 'package:tien_day/application/transaction_service.dart';
 import 'package:tien_day/domain/entities/payment_method_kind.dart';
@@ -66,7 +65,6 @@ Future<void> _pumpShell(
 
 void main() {
   setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
   });
 
   testWidgets('empty transaction list copy', (tester) async {
@@ -135,6 +133,7 @@ void main() {
     expect(find.text('Highlands'), findsWidgets);
     expect(find.text('Chi cho'), findsOneWidget);
     expect(find.text('MoMo'), findsOneWidget);
+    expect(tester.getTopLeft(find.byType(BottomSheet)).dy, greaterThan(80));
     expect(tester.getRect(find.byKey(const Key('btn-detail-edit'))).bottom, lessThan(844));
     expect(tester.getRect(find.byKey(const Key('btn-detail-delete'))).bottom, lessThan(844));
   });

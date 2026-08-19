@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:tien_day/application/home_query.dart';
 import 'package:tien_day/application/transaction_service.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
@@ -31,7 +30,6 @@ Future<void> _submitPin(WidgetTester tester, String pin) async {
 
 void main() {
   setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
   });
 
   testWidgets('core flow: Home → add → Giao dịch → edit → delete → Thống kê → Cài đặt → Tài chính → PIN', (tester) async {

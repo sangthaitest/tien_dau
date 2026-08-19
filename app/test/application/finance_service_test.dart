@@ -53,6 +53,51 @@ void main() {
     expect(snap.remaining, 10000000 - 45000);
   });
 
+  test('monthly budget excludes income and other months and reports overspend', () async {
+    final txs = MemoryTransactionRepository();
+    final finance = service(txs: txs);
+    final transactions = TransactionService(txs);
+    expect((await finance.saveBudget(100000)).isOk, isTrue);
+
+    for (final input in [
+      NewTransaction(
+        amount: 120000,
+        type: TransactionType.expense,
+        categoryId: 'market',
+        occurredOn: DateTime(2026, 8, 18),
+        paymentSourceId: 'cash',
+        paymentSourceName: 'Tiền mặt',
+        paymentMethod: PaymentMethodKind.cash,
+      ),
+      NewTransaction(
+        amount: 900000,
+        type: TransactionType.income,
+        categoryId: 'other',
+        occurredOn: DateTime(2026, 8, 18),
+        paymentSourceId: 'bank',
+        paymentSourceName: 'Ngân hàng',
+        paymentMethod: PaymentMethodKind.bankAccount,
+      ),
+      NewTransaction(
+        amount: 50000,
+        type: TransactionType.expense,
+        categoryId: 'cafe',
+        occurredOn: DateTime(2026, 7, 31),
+        paymentSourceId: 'cash',
+        paymentSourceName: 'Tiền mặt',
+        paymentMethod: PaymentMethodKind.cash,
+      ),
+    ]) {
+      expect((await transactions.add(input)).isOk, isTrue);
+    }
+
+    final snap = ((await finance.load()) as Ok).value;
+    expect(snap.budgetLimit, 100000);
+    expect(snap.used, 120000);
+    expect(snap.remaining, -20000);
+    expect(snap.percentUsed, 100);
+  });
+
   test('rejects invalid salary and budget', () async {
     final finance = service();
     expect(((await finance.saveSalary(0)) as Err).failure, isA<ValidationFailure>());

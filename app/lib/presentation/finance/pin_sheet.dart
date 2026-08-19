@@ -150,7 +150,7 @@ class _PinSheetState extends State<PinSheet> {
               style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
               child: Text(
                 widget.mode == PinSheetMode.setup ? 'Lưu mật khẩu' : 'Xác nhận',
-                style: TextStyle(fontWeight: FontWeight.w800),
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -179,7 +179,7 @@ class _PinField extends StatelessWidget {
           label.toUpperCase(),
           style: TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             color: AppColors.textSecondary,
             letterSpacing: 0.5,
           ),

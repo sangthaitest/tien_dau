@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:tien_day/application/home_query.dart';
 import 'package:tien_day/application/transaction_service.dart';
 import 'package:tien_day/domain/entities/payment_method_kind.dart';
@@ -63,7 +62,6 @@ Future<void> _openStats(WidgetTester tester) async {
 
 void main() {
   setUpAll(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
   });
 
   testWidgets('navigation opens Statistics with active tab', (tester) async {

@@ -104,7 +104,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
                             'CHI TIÊU',
                             style: TextStyle(
                               fontSize: 11,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                               color: AppColors.textTertiary,
                               letterSpacing: 0.4,
                             ),
@@ -313,7 +313,7 @@ class _FilterChip extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: selected ? AppColors.onPrimary : AppColors.textSecondary,
             ),
           ),
@@ -394,7 +394,7 @@ class _Empty extends StatelessWidget {
             ),
             child: const Text(
               'Thêm giao dịch',
-              style: TextStyle(fontWeight: FontWeight.w800),
+              style: TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -424,7 +424,7 @@ class _DayGroup extends StatelessWidget {
                     group.label.toUpperCase(),
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.textTertiary,
                       letterSpacing: 0.5,
                     ),
@@ -434,7 +434,7 @@ class _DayGroup extends StatelessWidget {
                   '−${formatVndShort(group.dayExpense)}',
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: AppColors.textSecondary,
                   ),
                 ),

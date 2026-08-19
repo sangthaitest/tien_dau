@@ -128,7 +128,7 @@ class _Header extends StatelessWidget {
                     key: const Key('trend-text'),
                     style: TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: badgeColor,
                     ),
                   ),
@@ -304,7 +304,7 @@ class _Pie extends StatelessWidget {
                     key: const Key('pie-total'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -397,7 +397,7 @@ class _LegendRow extends StatelessWidget {
           ),
           Text(
             '${row.percent}%',
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
           ),
         ],
       ),
@@ -478,7 +478,7 @@ class _RankRow extends StatelessWidget {
             ),
             child: Text(
               '${index + 1}',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: rankColor),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: rankColor),
             ),
           ),
           const SizedBox(width: 12),
@@ -500,7 +500,7 @@ class _RankRow extends StatelessWidget {
                   look.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 Text(
                   '${row.percent}% chi tiêu',
@@ -518,7 +518,7 @@ class _RankRow extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               fontSize: 14,
               color: AppColors.expense,
             ),

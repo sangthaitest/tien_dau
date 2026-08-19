@@ -18,6 +18,10 @@ class AppColors {
       dark ? const Color(0xFF242A35) : const Color(0xFFEEF1F5);
   static Color get card =>
       dark ? const Color(0xFF1A1F28) : const Color(0xFFFFFFFF);
+  static Color get cardBorder =>
+      dark ? const Color(0xFF2A313D) : const Color(0xFFE8EBF0);
+  static Color get cardShadow =>
+      dark ? const Color(0x38000000) : const Color(0x0D1A1D26);
   static Color get text =>
       dark ? const Color(0xFFF2F4F7) : const Color(0xFF1A1D26);
   static Color get textSecondary =>
@@ -44,5 +48,5 @@ class AppColors {
   static Color get onPrimary =>
       dark ? const Color(0xFF0A1A14) : const Color(0xFFFFFFFF);
   static Color get navBar =>
-      dark ? const Color(0xF01A1F28) : const Color(0xEBFFFFFF);
+      dark ? const Color(0xFF1A1F28) : const Color(0xFFFFFFFF);
 }

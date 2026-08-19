@@ -6,12 +6,14 @@ void main() {
     expect(formatVnd(0), '0 ₫');
     expect(formatVnd(25000), '25.000 ₫');
     expect(formatVnd(18500000), '18.500.000 ₫');
+    expect(formatVnd(-25555), '−25.555 ₫');
   });
 
   test('formats compact VND like V3 summaries', () {
     expect(formatVndShort(0), '0 ₫');
     expect(formatVndShort(50000), '50k');
     expect(formatVndShort(1000000), '1tr');
+    expect(formatVndShort(-1200000), '−1.2tr');
   });
 
   test('privacy mask matches Demo dots', () {

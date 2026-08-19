@@ -8,6 +8,7 @@ import '../add_transaction/add_transaction_page.dart';
 import '../format/money_format.dart';
 import '../settings/settings_scope.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
 import '../transactions/transaction_detail_controller.dart';
 import '../transactions/transaction_detail_sheet.dart';
 import '../transactions/transaction_list_controller.dart';
@@ -110,7 +111,7 @@ class _HomePageState extends State<HomePage> {
         final height = MediaQuery.sizeOf(ctx).height;
         final inset = MediaQuery.viewInsetsOf(ctx).bottom;
         return Padding(
-          padding: EdgeInsets.only(top: height * 0.15, bottom: inset),
+          padding: EdgeInsets.only(bottom: inset),
           child: SizedBox(
             height: height * 0.85 - inset,
             child: TransactionDetailSheet(
@@ -229,17 +230,20 @@ class _Header extends StatelessWidget {
                           greetingFor(DateTime.now()),
                           style: const TextStyle(
                             color: Color(0xD9FFFFFF),
-                            fontWeight: FontWeight.w600,
+                            fontWeight: AppTypography.bodyWeight,
                             fontSize: 13,
+                            height: 1.35,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Text(
                           page.userName,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 20,
+                            fontWeight: AppTypography.strongWeight,
+                            height: 1.2,
+                            letterSpacing: -0.25,
                           ),
                         ),
                       ],
@@ -258,7 +262,7 @@ class _Header extends StatelessWidget {
                       page.userInitials,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: AppTypography.titleWeight,
                         fontSize: 14,
                       ),
                     ),
@@ -284,7 +288,7 @@ class _Header extends StatelessWidget {
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: AppTypography.metadataWeight,
                       ),
                     ),
                   ],
@@ -306,17 +310,21 @@ class _Header extends StatelessWidget {
                       'Chi tiêu tháng này',
                       style: TextStyle(
                         color: Color(0xC7FFFFFF),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        fontWeight: AppTypography.metadataWeight,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      controller.loading
-                          ? '…'
-                          : displayVnd(snapshot.monthExpense, hidden: hidden),
-                      key: const Key('home-month-spend'),
-                      style: moneyStyle(size: 16),
+                    const SizedBox(height: 5),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        controller.loading
+                            ? '…'
+                            : displayVnd(snapshot.monthExpense, hidden: hidden),
+                        key: const Key('home-month-spend'),
+                        style: moneyStyle(size: 28),
+                      ),
                     ),
                   ],
                 ),
@@ -374,8 +382,8 @@ class _Recent extends StatelessWidget {
                 child: Text(
                   'Gần đây',
                   style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    fontWeight: AppTypography.titleWeight,
                     letterSpacing: -0.2,
                     color: AppColors.text,
                   ),
@@ -388,7 +396,7 @@ class _Recent extends StatelessWidget {
                   'Xem tất cả',
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: AppTypography.titleWeight,
                     color: AppColors.primary,
                   ),
                 ),
@@ -410,7 +418,7 @@ class _Recent extends StatelessWidget {
               'Chưa có giao dịch. Nhấn + để thêm.',
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.w600,
+                fontWeight: AppTypography.bodyWeight,
                 color: AppColors.textSecondary,
               ),
             )

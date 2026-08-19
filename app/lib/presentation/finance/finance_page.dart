@@ -70,7 +70,7 @@ class FinancePage extends StatelessWidget {
                               TextButton(
                                 key: const Key('btn-edit-salary'),
                                 onPressed: () => _editSalary(context),
-                                child: Text('Sửa', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.primary)),
+                                child: Text('Sửa', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary)),
                               ),
                             ],
                           ),
@@ -112,7 +112,7 @@ class FinancePage extends StatelessWidget {
                               TextButton(
                                 key: const Key('btn-create-goal'),
                                 onPressed: () => _goalSheet(context, mode: _GoalMode.create),
-                                child: Text('+ Tạo mới', style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.primary)),
+                                child: Text('+ Tạo mới', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary)),
                               ),
                             ],
                           ),
@@ -244,14 +244,18 @@ Future<int?> _amountDialog(
     builder: (context) {
       final inset = MediaQuery.viewInsetsOf(context).bottom;
       return Padding(
-        padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + inset),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+        padding: EdgeInsets.only(bottom: inset),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
             Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
             const SizedBox(height: 16),
-            Text(label.toUpperCase(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.textSecondary)),
+            Text(label.toUpperCase(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
             const SizedBox(height: 8),
             TextField(
               key: const Key('finance-amount-input'),
@@ -283,10 +287,12 @@ Future<int?> _amountDialog(
                 key: const Key('finance-amount-save'),
                 onPressed: () => Navigator.pop(context, AmountInput.parse(field.text)),
                 style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-                child: const Text('Lưu', style: TextStyle(fontWeight: FontWeight.w800)),
+                child: const Text('Lưu', style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
-          ],
+              ],
+            ),
+          ),
         ),
       );
     },
@@ -412,26 +418,43 @@ class _GoalSheetState extends State<_GoalSheet> {
       _GoalMode.addMoney => 'Thêm tiền',
     };
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + inset),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+      padding: EdgeInsets.only(bottom: inset),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
           Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
           if (widget.mode != _GoalMode.addMoney) ...[
             const SizedBox(height: 12),
-            const Text('Tên mục tiêu', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-            TextField(controller: name, decoration: const InputDecoration(hintText: 'VD: Quỹ khẩn cấp')),
+            const Text('Tên mục tiêu', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+            TextField(
+              key: const Key('goal-name-input'),
+              controller: name,
+              decoration: const InputDecoration(hintText: 'VD: Quỹ khẩn cấp'),
+            ),
             const SizedBox(height: 12),
-            const Text('Mục tiêu (₫)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-            TextField(controller: target, keyboardType: TextInputType.number),
+            const Text('Mục tiêu (₫)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+            TextField(
+              key: const Key('goal-target-input'),
+              controller: target,
+              keyboardType: TextInputType.number,
+            ),
           ],
           const SizedBox(height: 12),
           Text(
             widget.mode == _GoalMode.addMoney ? 'Số tiền thêm (₫)' : 'Số hiện có (₫)',
-            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.textSecondary),
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppColors.textSecondary),
           ),
-          TextField(controller: current, keyboardType: TextInputType.number),
+          TextField(
+            key: const Key('goal-current-input'),
+            controller: current,
+            keyboardType: TextInputType.number,
+          ),
           if (widget.mode != _GoalMode.addMoney)
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -444,6 +467,7 @@ class _GoalSheetState extends State<_GoalSheet> {
           SizedBox(
             height: 52,
             child: FilledButton(
+              key: const Key('goal-save'),
               onPressed: () {
                 Navigator.pop(
                   context,
@@ -455,10 +479,12 @@ class _GoalSheetState extends State<_GoalSheet> {
                 );
               },
               style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-              child: const Text('Lưu', style: TextStyle(fontWeight: FontWeight.w800)),
+              child: const Text('Lưu', style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -490,7 +516,7 @@ class _GoalCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(goal.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+          Text(goal.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
           const SizedBox(height: 4),
           Text(
             'Mục tiêu ${displayVnd(goal.targetAmount, hidden: hidden)} · ${goal.progressPercent}%',

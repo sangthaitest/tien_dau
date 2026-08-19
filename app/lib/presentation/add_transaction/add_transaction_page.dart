@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../domain/amount/amount_input.dart';
 import '../../domain/catalog/chi_cho_catalog.dart';
@@ -8,6 +7,7 @@ import '../../domain/catalog/payment_option_catalog.dart';
 import '../../domain/failures/result.dart';
 import '../../domain/time/clock_format.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
 import '../theme/category_look.dart';
 import 'add_transaction_controller.dart';
 import 'add_transaction_copy.dart';
@@ -118,7 +118,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             title: Text(
               _c.isEditing ? AddTransactionCopy.editTitle : AddTransactionCopy.title,
               style: TextStyle(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 fontSize: 18,
                 color: AppColors.text,
               ),
@@ -248,7 +248,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                           child: Text(
                             _c.isEditing ? AddTransactionCopy.update : AddTransactionCopy.save,
                             style: TextStyle(
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                               fontSize: 16,
                             ),
                           ),
@@ -278,7 +278,7 @@ class _FieldLabel extends StatelessWidget {
         text,
         style: TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w600,
           color: AppColors.textSecondary,
           letterSpacing: 0.5,
         ),
@@ -338,22 +338,13 @@ class _AmountField extends StatelessWidget {
       keyboardType: TextInputType.number,
       inputFormatters: const [_VndAmountFormatter()],
       onChanged: onChanged,
-      style: GoogleFonts.sora(
-        fontSize: 32,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -1,
-        color: AppColors.text,
-      ),
+      style: AppTypography.money(size: 32, color: AppColors.text),
       decoration: _filledDecoration(hint: '0').copyWith(
         prefixIcon: Padding(
           padding: const EdgeInsets.only(left: 16, right: 8),
           child: Text(
             '₫',
-            style: GoogleFonts.sora(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: AppColors.primary,
-            ),
+            style: AppTypography.money(size: 20, color: AppColors.primary),
           ),
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
@@ -418,7 +409,7 @@ class _QuickChip extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 color: selected ? AppColors.onPrimary : AppColors.textSecondary,
               ),
             ),
@@ -506,7 +497,7 @@ class _CatOption extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: AppColors.textSecondary,
                   height: 1.25,
                 ),
@@ -556,7 +547,7 @@ class _DetailChips extends StatelessWidget {
                   name,
                   style: TextStyle(
                     fontSize: 13,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: selected == name ? AppColors.onPrimary : AppColors.textSecondary,
                   ),
                 ),
@@ -632,7 +623,7 @@ class _PaySelectState extends State<_PaySelect> {
                                 Text(
                                   option.source.name,
                                   style: TextStyle(
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w600,
                                     fontSize: 15,
                                     color: AppColors.text,
                                   ),

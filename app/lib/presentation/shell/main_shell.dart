@@ -108,7 +108,7 @@ class _MainShellState extends State<MainShell> {
         final height = MediaQuery.sizeOf(ctx).height;
         final inset = MediaQuery.viewInsetsOf(ctx).bottom;
         return Padding(
-          padding: EdgeInsets.only(top: height * 0.15, bottom: inset),
+          padding: EdgeInsets.only(bottom: inset),
           child: SizedBox(
             height: height * 0.85 - inset,
             child: TransactionDetailSheet(

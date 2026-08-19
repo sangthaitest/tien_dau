@@ -134,20 +134,31 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                   ),
                 ),
                 if (c.loading)
-                  Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: CircularProgressIndicator(color: AppColors.primary),
+                  Expanded(
+                    child: Center(
+                      child: SizedBox.square(
+                        dimension: 32,
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                          strokeWidth: 3,
+                        ),
+                      ),
+                    ),
                   )
                 else if (c.error != null && c.transaction == null)
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      c.error!,
-                      key: const Key('detail-error'),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppColors.expense,
-                        fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          c.error!,
+                          key: const Key('detail-error'),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.expense,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
                   )
@@ -198,7 +209,7 @@ class _BodyContent extends StatelessWidget {
         Text(
           transactionTitle(transaction),
           style: TextStyle(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             fontSize: 17,
             color: AppColors.text,
           ),
@@ -252,7 +263,7 @@ class _ActionFooter extends StatelessWidget {
                 minimumSize: const Size.fromHeight(52),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
               ),
-              child: const Text('Xóa', style: TextStyle(fontWeight: FontWeight.w800)),
+              child: const Text('Xóa', style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ),
           const SizedBox(width: 12),
@@ -266,7 +277,7 @@ class _ActionFooter extends StatelessWidget {
                 minimumSize: const Size.fromHeight(52),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
               ),
-              child: const Text('Sửa', style: TextStyle(fontWeight: FontWeight.w800)),
+              child: const Text('Sửa', style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ),
         ],
@@ -300,7 +311,7 @@ class _Row extends StatelessWidget {
               value,
               textAlign: TextAlign.right,
               style: TextStyle(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 color: AppColors.text,
               ),
             ),
