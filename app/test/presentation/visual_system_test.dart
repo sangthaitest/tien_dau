@@ -11,6 +11,7 @@ import 'package:tien_day/presentation/theme/app_theme.dart';
 import 'package:tien_day/presentation/theme/app_typography.dart';
 
 import '../support/memory_transaction_repository.dart';
+import '../support/memory_transaction_catalog_repository.dart';
 
 void main() {
   testWidgets('app theme uses the bundled Be Vietnam Pro weight system', (
@@ -83,7 +84,11 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: buildAppTheme(),
-          home: HomePage(controller: controller, transactionService: service),
+          home: HomePage(
+            controller: controller,
+            transactionService: service,
+            catalogController: buildTestCatalogController(),
+          ),
         ),
       );
       await tester.pumpAndSettle();

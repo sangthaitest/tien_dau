@@ -6,12 +6,26 @@ class PaymentOption {
   const PaymentOption({
     required this.source,
     required this.typeLabel,
+    this.archived = false,
   });
 
   final PaymentSource source;
   final String typeLabel;
+  final bool archived;
 
   String get pickerLabel => '${source.name} — $typeLabel';
+
+  PaymentOption copyWith({
+    PaymentSource? source,
+    String? typeLabel,
+    bool? archived,
+  }) {
+    return PaymentOption(
+      source: source ?? this.source,
+      typeLabel: typeLabel ?? this.typeLabel,
+      archived: archived ?? this.archived,
+    );
+  }
 }
 
 class PaymentOptionCatalog {

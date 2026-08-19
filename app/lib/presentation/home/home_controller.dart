@@ -16,12 +16,12 @@ class HomeController extends ChangeNotifier {
     recent: const [],
   );
 
-  Future<void> load() async {
+  Future<void> load({DateTime? month}) async {
     loading = true;
     error = null;
     notifyListeners();
 
-    final result = await _query.load();
+    final result = await _query.load(month: month);
     switch (result) {
       case Ok(:final value):
         snapshot = value;

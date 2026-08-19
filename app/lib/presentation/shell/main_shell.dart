@@ -4,9 +4,11 @@ import '../../application/finance_service.dart';
 import '../../application/statistics_query.dart';
 import '../../application/transaction_service.dart';
 import '../../domain/entities/transaction.dart';
+import '../../domain/failures/result.dart';
 import '../../domain/security/sensitive_access_port.dart';
 import '../add_transaction/add_transaction_controller.dart';
 import '../add_transaction/add_transaction_page.dart';
+import '../catalog/transaction_catalog_controller.dart';
 import '../finance/finance_controller.dart';
 import '../finance/finance_page.dart';
 import '../finance/pin_sheet.dart';
@@ -22,6 +24,7 @@ import '../transactions/transaction_detail_controller.dart';
 import '../transactions/transaction_detail_sheet.dart';
 import '../transactions/transaction_list_controller.dart';
 import '../transactions/transaction_list_page.dart';
+import '../view_month/view_month_controller.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({
@@ -30,6 +33,8 @@ class MainShell extends StatefulWidget {
     required this.homeController,
     required this.financeService,
     required this.sensitiveAccess,
+    required this.catalogController,
+    required this.viewMonthController,
     this.clock = DateTime.now,
   });
 
@@ -37,6 +42,8 @@ class MainShell extends StatefulWidget {
   final HomeController homeController;
   final FinanceService financeService;
   final SensitiveAccessPort sensitiveAccess;
+  final TransactionCatalogController catalogController;
+  final ViewMonthController viewMonthController;
   final DateTime Function() clock;
 
   @override
@@ -56,25 +63,38 @@ class _MainShellState extends State<MainShell> {
     _listController = TransactionListController(
       widget.transactionService,
       clock: widget.clock,
+      viewMonth: () => widget.viewMonthController.month,
     );
-    _financeController = FinanceController(widget.financeService);
+    _financeController = FinanceController(
+      widget.financeService,
+      month: () => widget.viewMonthController.month,
+    );
     _statsController = StatisticsController(
-      StatisticsQuery(widget.transactionService, clock: widget.clock),
-      clock: widget.clock,
+      StatisticsQuery(
+        widget.transactionService,
+        clock: () => widget.viewMonthController.month,
+      ),
+      clock: () => widget.viewMonthController.month,
     );
+    widget.viewMonthController.addListener(_onViewMonthChanged);
   }
 
   @override
   void dispose() {
+    widget.viewMonthController.removeListener(_onViewMonthChanged);
     _listController.dispose();
     _financeController.dispose();
     _statsController.dispose();
     super.dispose();
   }
 
+  void _onViewMonthChanged() {
+    _refresh();
+  }
+
   Future<void> _refresh() async {
     await Future.wait([
-      widget.homeController.load(),
+      widget.homeController.load(month: widget.viewMonthController.month),
       _listController.load(),
       if (_showFinance) _financeController.load(),
       if (_tab == AppTab.statistics) _statsController.load(),
@@ -88,6 +108,7 @@ class _MainShellState extends State<MainShell> {
         builder: (_) => AddTransactionPage(
           controller: AddTransactionController(
             service: widget.transactionService,
+            catalogController: widget.catalogController,
             clock: widget.clock,
           ),
         ),
@@ -112,8 +133,11 @@ class _MainShellState extends State<MainShell> {
           child: SizedBox(
             height: height * 0.85 - inset,
             child: TransactionDetailSheet(
-              controller: TransactionDetailController(widget.transactionService),
+              controller: TransactionDetailController(
+                widget.transactionService,
+              ),
               transactionService: widget.transactionService,
+              catalogController: widget.catalogController,
               clock: widget.clock,
               transactionId: tx.id,
             ),
@@ -122,6 +146,32 @@ class _MainShellState extends State<MainShell> {
       },
     );
     if (changed == true && mounted) await _refresh();
+  }
+
+  Future<bool> _deleteTransaction(Transaction tx) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xóa giao dịch?'),
+        content: const Text('Thao tác này không thể hoàn tác.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Xác nhận'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return false;
+    final result = await widget.transactionService.remove(tx.id);
+    if (result is Ok && mounted) {
+      await _refresh();
+    }
+    return false;
   }
 
   void _selectTab(AppTab tab) {
@@ -176,9 +226,9 @@ class _MainShellState extends State<MainShell> {
     await widget.sensitiveAccess.lock();
     if (!mounted) return;
     setState(() => _showFinance = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã khóa khu vực tài chính')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Đã khóa khu vực tài chính')));
   }
 
   @override
@@ -200,10 +250,13 @@ class _MainShellState extends State<MainShell> {
                       HomePage(
                         controller: widget.homeController,
                         transactionService: widget.transactionService,
+                        catalogController: widget.catalogController,
+                        viewMonthController: widget.viewMonthController,
                         clock: widget.clock,
                         embedNavigation: false,
                         onSeeAll: () => _selectTab(AppTab.transactions),
                         onTransactionTap: _openDetail,
+                        onAvatarTap: () => _selectTab(AppTab.settings),
                       ),
                       TransactionListPage(
                         controller: _listController,
@@ -211,6 +264,7 @@ class _MainShellState extends State<MainShell> {
                         embedNavigation: false,
                         onAddPressed: _openAdd,
                         onTransactionTap: _openDetail,
+                        onDelete: _deleteTransaction,
                       ),
                       StatisticsPage(controller: _statsController),
                       SettingsPage(
@@ -222,7 +276,9 @@ class _MainShellState extends State<MainShell> {
                   ),
           ),
           HomeBottomNav(
-            tab: _tab == AppTab.settings || _showFinance ? AppTab.settings : _tab,
+            tab: _tab == AppTab.settings || _showFinance
+                ? AppTab.settings
+                : _tab,
             onAddPressed: _openAdd,
             onTabSelected: _selectTab,
           ),

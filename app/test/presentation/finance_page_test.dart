@@ -162,4 +162,25 @@ void main() {
     expect(find.text('−20.000 ₫'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('goal amount fields group digits while typing', (tester) async {
+    _phone(tester);
+    final service = TransactionService(MemoryTransactionRepository());
+    final home = HomeController(HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)));
+    final harness = buildShell(transactions: service, home: home, clock: () => DateTime(2026, 8, 18, 9));
+    await harness.access.setupPin('5820');
+    await harness.access.unlock('5820');
+    await tester.pumpWidget(MaterialApp(home: harness.shell));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('nav-settings')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('settings-finance')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const Key('btn-create-goal')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('goal-target-input')), '1500000');
+    await tester.pump();
+    expect(find.text('1.500.000'), findsOneWidget);
+  });
 }

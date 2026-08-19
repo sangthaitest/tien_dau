@@ -5,6 +5,7 @@ import '../../application/transaction_service.dart';
 import '../../domain/entities/transaction.dart';
 import '../add_transaction/add_transaction_controller.dart';
 import '../add_transaction/add_transaction_page.dart';
+import '../catalog/transaction_catalog_controller.dart';
 import '../format/money_format.dart';
 import '../settings/settings_scope.dart';
 import '../theme/app_colors.dart';
@@ -13,6 +14,8 @@ import '../transactions/transaction_detail_controller.dart';
 import '../transactions/transaction_detail_sheet.dart';
 import '../transactions/transaction_list_controller.dart';
 import '../transactions/transaction_list_page.dart';
+import '../view_month/month_picker_sheet.dart';
+import '../view_month/view_month_controller.dart';
 import 'home_controller.dart';
 import 'widgets/home_bottom_nav.dart';
 import 'widgets/home_transaction_tile.dart';
@@ -22,6 +25,8 @@ class HomePage extends StatefulWidget {
     super.key,
     required this.controller,
     required this.transactionService,
+    required this.catalogController,
+    this.viewMonthController,
     this.clock = DateTime.now,
     this.userName = 'Minh Khuê',
     this.userInitials = 'MK',
@@ -29,10 +34,13 @@ class HomePage extends StatefulWidget {
     this.onSeeAll,
     this.onTransactionTap,
     this.onTabSelected,
+    this.onAvatarTap,
   });
 
   final HomeController controller;
   final TransactionService transactionService;
+  final TransactionCatalogController catalogController;
+  final ViewMonthController? viewMonthController;
   final DateTime Function() clock;
   final String userName;
   final String userInitials;
@@ -40,6 +48,7 @@ class HomePage extends StatefulWidget {
   final VoidCallback? onSeeAll;
   final ValueChanged<Transaction>? onTransactionTap;
   final ValueChanged<AppTab>? onTabSelected;
+  final VoidCallback? onAvatarTap;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -49,7 +58,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    widget.controller.load();
+    widget.controller.load(month: widget.viewMonthController?.month);
   }
 
   Future<void> _openAdd(BuildContext context) async {
@@ -59,6 +68,7 @@ class _HomePageState extends State<HomePage> {
         builder: (_) => AddTransactionPage(
           controller: AddTransactionController(
             service: widget.transactionService,
+            catalogController: widget.catalogController,
             clock: widget.clock,
           ),
         ),
@@ -66,7 +76,7 @@ class _HomePageState extends State<HomePage> {
     );
     if (!context.mounted) return;
     if (saved == true) {
-      await widget.controller.load();
+      await widget.controller.load(month: widget.viewMonthController?.month);
     }
   }
 
@@ -91,7 +101,9 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
-    if (context.mounted) await widget.controller.load();
+    if (context.mounted) {
+      await widget.controller.load(month: widget.viewMonthController?.month);
+    }
   }
 
   Future<void> _openDetail(BuildContext context, String id) async {
@@ -115,8 +127,11 @@ class _HomePageState extends State<HomePage> {
           child: SizedBox(
             height: height * 0.85 - inset,
             child: TransactionDetailSheet(
-              controller: TransactionDetailController(widget.transactionService),
+              controller: TransactionDetailController(
+                widget.transactionService,
+              ),
               transactionService: widget.transactionService,
+              catalogController: widget.catalogController,
               clock: widget.clock,
               transactionId: id,
             ),
@@ -125,7 +140,7 @@ class _HomePageState extends State<HomePage> {
       },
     );
     if (changed == true && context.mounted) {
-      await widget.controller.load();
+      await widget.controller.load(month: widget.viewMonthController?.month);
     }
   }
 
@@ -146,7 +161,11 @@ class _HomePageState extends State<HomePage> {
                   child: CustomScrollView(
                     slivers: [
                       SliverToBoxAdapter(
-                        child: _Header(controller: c, page: widget, hidden: hide),
+                        child: _Header(
+                          controller: c,
+                          page: widget,
+                          hidden: hide,
+                        ),
                       ),
                       SliverToBoxAdapter(
                         child: _Recent(
@@ -180,7 +199,11 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.controller, required this.page, required this.hidden});
+  const _Header({
+    required this.controller,
+    required this.page,
+    required this.hidden,
+  });
 
   final HomeController controller;
   final HomePage page;
@@ -197,11 +220,7 @@ class _Header extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF00B67A),
-            Color(0xFF009963),
-            Color(0xFF00855A),
-          ],
+          colors: [Color(0xFF00B67A), Color(0xFF009963), Color(0xFF00855A)],
         ),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(36)),
       ),
@@ -249,49 +268,82 @@ class _Header extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Container(
-                    width: 44,
-                    height: 44,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: const Color(0x38FFFFFF),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0x73FFFFFF), width: 2),
-                    ),
-                    child: Text(
-                      page.userInitials,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: AppTypography.titleWeight,
-                        fontSize: 14,
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      key: const Key('btn-avatar'),
+                      onTap: page.onAvatarTap,
+                      customBorder: const CircleBorder(),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: const Color(0x38FFFFFF),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0x73FFFFFF),
+                            width: 2,
+                          ),
+                        ),
+                        child: Text(
+                          page.userInitials,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: AppTypography.titleWeight,
+                            fontSize: 14,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 18),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                decoration: BoxDecoration(
-                  color: const Color(0x33FFFFFF),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  key: const Key('home-month-chip'),
+                  onTap: page.viewMonthController == null
+                      ? null
+                      : () => showMonthPickerSheet(
+                          context,
+                          page.viewMonthController!,
+                        ),
                   borderRadius: BorderRadius.circular(999),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.calendar_month, size: 15, color: Colors.white),
-                    const SizedBox(width: 5),
-                    Text(
-                      monthLabel(snapshot.month.year == 1970
-                          ? DateTime.now()
-                          : snapshot.month),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: AppTypography.metadataWeight,
-                      ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 7,
                     ),
-                  ],
+                    decoration: BoxDecoration(
+                      color: const Color(0x33FFFFFF),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.calendar_month,
+                          size: 15,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          monthLabel(
+                            snapshot.month.year == 1970
+                                ? DateTime.now()
+                                : snapshot.month,
+                          ),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: AppTypography.metadataWeight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -406,7 +458,10 @@ class _Recent extends StatelessWidget {
           if (controller.error != null)
             Text(
               controller.error!,
-              style: TextStyle(color: AppColors.expense, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: AppColors.expense,
+                fontWeight: FontWeight.w600,
+              ),
             )
           else if (controller.loading)
             const Padding(

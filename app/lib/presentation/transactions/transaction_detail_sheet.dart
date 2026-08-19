@@ -8,6 +8,7 @@ import '../../domain/time/clock_format.dart';
 import '../../domain/transaction_display.dart';
 import '../add_transaction/add_transaction_controller.dart';
 import '../add_transaction/add_transaction_page.dart';
+import '../catalog/transaction_catalog_controller.dart';
 import '../format/money_format.dart';
 import '../theme/app_colors.dart';
 import '../theme/category_look.dart';
@@ -18,12 +19,14 @@ class TransactionDetailSheet extends StatefulWidget {
     super.key,
     required this.controller,
     required this.transactionService,
+    required this.catalogController,
     required this.clock,
     this.transactionId,
   });
 
   final TransactionDetailController controller;
   final TransactionService transactionService;
+  final TransactionCatalogController catalogController;
   final DateTime Function() clock;
   final String? transactionId;
 
@@ -74,6 +77,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
         builder: (_) => AddTransactionPage(
           controller: AddTransactionController(
             service: widget.transactionService,
+            catalogController: widget.catalogController,
             clock: widget.clock,
             existing: tx,
             draft: AddTransactionDraft.fromTransaction(tx),
@@ -98,87 +102,93 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
           child: Column(
             mainAxisSize: MainAxisSize.max,
             children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.divider,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.divider,
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Chi tiết',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.text,
-                              ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Chi tiết',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.text,
                             ),
                           ),
-                          IconButton(
-                            key: const Key('btn-close-detail'),
-                            onPressed: () => Navigator.pop(context, false),
-                            icon: const Icon(Icons.close),
-                          ),
-                        ],
+                        ),
+                        IconButton(
+                          key: const Key('btn-close-detail'),
+                          onPressed: () => Navigator.pop(context, false),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (c.loading)
+                Expanded(
+                  child: Center(
+                    child: SizedBox.square(
+                      dimension: 32,
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                        strokeWidth: 3,
                       ),
-                    ],
+                    ),
+                  ),
+                )
+              else if (c.error != null && c.transaction == null)
+                Expanded(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        c.error!,
+                        key: const Key('detail-error'),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.expense,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              else if (c.transaction != null) ...[
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                    child: _BodyContent(
+                      transaction: c.transaction!,
+                      categoryName: widget.catalogController
+                          .categoryById(c.transaction!.categoryId)
+                          ?.name,
+                      categoryVisualKey: widget.catalogController
+                          .categoryById(c.transaction!.categoryId)
+                          ?.visualKey,
+                      error: c.error,
+                    ),
                   ),
                 ),
-                if (c.loading)
-                  Expanded(
-                    child: Center(
-                      child: SizedBox.square(
-                        dimension: 32,
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                          strokeWidth: 3,
-                        ),
-                      ),
-                    ),
-                  )
-                else if (c.error != null && c.transaction == null)
-                  Expanded(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          c.error!,
-                          key: const Key('detail-error'),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: AppColors.expense,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                else if (c.transaction != null) ...[
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                      child: _BodyContent(
-                        transaction: c.transaction!,
-                        error: c.error,
-                      ),
-                    ),
-                  ),
-                  _ActionFooter(
-                    onDelete: _delete,
-                    onEdit: () => _edit(c.transaction!),
-                  ),
-                ],
+                _ActionFooter(
+                  onDelete: _delete,
+                  onEdit: () => _edit(c.transaction!),
+                ),
               ],
-            ),
+            ],
+          ),
         );
       },
     );
@@ -188,15 +198,23 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
 class _BodyContent extends StatelessWidget {
   const _BodyContent({
     required this.transaction,
+    this.categoryName,
+    this.categoryVisualKey,
     this.error,
   });
 
   final Transaction transaction;
+  final String? categoryName;
+  final String? categoryVisualKey;
   final String? error;
 
   @override
   Widget build(BuildContext context) {
-    final look = categoryLook(transaction.categoryId);
+    final look = categoryLook(
+      transaction.categoryId,
+      name: categoryName,
+      visualKey: categoryVisualKey,
+    );
     final date = formatIsoDate(transaction.occurredOn);
     final time = transaction.occurredTime ?? '';
     return Column(
@@ -207,7 +225,7 @@ class _BodyContent extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          transactionTitle(transaction),
+          transactionTitle(transaction, categoryName: categoryName),
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 17,
@@ -217,7 +235,10 @@ class _BodyContent extends StatelessWidget {
         const SizedBox(height: 20),
         _Row(label: 'Chi cho', value: look.name),
         _Row(label: 'Chi tiết', value: _orDash(transaction.detail)),
-        _Row(label: 'Thanh toán', value: _orDash(transaction.paymentSourceName)),
+        _Row(
+          label: 'Thanh toán',
+          value: _orDash(transaction.paymentSourceName),
+        ),
         _Row(label: 'Ngày', value: time.isEmpty ? date : '$date · $time'),
         _Row(label: 'Ghi chú', value: _orDash(transaction.note)),
         if (error != null) ...[
@@ -236,10 +257,7 @@ class _BodyContent extends StatelessWidget {
 }
 
 class _ActionFooter extends StatelessWidget {
-  const _ActionFooter({
-    required this.onDelete,
-    required this.onEdit,
-  });
+  const _ActionFooter({required this.onDelete, required this.onEdit});
 
   final VoidCallback onDelete;
   final VoidCallback onEdit;
@@ -261,9 +279,14 @@ class _ActionFooter extends StatelessWidget {
                 foregroundColor: AppColors.text,
                 side: BorderSide(color: AppColors.divider),
                 minimumSize: const Size.fromHeight(52),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
               ),
-              child: const Text('Xóa', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text(
+                'Xóa',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -275,9 +298,14 @@ class _ActionFooter extends StatelessWidget {
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.onPrimary,
                 minimumSize: const Size.fromHeight(52),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
               ),
-              child: const Text('Sửa', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: const Text(
+                'Sửa',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],

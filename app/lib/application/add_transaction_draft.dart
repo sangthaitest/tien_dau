@@ -11,10 +11,10 @@ import '../domain/validation/transaction_validator.dart';
 /// In-memory Add Transaction form. Maps V3 UX to the production model.
 class AddTransactionDraft {
   AddTransactionDraft({required DateTime now})
-      : occurredOn = dateOnly(now),
-        occurredTime = formatHHmm(now),
-        categoryId = ChiChoCatalog.defaultId,
-        paymentSourceId = PaymentOptionCatalog.defaultId;
+    : occurredOn = dateOnly(now),
+      occurredTime = formatHHmm(now),
+      categoryId = ChiChoCatalog.defaultId,
+      paymentSourceId = PaymentOptionCatalog.defaultId;
 
   factory AddTransactionDraft.fromTransaction(Transaction tx) {
     return AddTransactionDraft(now: tx.occurredOn)
@@ -56,7 +56,8 @@ class AddTransactionDraft {
   }
 
   void selectCategory(String id) {
-    categoryId = ChiChoCatalog.byId(id).id;
+    if (id.isEmpty) return;
+    categoryId = id;
     detail = null;
   }
 
@@ -65,7 +66,8 @@ class AddTransactionDraft {
   }
 
   void selectPayment(String id) {
-    paymentSourceId = PaymentOptionCatalog.byId(id).source.id;
+    if (id.isEmpty) return;
+    paymentSourceId = id;
   }
 
   void setOccurredOn(DateTime value) {
@@ -80,15 +82,17 @@ class AddTransactionDraft {
     note = value;
   }
 
-  NewTransaction toNewTransaction() {
+  NewTransaction toNewTransaction({PaymentOption? paymentOverride}) {
     final trimmedNote = note.trim();
     final trimmedDetail = detail?.trim();
-    final pay = payment.source;
+    final pay = (paymentOverride ?? payment).source;
     return NewTransaction(
       amount: amount,
       type: TransactionType.expense,
       categoryId: categoryId,
-      detail: (trimmedDetail == null || trimmedDetail.isEmpty) ? null : trimmedDetail,
+      detail: (trimmedDetail == null || trimmedDetail.isEmpty)
+          ? null
+          : trimmedDetail,
       occurredOn: occurredOn,
       occurredTime: occurredTime,
       paymentSourceId: pay.id,
@@ -98,5 +102,8 @@ class AddTransactionDraft {
     );
   }
 
-  ValidationFailure? validate() => validateNewTransaction(toNewTransaction());
+  ValidationFailure? validate({PaymentOption? paymentOverride}) =>
+      validateNewTransaction(
+        toNewTransaction(paymentOverride: paymentOverride),
+      );
 }

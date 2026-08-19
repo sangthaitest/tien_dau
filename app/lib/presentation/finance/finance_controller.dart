@@ -5,9 +5,11 @@ import '../../domain/entities/finance.dart';
 import '../../domain/failures/result.dart';
 
 class FinanceController extends ChangeNotifier {
-  FinanceController(this._service);
+  FinanceController(this._service, {DateTime Function()? month})
+    : _month = month;
 
   final FinanceService _service;
+  final DateTime Function()? _month;
 
   bool loading = false;
   String? error;
@@ -25,7 +27,7 @@ class FinanceController extends ChangeNotifier {
     loading = true;
     error = null;
     notifyListeners();
-    final result = await _service.load();
+    final result = await _service.load(month: _month?.call());
     switch (result) {
       case Ok(:final value):
         snapshot = value;
@@ -44,7 +46,7 @@ class FinanceController extends ChangeNotifier {
   }
 
   Future<Result<void>> saveBudget(int limit) async {
-    final result = await _service.saveBudget(limit);
+    final result = await _service.saveBudget(limit, month: _month?.call());
     if (result.isOk) await load();
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }

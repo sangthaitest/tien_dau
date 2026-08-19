@@ -11,6 +11,7 @@ import '../theme/app_typography.dart';
 import '../theme/category_look.dart';
 import 'add_transaction_controller.dart';
 import 'add_transaction_copy.dart';
+import 'catalog_management_sheets.dart';
 
 class AddTransactionPage extends StatefulWidget {
   const AddTransactionPage({super.key, required this.controller});
@@ -96,6 +97,25 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     _c.setOccurredTime(formatHHmm(asDateTime));
   }
 
+  Future<void> _manageCategories() async {
+    await showCategoryManager(context, _c.catalogController);
+    if (mounted) _c.reconcileSelections();
+  }
+
+  Future<void> _manageDetails() async {
+    await showDetailManager(
+      context,
+      _c.catalogController,
+      categoryId: _c.draft.categoryId,
+    );
+    if (mounted) _c.reconcileSelections();
+  }
+
+  Future<void> _managePayments() async {
+    await showPaymentManager(context, _c.catalogController);
+    if (mounted) _c.reconcileSelections();
+  }
+
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
@@ -116,7 +136,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             ),
             centerTitle: true,
             title: Text(
-              _c.isEditing ? AddTransactionCopy.editTitle : AddTransactionCopy.title,
+              _c.isEditing
+                  ? AddTransactionCopy.editTitle
+                  : AddTransactionCopy.title,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 18,
@@ -142,22 +164,36 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                       onTap: _c.applyShortcut,
                     ),
                     const SizedBox(height: 20),
-                    const _FieldLabel(AddTransactionCopy.chiCho),
+                    _ManagedFieldLabel(
+                      text: AddTransactionCopy.chiCho,
+                      manageKey: const Key('manage-categories'),
+                      onManage: _manageCategories,
+                    ),
                     _ChiChoGrid(
+                      categories: _c.categories,
                       selectedId: _c.draft.categoryId,
                       onSelect: _c.selectCategory,
                     ),
                     const SizedBox(height: 20),
-                    const _FieldLabel(AddTransactionCopy.detail),
+                    _ManagedFieldLabel(
+                      text: AddTransactionCopy.detail,
+                      manageKey: const Key('manage-details'),
+                      onManage: _manageDetails,
+                    ),
                     _DetailChips(
-                      options: _c.draft.detailOptions,
+                      options: _c.detailOptions,
                       selected: _c.draft.detail,
                       onToggle: _c.toggleDetail,
                     ),
                     const SizedBox(height: 20),
-                    const _FieldLabel(AddTransactionCopy.payWith),
+                    _ManagedFieldLabel(
+                      text: AddTransactionCopy.payWith,
+                      manageKey: const Key('manage-payments'),
+                      onManage: _managePayments,
+                    ),
                     _PaySelect(
-                      selected: _c.draft.payment,
+                      options: _c.payments,
+                      selected: _c.payment,
                       onSelect: _c.selectPayment,
                     ),
                     const SizedBox(height: 20),
@@ -246,7 +282,9 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             ),
                           ),
                           child: Text(
-                            _c.isEditing ? AddTransactionCopy.update : AddTransactionCopy.save,
+                            _c.isEditing
+                                ? AddTransactionCopy.update
+                                : AddTransactionCopy.save,
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 16,
@@ -287,6 +325,56 @@ class _FieldLabel extends StatelessWidget {
   }
 }
 
+class _ManagedFieldLabel extends StatelessWidget {
+  const _ManagedFieldLabel({
+    required this.text,
+    required this.manageKey,
+    required this.onManage,
+  });
+
+  final String text;
+  final Key manageKey;
+  final VoidCallback onManage;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          InkWell(
+            key: manageKey,
+            onTap: onManage,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: Text(
+                'Quản lý →',
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 InputDecoration _filledDecoration({String? hint}) {
   return InputDecoration(
     hintText: hint,
@@ -308,7 +396,10 @@ class _VndAmountFormatter extends TextInputFormatter {
   const _VndAmountFormatter();
 
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     final amount = AmountInput.parse(newValue.text);
     final text = AmountInput.formatGrouped(amount);
     return TextEditingValue(
@@ -421,8 +512,13 @@ class _QuickChip extends StatelessWidget {
 }
 
 class _ChiChoGrid extends StatelessWidget {
-  const _ChiChoGrid({required this.selectedId, required this.onSelect});
+  const _ChiChoGrid({
+    required this.categories,
+    required this.selectedId,
+    required this.onSelect,
+  });
 
+  final List<ChiChoCategory> categories;
   final String selectedId;
   final ValueChanged<String> onSelect;
 
@@ -436,9 +532,9 @@ class _ChiChoGrid extends StatelessWidget {
       crossAxisSpacing: 10,
       childAspectRatio: 0.72,
       children: [
-        for (final category in ChiChoCatalog.all)
+        for (final category in categories)
           _CatOption(
-            id: category.id,
+            category: category,
             selected: selectedId == category.id,
             onTap: () => onSelect(category.id),
           ),
@@ -449,23 +545,27 @@ class _ChiChoGrid extends StatelessWidget {
 
 class _CatOption extends StatelessWidget {
   const _CatOption({
-    required this.id,
+    required this.category,
     required this.selected,
     required this.onTap,
   });
 
-  final String id;
+  final ChiChoCategory category;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final look = categoryLook(id);
+    final look = categoryLook(
+      category.id,
+      name: category.name,
+      visualKey: category.visualKey,
+    );
     return Material(
       color: selected ? AppColors.primaryContainer : Colors.transparent,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        key: Key('chi-cho-$id'),
+        key: Key('chi-cho-${category.id}'),
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
@@ -535,11 +635,16 @@ class _DetailChips extends StatelessWidget {
               onTap: () => onToggle(name),
               borderRadius: BorderRadius.circular(999),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(
-                    color: selected == name ? AppColors.primary : AppColors.divider,
+                    color: selected == name
+                        ? AppColors.primary
+                        : AppColors.divider,
                     width: 1.5,
                   ),
                 ),
@@ -548,7 +653,9 @@ class _DetailChips extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: selected == name ? AppColors.onPrimary : AppColors.textSecondary,
+                    color: selected == name
+                        ? AppColors.onPrimary
+                        : AppColors.textSecondary,
                   ),
                 ),
               ),
@@ -560,8 +667,13 @@ class _DetailChips extends StatelessWidget {
 }
 
 class _PaySelect extends StatefulWidget {
-  const _PaySelect({required this.selected, required this.onSelect});
+  const _PaySelect({
+    required this.options,
+    required this.selected,
+    required this.onSelect,
+  });
 
+  final List<PaymentOption> options;
   final PaymentOption selected;
   final ValueChanged<String> onSelect;
 
@@ -599,7 +711,7 @@ class _PaySelectState extends State<_PaySelect> {
             ),
             child: Column(
               children: [
-                for (final option in PaymentOptionCatalog.all)
+                for (final option in widget.options)
                   InkWell(
                     key: Key('pay-${option.source.id}'),
                     onTap: () {
@@ -607,13 +719,20 @@ class _PaySelectState extends State<_PaySelect> {
                       setState(() => _open = false);
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       child: Row(
                         children: [
                           SizedBox(
                             width: 28,
                             child: option.source.id == widget.selected.source.id
-                                ? Icon(Icons.check, color: AppColors.primary, size: 20)
+                                ? Icon(
+                                    Icons.check,
+                                    color: AppColors.primary,
+                                    size: 20,
+                                  )
                                 : null,
                           ),
                           Expanded(

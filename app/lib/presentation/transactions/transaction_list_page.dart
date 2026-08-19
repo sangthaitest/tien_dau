@@ -1,10 +1,11 @@
+import '../../domain/catalog/chi_cho_catalog.dart';
 import 'package:flutter/material.dart';
 
 import '../../application/transaction_list_query.dart';
-import '../../domain/catalog/chi_cho_catalog.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/time/clock_format.dart';
 import '../format/money_format.dart';
+import '../catalog/transaction_catalog_scope.dart';
 import '../home/widgets/home_bottom_nav.dart';
 import '../home/widgets/home_transaction_tile.dart';
 import '../theme/app_colors.dart';
@@ -18,6 +19,7 @@ class TransactionListPage extends StatefulWidget {
     this.onAddPressed,
     this.onTabSelected,
     this.onTransactionTap,
+    this.onDelete,
     this.clock = DateTime.now,
   });
 
@@ -26,6 +28,7 @@ class TransactionListPage extends StatefulWidget {
   final VoidCallback? onAddPressed;
   final ValueChanged<AppTab>? onTabSelected;
   final ValueChanged<Transaction>? onTransactionTap;
+  final Future<bool> Function(Transaction tx)? onDelete;
   final DateTime Function() clock;
 
   @override
@@ -125,12 +128,32 @@ class _TransactionListPageState extends State<TransactionListPage> {
                   _ChipRow(
                     children: [
                       _FilterChip(
+                        key: const Key('type-all'),
+                        label: 'Tất cả',
+                        selected: c.filter.type == TxTypeFilter.all,
+                        onTap: () => c.setTypeFilter(TxTypeFilter.all),
+                      ),
+                      _FilterChip(
+                        key: const Key('type-expense'),
+                        label: 'Chi tiêu',
+                        selected: c.filter.type == TxTypeFilter.expense,
+                        onTap: () => c.setTypeFilter(TxTypeFilter.expense),
+                      ),
+                    ],
+                  ),
+                  _ChipRow(
+                    children: [
+                      _FilterChip(
                         key: const Key('cat-all'),
                         label: 'Tất cả',
                         selected: c.filter.categoryId == 'all',
                         onTap: () => c.setCategory('all'),
                       ),
-                      for (final category in ChiChoCatalog.all)
+                      for (final category
+                          in (TransactionCatalogScope.maybeOf(
+                                context,
+                              )?.categories ??
+                              ChiChoCatalog.all))
                         _FilterChip(
                           key: Key('cat-${category.id}'),
                           label: category.name,
@@ -211,7 +234,11 @@ class _TransactionListPageState extends State<TransactionListPage> {
                     _Empty(onAdd: widget.onAddPressed)
                   else
                     for (final group in c.snapshot.groups)
-                      _DayGroup(group: group, onTap: widget.onTransactionTap),
+                      _DayGroup(
+                        group: group,
+                        onTap: widget.onTransactionTap,
+                        onDelete: widget.onDelete,
+                      ),
                   if (c.loadingMore)
                     Padding(
                       padding: const EdgeInsets.all(20),
@@ -404,10 +431,11 @@ class _Empty extends StatelessWidget {
 }
 
 class _DayGroup extends StatelessWidget {
-  const _DayGroup({required this.group, this.onTap});
+  const _DayGroup({required this.group, this.onTap, this.onDelete});
 
   final TransactionDayGroup group;
   final ValueChanged<Transaction>? onTap;
+  final Future<bool> Function(Transaction tx)? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -444,10 +472,29 @@ class _DayGroup extends StatelessWidget {
           for (final tx in group.items)
             Padding(
               padding: const EdgeInsets.only(bottom: 6),
-              child: HomeTransactionTile(
-                transaction: tx,
-                onTap: onTap == null ? null : () => onTap!(tx),
-              ),
+              child: onDelete == null
+                  ? HomeTransactionTile(
+                      transaction: tx,
+                      onTap: onTap == null ? null : () => onTap!(tx),
+                    )
+                  : Dismissible(
+                      key: Key('tx-swipe-${tx.id}'),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        decoration: BoxDecoration(
+                          color: AppColors.expense,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: const Icon(Icons.delete_outline, color: Colors.white),
+                      ),
+                      confirmDismiss: (_) => onDelete!(tx),
+                      child: HomeTransactionTile(
+                        transaction: tx,
+                        onTap: onTap == null ? null : () => onTap!(tx),
+                      ),
+                    ),
             ),
         ],
       ),

@@ -3,6 +3,7 @@ import '../domain/entities/transaction.dart';
 import '../domain/entities/transaction_query.dart';
 import '../domain/entities/transaction_type.dart';
 import '../domain/failures/result.dart';
+import '../domain/time/clock_format.dart';
 
 class HomeSnapshot {
   const HomeSnapshot({
@@ -26,13 +27,12 @@ class HomeQuery {
 
   static const recentLimit = 3;
 
-  Future<Result<HomeSnapshot>> load() async {
-    final now = _clock();
-    final month = DateTime(now.year, now.month);
-    final nextMonth = DateTime(now.year, now.month + 1);
+  Future<Result<HomeSnapshot>> load({DateTime? month}) async {
+    final selected = monthStart(month ?? _clock());
+    final nextMonth = DateTime(selected.year, selected.month + 1);
     final result = await _service.query(
       TransactionQuerySpec(
-        fromInclusive: month,
+        fromInclusive: selected,
         toExclusive: nextMonth,
         type: TransactionType.expense,
         limit: recentLimit,
@@ -42,7 +42,7 @@ class HomeQuery {
       Err(:final failure) => Err(failure),
       Ok(:final value) => Ok(
         HomeSnapshot(
-          month: month,
+          month: selected,
           monthExpense: value.expenseSum,
           recent: value.items,
         ),

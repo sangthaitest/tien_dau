@@ -17,6 +17,7 @@ class MemoryTransactionRepository implements TransactionRepository {
   final List<Transaction> _items;
   bool failCreate;
   bool failList;
+  final List<TransactionQuerySpec> querySpecs = [];
 
   List<Transaction> get items => List.unmodifiable(_items);
 
@@ -59,6 +60,7 @@ class MemoryTransactionRepository implements TransactionRepository {
 
   @override
   Future<Result<TransactionPage>> query(TransactionQuerySpec spec) async {
+    querySpecs.add(spec);
     if (failList) {
       return const Err(PersistenceFailure('read failed'));
     }

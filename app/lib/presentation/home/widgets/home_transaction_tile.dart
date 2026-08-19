@@ -8,6 +8,7 @@ import '../../settings/settings_scope.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
 import '../../theme/category_look.dart';
+import '../../catalog/transaction_catalog_scope.dart';
 
 class HomeTransactionTile extends StatelessWidget {
   const HomeTransactionTile({super.key, required this.transaction, this.onTap});
@@ -17,8 +18,15 @@ class HomeTransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final look = categoryLook(transaction.categoryId);
-    final title = transactionTitle(transaction);
+    final category = TransactionCatalogScope.maybeOf(
+      context,
+    )?.categoryById(transaction.categoryId);
+    final look = categoryLook(
+      transaction.categoryId,
+      name: category?.name,
+      visualKey: category?.visualKey,
+    );
+    final title = transactionTitle(transaction, categoryName: category?.name);
     final sign = transaction.type == TransactionType.income ? '+' : '−';
     final hidden = SettingsScope.hideMoney(context);
     final amountText = hidden

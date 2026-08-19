@@ -75,4 +75,15 @@ void main() {
     final ids = (result as Ok).value.recent.map((e) => e.id).toList();
     expect(ids, ['3', '2', '4']);
   });
+
+  test('load uses the requested month instead of the clock', () async {
+    final result = await query([
+      _tx(id: 'aug', amount: 10000, date: DateTime(2026, 8, 2)),
+      _tx(id: 'jul', amount: 45000, date: DateTime(2026, 7, 20)),
+    ]).load(month: DateTime(2026, 7));
+    final snap = (result as Ok).value;
+    expect(snap.month, DateTime(2026, 7));
+    expect(snap.monthExpense, 45000);
+    expect(snap.recent.single.id, 'jul');
+  });
 }

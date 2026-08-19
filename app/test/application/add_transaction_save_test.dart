@@ -2,18 +2,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tien_day/application/home_query.dart';
 import 'package:tien_day/application/transaction_service.dart';
 import 'package:tien_day/domain/entities/payment_method_kind.dart';
+import 'package:tien_day/domain/entities/transaction.dart';
+import 'package:tien_day/domain/entities/transaction_type.dart';
 import 'package:tien_day/domain/failures/app_failure.dart';
 import 'package:tien_day/domain/failures/result.dart';
 import 'package:tien_day/presentation/add_transaction/add_transaction_controller.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
 
 import '../support/memory_transaction_repository.dart';
+import '../support/memory_transaction_catalog_repository.dart';
 
 void main() {
   test('successful save persists through the service', () async {
     final repo = MemoryTransactionRepository();
     final controller = AddTransactionController(
       service: TransactionService(repo),
+      catalogController: buildTestCatalogController(),
       clock: () => DateTime(2026, 8, 18, 9, 15),
     );
     controller.applyShortcut(10000);
@@ -40,6 +44,7 @@ void main() {
     final repo = MemoryTransactionRepository();
     final controller = AddTransactionController(
       service: TransactionService(repo),
+      catalogController: buildTestCatalogController(),
       clock: () => DateTime(2026, 8, 18, 9, 15),
     );
 
@@ -54,6 +59,7 @@ void main() {
     final repo = MemoryTransactionRepository(failCreate: true);
     final controller = AddTransactionController(
       service: TransactionService(repo),
+      catalogController: buildTestCatalogController(),
       clock: () => DateTime(2026, 8, 18, 9, 15),
     );
     controller.applyShortcut(200000);
@@ -82,6 +88,7 @@ void main() {
 
     final add = AddTransactionController(
       service: service,
+      catalogController: buildTestCatalogController(),
       clock: () => DateTime(2026, 8, 18, 9, 15),
     );
     add.applyShortcut(50000);
@@ -94,5 +101,36 @@ void main() {
     expect(home.snapshot.recent, hasLength(1));
     expect(home.snapshot.recent.single.detail, 'Grab');
     expect(home.snapshot.recent.single.categoryId, 'transport');
+  });
+
+  test('editing preserves a historical payment outside the catalog', () async {
+    final now = DateTime.utc(2026, 8, 18);
+    final existing = Transaction(
+      id: 'legacy',
+      amount: 30000,
+      type: TransactionType.expense,
+      categoryId: 'cafe',
+      occurredOn: DateTime(2026, 8, 18),
+      paymentSourceId: 'legacy-bank',
+      paymentSourceName: 'Ngân hàng cũ',
+      paymentMethod: PaymentMethodKind.bankAccount,
+      createdAt: now,
+      updatedAt: now,
+    );
+    final repo = MemoryTransactionRepository(seed: [existing]);
+    final controller = AddTransactionController(
+      service: TransactionService(repo),
+      catalogController: buildTestCatalogController(),
+      clock: () => now,
+      existing: existing,
+    );
+
+    controller.applyShortcut(50000);
+    expect((await controller.save()).isOk, isTrue);
+
+    expect(repo.items.single.amount, 50000);
+    expect(repo.items.single.paymentSourceId, 'legacy-bank');
+    expect(repo.items.single.paymentSourceName, 'Ngân hàng cũ');
+    expect(repo.items.single.paymentMethod, PaymentMethodKind.bankAccount);
   });
 }

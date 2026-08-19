@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../application/statistics_query.dart';
 import '../format/money_format.dart';
+import '../catalog/transaction_catalog_scope.dart';
 import '../theme/app_colors.dart';
 import '../theme/category_look.dart';
 import 'statistics_controller.dart';
@@ -22,7 +23,12 @@ class StatisticsPage extends StatelessWidget {
         builder: (context, _) {
           final snap = controller.snapshot;
           return ListView(
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 12, 20, 24),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              MediaQuery.paddingOf(context).top + 12,
+              20,
+              24,
+            ),
             children: [
               _Header(
                 snapshot: snap,
@@ -44,7 +50,9 @@ class StatisticsPage extends StatelessWidget {
               else if (controller.loading)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 48),
-                  child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
                 )
               else ...[
                 _InsightCard(snapshot: snap),
@@ -109,43 +117,46 @@ class _Header extends StatelessWidget {
           ),
         ),
         if (showTrend)
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-              decoration: BoxDecoration(
-                color: badgeBg,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, size: 16, color: badgeColor),
-                  const SizedBox(width: 4),
-                  Text(
-                    text,
-                    key: const Key('trend-text'),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: badgeColor,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: badgeBg,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 16, color: badgeColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      text,
+                      key: const Key('trend-text'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: badgeColor,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'so với tháng trước',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textTertiary,
+              const SizedBox(height: 2),
+              Text(
+                'so với tháng trước',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textTertiary,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
       ],
     );
   }
@@ -244,7 +255,8 @@ class _CategoryChart extends StatelessWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      for (final row in snapshot.categories) _LegendRow(row: row),
+                      for (final row in snapshot.categories)
+                        _LegendRow(row: row),
                     ],
                   ),
                 ),
@@ -265,7 +277,10 @@ class _Pie extends StatelessWidget {
   Widget build(BuildContext context) {
     final slices = [
       for (final row in snapshot.categories)
-        (color: categoryLook(row.categoryId).color, fraction: row.amount / snapshot.totalExpense),
+        (
+          color: _catalogLook(context, row.categoryId).color,
+          fraction: row.amount / snapshot.totalExpense,
+        ),
     ];
     return SizedBox(
       width: 148,
@@ -346,7 +361,8 @@ class _PiePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _PiePainter oldDelegate) => oldDelegate.slices != slices;
+  bool shouldRepaint(covariant _PiePainter oldDelegate) =>
+      oldDelegate.slices != slices;
 }
 
 class _LegendRow extends StatelessWidget {
@@ -356,7 +372,7 @@ class _LegendRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final look = categoryLook(row.categoryId);
+    final look = _catalogLook(context, row.categoryId);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -451,7 +467,7 @@ class _RankRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final look = categoryLook(row.categoryId);
+    final look = _catalogLook(context, row.categoryId);
     final rankBg = switch (index) {
       0 => const Color(0xFFFFF3E0),
       1 => const Color(0xFFECEFF1),
@@ -478,7 +494,11 @@ class _RankRow extends StatelessWidget {
             ),
             child: Text(
               '${index + 1}',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: rankColor),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: rankColor,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -527,4 +547,15 @@ class _RankRow extends StatelessWidget {
       ),
     );
   }
+}
+
+CategoryLook _catalogLook(BuildContext context, String categoryId) {
+  final category = TransactionCatalogScope.maybeOf(
+    context,
+  )?.categoryById(categoryId);
+  return categoryLook(
+    categoryId,
+    name: category?.name,
+    visualKey: category?.visualKey,
+  );
 }

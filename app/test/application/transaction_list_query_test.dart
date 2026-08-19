@@ -13,6 +13,7 @@ import 'package:tien_day/presentation/transactions/transaction_detail_controller
 import 'package:tien_day/presentation/transactions/transaction_list_controller.dart';
 
 import '../support/memory_transaction_repository.dart';
+import '../support/memory_transaction_catalog_repository.dart';
 
 Transaction _tx({
   required String id,
@@ -91,6 +92,21 @@ void main() {
     expect(last.expenseSum, 50000);
   });
 
+  test('thisMonth follows viewMonth when it differs from now', () {
+    const query = TransactionListQuery();
+    final all = [
+      _tx(id: 'aug', amount: 10000, date: DateTime(2026, 8, 2)),
+      _tx(id: 'jul', amount: 50000, date: DateTime(2026, 7, 20)),
+    ];
+    final snap = query.apply(
+      all: all,
+      now: now,
+      viewMonth: DateTime(2026, 7),
+      filter: const TransactionListFilter(),
+    );
+    expect(snap.items.single.id, 'jul');
+  });
+
   test('category filter and income excluded', () {
     const query = TransactionListQuery();
     final snap = query.apply(
@@ -145,6 +161,44 @@ void main() {
     expect(controller.snapshot.items.single.id, '1');
     await controller.setDateFilter(TxDateFilter.lastMonth);
     expect(controller.snapshot.items.single.id, '2');
+  });
+
+  test('list controller thisMonth uses viewMonth', () async {
+    final repo = MemoryTransactionRepository(
+      seed: [
+        _tx(id: 'aug', amount: 10000, date: DateTime(2026, 8, 2)),
+        _tx(id: 'jul', amount: 20000, date: DateTime(2026, 7, 2)),
+      ],
+    );
+    final controller = TransactionListController(
+      TransactionService(repo),
+      clock: () => now,
+      viewMonth: () => DateTime(2026, 7),
+    );
+    await controller.load();
+    expect(controller.snapshot.items.single.id, 'jul');
+  });
+
+  test('custom date filter never runs an unbounded query', () async {
+    final repo = MemoryTransactionRepository();
+    final controller = TransactionListController(
+      TransactionService(repo),
+      clock: () => DateTime(2026, 8, 19),
+    );
+    await controller.load();
+    final initialQueries = repo.querySpecs.length;
+
+    await controller.setDateFilter(TxDateFilter.custom);
+    expect(repo.querySpecs, hasLength(initialQueries));
+    expect(controller.snapshot.isEmpty, isTrue);
+
+    await controller.setCustomFrom(DateTime(2026, 8, 5));
+    expect(repo.querySpecs, hasLength(initialQueries));
+
+    await controller.setCustomTo(DateTime(2026, 8, 12));
+    expect(repo.querySpecs, hasLength(initialQueries + 1));
+    expect(repo.querySpecs.last.fromInclusive, DateTime(2026, 8, 5));
+    expect(repo.querySpecs.last.toExclusive, DateTime(2026, 8, 13));
   });
 
   test('list controller loads transaction pages incrementally', () async {
@@ -228,6 +282,7 @@ void main() {
 
     final add = AddTransactionController(
       service: service,
+      catalogController: buildTestCatalogController(),
       clock: () => now,
       existing: repo.items.single,
     );

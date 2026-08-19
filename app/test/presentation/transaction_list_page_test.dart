@@ -10,6 +10,7 @@ import 'package:tien_day/presentation/transactions/transaction_detail_controller
 import 'package:tien_day/presentation/transactions/transaction_detail_sheet.dart';
 
 import '../support/memory_transaction_repository.dart';
+import '../support/memory_transaction_catalog_repository.dart';
 import '../support/shell_harness.dart';
 
 void _phone(WidgetTester tester) {
@@ -64,12 +65,14 @@ Future<void> _pumpShell(
 }
 
 void main() {
-  setUpAll(() {
-  });
+  setUpAll(() {});
 
   testWidgets('empty transaction list copy', (tester) async {
     _phone(tester);
-    await _pumpShell(tester, service: TransactionService(MemoryTransactionRepository()));
+    await _pumpShell(
+      tester,
+      service: TransactionService(MemoryTransactionRepository()),
+    );
     await tester.tap(find.byKey(const Key('nav-transactions')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
@@ -82,7 +85,12 @@ void main() {
     final service = TransactionService(
       MemoryTransactionRepository(
         seed: [
-          _tx(id: '1', amount: 45000, date: DateTime(2026, 8, 7), detail: 'Highlands'),
+          _tx(
+            id: '1',
+            amount: 45000,
+            date: DateTime(2026, 8, 7),
+            detail: 'Highlands',
+          ),
         ],
       ),
     );
@@ -102,7 +110,14 @@ void main() {
       tester,
       service: TransactionService(
         MemoryTransactionRepository(
-          seed: [_tx(id: '1', amount: 10000, date: DateTime(2026, 8, 18), detail: 'Grab')],
+          seed: [
+            _tx(
+              id: '1',
+              amount: 10000,
+              date: DateTime(2026, 8, 18),
+              detail: 'Grab',
+            ),
+          ],
         ),
       ),
     );
@@ -119,7 +134,14 @@ void main() {
       tester,
       service: TransactionService(
         MemoryTransactionRepository(
-          seed: [_tx(id: '1', amount: 45000, date: DateTime(2026, 8, 7), detail: 'Highlands')],
+          seed: [
+            _tx(
+              id: '1',
+              amount: 45000,
+              date: DateTime(2026, 8, 7),
+              detail: 'Highlands',
+            ),
+          ],
         ),
       ),
     );
@@ -134,8 +156,14 @@ void main() {
     expect(find.text('Chi cho'), findsOneWidget);
     expect(find.text('MoMo'), findsOneWidget);
     expect(tester.getTopLeft(find.byType(BottomSheet)).dy, greaterThan(80));
-    expect(tester.getRect(find.byKey(const Key('btn-detail-edit'))).bottom, lessThan(844));
-    expect(tester.getRect(find.byKey(const Key('btn-detail-delete'))).bottom, lessThan(844));
+    expect(
+      tester.getRect(find.byKey(const Key('btn-detail-edit'))).bottom,
+      lessThan(844),
+    );
+    expect(
+      tester.getRect(find.byKey(const Key('btn-detail-delete'))).bottom,
+      lessThan(844),
+    );
   });
 
   testWidgets('detail not found', (tester) async {
@@ -147,6 +175,7 @@ void main() {
           body: TransactionDetailSheet(
             controller: TransactionDetailController(service),
             transactionService: service,
+            catalogController: buildTestCatalogController(),
             clock: DateTime.now,
             transactionId: 'missing',
           ),
@@ -168,5 +197,50 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.byKey(const Key('tx-list-error')), findsOneWidget);
+  });
+
+  testWidgets('type filter chips are on the transaction list', (tester) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(MemoryTransactionRepository()),
+    );
+    await tester.tap(find.byKey(const Key('nav-transactions')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.byKey(const Key('type-all')), findsOneWidget);
+    expect(find.byKey(const Key('type-expense')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('type-expense')));
+    await tester.pump();
+    expect(find.text('Chi tiêu'), findsWidgets);
+  });
+
+  testWidgets('swipe-to-delete removes a transaction after confirm', (
+    tester,
+  ) async {
+    _phone(tester);
+    final repo = MemoryTransactionRepository(
+      seed: [
+        _tx(
+          id: '1',
+          amount: 10000,
+          date: DateTime(2026, 8, 18),
+          detail: 'Grab',
+        ),
+      ],
+    );
+    await _pumpShell(tester, service: TransactionService(repo));
+    await tester.tap(find.byKey(const Key('nav-transactions')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Grab'), findsOneWidget);
+
+    await tester.drag(find.byKey(const Key('tx-swipe-1')), const Offset(-300, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Xóa giao dịch?'), findsOneWidget);
+    await tester.tap(find.text('Xác nhận'));
+    await tester.pumpAndSettle();
+    expect(find.text('Grab'), findsNothing);
+    expect(repo.items, isEmpty);
   });
 }

@@ -12,12 +12,15 @@ class TransactionListController extends ChangeNotifier {
   TransactionListController(
     this._service, {
     DateTime Function()? clock,
+    DateTime Function()? viewMonth,
     TransactionListQuery query = const TransactionListQuery(),
   }) : _clock = clock ?? DateTime.now,
+       _viewMonth = viewMonth,
        _query = query;
 
   final TransactionService _service;
   final DateTime Function() _clock;
+  final DateTime Function()? _viewMonth;
   final TransactionListQuery _query;
 
   static const pageSize = 50;
@@ -42,6 +45,23 @@ class TransactionListController extends ChangeNotifier {
   }
 
   Future<void> _loadFirstPage() async {
+    if (filter.date == TxDateFilter.custom &&
+        (filter.customFrom == null || filter.customTo == null)) {
+      _requestGeneration++;
+      loading = false;
+      loadingMore = false;
+      hasMore = false;
+      error = null;
+      _loaded = [];
+      _expenseSum = 0;
+      snapshot = TransactionListSnapshot(
+        expenseSum: 0,
+        groups: const [],
+        filter: filter,
+      );
+      notifyListeners();
+      return;
+    }
     final generation = ++_requestGeneration;
     loading = true;
     loadingMore = false;
@@ -108,17 +128,27 @@ class TransactionListController extends ChangeNotifier {
   }
 
   Future<void> setCustomFrom(DateTime value) async {
+    final from = dateOnly(value);
+    final currentTo = filter.customTo;
     filter = filter.copyWith(
       date: TxDateFilter.custom,
-      customFrom: dateOnly(value),
+      customFrom: from,
+      customTo: currentTo != null && currentTo.isBefore(from)
+          ? from
+          : currentTo,
     );
     await _loadFirstPage();
   }
 
   Future<void> setCustomTo(DateTime value) async {
+    final to = dateOnly(value);
+    final currentFrom = filter.customFrom;
     filter = filter.copyWith(
       date: TxDateFilter.custom,
-      customTo: dateOnly(value),
+      customFrom: currentFrom != null && currentFrom.isAfter(to)
+          ? to
+          : currentFrom,
+      customTo: to,
     );
     await _loadFirstPage();
   }
@@ -127,14 +157,14 @@ class TransactionListController extends ChangeNotifier {
     snapshot = _query.apply(
       all: _loaded,
       now: _clock(),
+      viewMonth: _viewMonth?.call(),
       filter: filter,
       expenseSumOverride: _expenseSum,
     );
   }
 
   TransactionQuerySpec _spec({required int offset}) {
-    final now = _clock();
-    final currentMonth = monthStart(now);
+    final currentMonth = monthStart(_viewMonth?.call() ?? _clock());
     DateTime? from;
     DateTime? to;
     switch (filter.date) {

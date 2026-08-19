@@ -39,16 +39,15 @@ class FinanceService {
   final String Function() _idFactory;
   final DateTime Function() _clock;
 
-  Future<Result<FinanceSnapshot>> load() async {
-    final now = _clock();
-    final key = monthKey(now);
+  Future<Result<FinanceSnapshot>> load({DateTime? month}) async {
+    final selected = monthStart(month ?? _clock());
+    final key = monthKey(selected);
     final salary = await _finance.getSalary();
     final budget = await _finance.getBudget(currentMonthKey: key);
     final goals = await _finance.getGoals();
-    final month = monthStart(now);
     final txs = await _transactions.summarizeExpenses(
-      fromInclusive: month,
-      toExclusive: DateTime(month.year, month.month + 1),
+      fromInclusive: selected,
+      toExclusive: DateTime(selected.year, selected.month + 1),
     );
 
     if (salary is Err<MonthlySalary>) return Err(salary.failure);
@@ -65,7 +64,7 @@ class FinanceService {
             : 0;
         return Ok(
           FinanceSnapshot(
-            month: monthStart(now),
+            month: selected,
             salary: (salary as Ok<MonthlySalary>).value.amount,
             budgetLimit: limit,
             used: used,
@@ -84,12 +83,15 @@ class FinanceService {
     return _finance.saveSalary(MonthlySalary(amount: amount));
   }
 
-  Future<Result<MonthlyBudget>> saveBudget(int limit) {
+  Future<Result<MonthlyBudget>> saveBudget(int limit, {DateTime? month}) {
     if (limit <= 0) {
       return Future.value(const Err(ValidationFailure('Nhập hạn mức hợp lệ')));
     }
     return _finance.saveBudget(
-      MonthlyBudget(monthKey: monthKey(_clock()), totalLimit: limit),
+      MonthlyBudget(
+        monthKey: monthKey(month ?? _clock()),
+        totalLimit: limit,
+      ),
     );
   }
 

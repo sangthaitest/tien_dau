@@ -19,6 +19,21 @@ String monthKey(DateTime value) {
   return '${value.year}-$month';
 }
 
+DateTime? parseMonthKey(String? raw) {
+  if (raw == null || raw.isEmpty) return null;
+  final parts = raw.split('-');
+  if (parts.length != 2) return null;
+  final year = int.tryParse(parts[0]);
+  final month = int.tryParse(parts[1]);
+  if (year == null || month == null || month < 1 || month > 12) return null;
+  return DateTime(year, month);
+}
+
+List<DateTime> lastTwelveMonths(DateTime now) {
+  final start = monthStart(now);
+  return [for (var i = 0; i < 12; i++) DateTime(start.year, start.month - i)];
+}
+
 DateTime previousMonthStart(DateTime value) {
   if (value.month == 1) return DateTime(value.year - 1, 12);
   return DateTime(value.year, value.month - 1);

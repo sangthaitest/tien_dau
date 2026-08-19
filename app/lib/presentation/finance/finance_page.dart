@@ -227,6 +227,16 @@ void _toast(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 
+void _groupAmountField(TextEditingController field, String raw) {
+  final formatted = AmountInput.formatGrouped(AmountInput.parse(raw));
+  if (field.text != formatted) {
+    field.value = TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
 Future<int?> _amountDialog(
   BuildContext context, {
   required String title,
@@ -262,15 +272,7 @@ Future<int?> _amountDialog(
               controller: field,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              onChanged: (raw) {
-                final formatted = AmountInput.formatGrouped(AmountInput.parse(raw));
-                if (field.text != formatted) {
-                  field.value = TextEditingValue(
-                    text: formatted,
-                    selection: TextSelection.collapsed(offset: formatted.length),
-                  );
-                }
-              },
+              onChanged: (raw) => _groupAmountField(field, raw),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: AppColors.surfaceVariant,
@@ -443,6 +445,8 @@ class _GoalSheetState extends State<_GoalSheet> {
               key: const Key('goal-target-input'),
               controller: target,
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (raw) => _groupAmountField(target, raw),
             ),
           ],
           const SizedBox(height: 12),
@@ -454,6 +458,8 @@ class _GoalSheetState extends State<_GoalSheet> {
             key: const Key('goal-current-input'),
             controller: current,
             keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            onChanged: (raw) => _groupAmountField(current, raw),
           ),
           if (widget.mode != _GoalMode.addMoney)
             Padding(

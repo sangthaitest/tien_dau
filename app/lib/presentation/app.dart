@@ -4,11 +4,14 @@ import '../application/finance_service.dart';
 import '../application/home_query.dart';
 import '../application/transaction_service.dart';
 import '../domain/security/sensitive_access_port.dart';
+import 'catalog/transaction_catalog_controller.dart';
+import 'catalog/transaction_catalog_scope.dart';
 import 'home/home_controller.dart';
 import 'settings/app_settings_controller.dart';
 import 'settings/settings_scope.dart';
 import 'shell/main_shell.dart';
 import 'theme/app_theme.dart';
+import 'view_month/view_month_controller.dart';
 
 class TienDayApp extends StatefulWidget {
   const TienDayApp({
@@ -17,12 +20,16 @@ class TienDayApp extends StatefulWidget {
     required this.financeService,
     required this.sensitiveAccess,
     required this.settingsController,
+    required this.catalogController,
+    required this.viewMonthController,
   });
 
   final TransactionService transactionService;
   final FinanceService financeService;
   final SensitiveAccessPort sensitiveAccess;
   final AppSettingsController settingsController;
+  final TransactionCatalogController catalogController;
+  final ViewMonthController viewMonthController;
 
   @override
   State<TienDayApp> createState() => _TienDayAppState();
@@ -41,6 +48,8 @@ class _TienDayAppState extends State<TienDayApp> {
   void dispose() {
     _homeController.dispose();
     widget.settingsController.dispose();
+    widget.catalogController.dispose();
+    widget.viewMonthController.dispose();
     super.dispose();
   }
 
@@ -58,11 +67,16 @@ class _TienDayAppState extends State<TienDayApp> {
           themeMode: dark ? ThemeMode.dark : ThemeMode.light,
           home: SettingsScope(
             controller: widget.settingsController,
-            child: MainShell(
-              transactionService: widget.transactionService,
-              homeController: _homeController,
-              financeService: widget.financeService,
-              sensitiveAccess: widget.sensitiveAccess,
+            child: TransactionCatalogScope(
+              controller: widget.catalogController,
+              child: MainShell(
+                transactionService: widget.transactionService,
+                homeController: _homeController,
+                financeService: widget.financeService,
+                sensitiveAccess: widget.sensitiveAccess,
+                catalogController: widget.catalogController,
+                viewMonthController: widget.viewMonthController,
+              ),
             ),
           ),
         );

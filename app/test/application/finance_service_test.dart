@@ -98,6 +98,45 @@ void main() {
     expect(snap.percentUsed, 100);
   });
 
+  test('load can summarize a selected month instead of the clock month', () async {
+    final txs = MemoryTransactionRepository();
+    final finance = service(txs: txs);
+    final transactions = TransactionService(txs);
+    expect((await finance.saveBudget(100000)).isOk, isTrue);
+    expect(
+      (await transactions.add(
+        NewTransaction(
+          amount: 45000,
+          type: TransactionType.expense,
+          categoryId: 'cafe',
+          occurredOn: DateTime(2026, 7, 20),
+          paymentSourceId: 'momo',
+          paymentSourceName: 'MoMo',
+          paymentMethod: PaymentMethodKind.eWallet,
+        ),
+      )).isOk,
+      isTrue,
+    );
+    expect(
+      (await transactions.add(
+        NewTransaction(
+          amount: 12000,
+          type: TransactionType.expense,
+          categoryId: 'cafe',
+          occurredOn: DateTime(2026, 8, 2),
+          paymentSourceId: 'momo',
+          paymentSourceName: 'MoMo',
+          paymentMethod: PaymentMethodKind.eWallet,
+        ),
+      )).isOk,
+      isTrue,
+    );
+
+    final july = ((await finance.load(month: DateTime(2026, 7))) as Ok).value;
+    expect(july.month, DateTime(2026, 7));
+    expect(july.used, 45000);
+  });
+
   test('rejects invalid salary and budget', () async {
     final finance = service();
     expect(((await finance.saveSalary(0)) as Err).failure, isA<ValidationFailure>());

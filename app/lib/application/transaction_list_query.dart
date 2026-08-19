@@ -78,10 +78,11 @@ class TransactionListQuery {
     required List<Transaction> all,
     required DateTime now,
     required TransactionListFilter filter,
+    DateTime? viewMonth,
     int? expenseSumOverride,
   }) {
-    final month = monthStart(now);
-    final previous = previousMonthStart(now);
+    final month = monthStart(viewMonth ?? now);
+    final previous = previousMonthStart(month);
 
     var list = all.where((tx) => tx.type != TransactionType.income).toList();
 
