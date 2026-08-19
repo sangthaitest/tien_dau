@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 220" fill="none">
   <circle cx="140" cy="110" r="96" fill="#E0F7F5"/>
   <circle cx="50" cy="160" r="18" fill="#B2DFDB" opacity="0.7"/>
-  <circle cx="228" cy="50" r="12" fill="#FFD166" opacity="0.85"/>
+  <circle cx="228" cy="50" r="12" fill="#F6C945" opacity="0.85"/>
   <!-- Target -->
   <circle cx="140" cy="108" r="58" fill="#B2DFDB"/>
   <circle cx="140" cy="108" r="42" fill="#4DB6AC"/>

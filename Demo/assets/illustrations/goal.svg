@@ -2,7 +2,7 @@
   <ellipse cx="100" cy="145" rx="50" ry="7" fill="#E8EEF2"/>
   <circle cx="100" cy="85" r="45" fill="#FFECB3"/>
   <circle cx="100" cy="85" r="32" fill="#FFE082"/>
-  <circle cx="100" cy="85" r="18" fill="#FFD54F"/>
+  <circle cx="100" cy="85" r="18" fill="#F6C945"/>
   <circle cx="100" cy="85" r="8" fill="#F9A825"/>
   <path d="M100 40 V20 M100 20 L90 30 M100 20 L110 30" stroke="#EF5350" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

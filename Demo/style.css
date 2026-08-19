@@ -1,17 +1,17 @@
 /* ============================================================
-   Tiền Đây v3 — Competing with Monzo · Money Lover · YNAB · Wallet
-   Friendlier · Cleaner · More emotional · Easier
+   Tiền đâu nè — color exploration (green identity + yellow accent)
+   Layout / UX unchanged from v3 prototype
    ============================================================ */
 
 :root {
-  /* Brand — fresh mint green (Money Lover energy, Monzo clarity) */
-  --primary: #00B67A;
-  --primary-dark: #009963;
-  --primary-light: #7BD3C0;
-  --primary-container: #E6F8EF;
-  --primary-glow: rgba(0, 182, 122, 0.28);
-  --secondary: #7BD3C0;
-  --success: #00B67A;
+  /* Brand — calm premium green (identity) */
+  --primary: #16856A;
+  --primary-dark: #0F5F4F;
+  --primary-light: #5BAF96;
+  --primary-container: #E8F5F0;
+  --primary-glow: rgba(22, 133, 106, 0.28);
+  --secondary: #8FC9B8;
+  --success: #16856A;
   --warning: #FFB020;
   --warning-container: #FFF6E5;
   --warning-text: #C47E00;
@@ -21,10 +21,15 @@
   --income-container: #E0F7F5;
   --accent: #FF8A5B;
   --accent-soft: #FFF0EA;
-  --gold: #FFD166;
+  --gold: #F6C945;
+  --yellow: #F6C945;
+  --yellow-soft: #FFF5CC;
+  --yellow-text: #9A7400;
+  --yellow-glow: rgba(246, 201, 69, 0.38);
+  --text-on-yellow: #0F5F4F;
 
   /* Surfaces — soft & airy */
-  --bg: #F3F5F8;
+  --bg: #F4FAF7;
   --bg-elevated: #FFFFFF;
   --card: #FFFFFF;
   --surface: #FFFFFF;
@@ -43,7 +48,7 @@
   --shadow-sm: 0 1px 2px rgba(26, 29, 38, 0.04), 0 1px 3px rgba(26, 29, 38, 0.03);
   --shadow-md: 0 4px 16px rgba(26, 29, 38, 0.06), 0 1px 4px rgba(26, 29, 38, 0.04);
   --shadow-lg: 0 16px 40px rgba(26, 29, 38, 0.1), 0 4px 12px rgba(26, 29, 38, 0.05);
-  --shadow-fab: 0 10px 28px var(--primary-glow);
+  --shadow-fab: 0 8px 20px var(--yellow-glow);
   --border-subtle: 1px solid rgba(26, 29, 38, 0.05);
 
   /* Radius — friendlier, rounder */
@@ -85,13 +90,13 @@
 }
 
 [data-theme="dark"] {
-  --primary: #3DDBA0;
-  --primary-dark: #7BD3C0;
-  --primary-light: #A8E6D0;
-  --primary-container: #0F2E24;
-  --primary-glow: rgba(61, 219, 160, 0.3);
-  --secondary: #7BD3C0;
-  --success: #3DDBA0;
+  --primary: #3BB894;
+  --primary-dark: #7ED4B8;
+  --primary-light: #8FD4BE;
+  --primary-container: #12382E;
+  --primary-glow: rgba(59, 184, 148, 0.3);
+  --secondary: #5BAF96;
+  --success: #3BB894;
   --warning: #FFC857;
   --warning-container: #3A2E12;
   --expense: #FF8A8A;
@@ -100,6 +105,12 @@
   --income-container: #0D2E2C;
   --accent: #FF9B76;
   --accent-soft: #3A2218;
+  --gold: #FFD65A;
+  --yellow: #FFD65A;
+  --yellow-soft: #3A3214;
+  --yellow-text: #F6C945;
+  --yellow-glow: rgba(255, 214, 90, 0.4);
+  --text-on-yellow: #0F5F4F;
   --bg: #0E1116;
   --bg-elevated: #161A21;
   --card: #1A1F28;
@@ -114,7 +125,7 @@
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
-  --shadow-fab: 0 10px 28px rgba(61, 219, 160, 0.35);
+  --shadow-fab: 0 8px 20px rgba(255, 214, 90, 0.32);
   --border-subtle: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -343,7 +354,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- Splash ---------- */
 #screen-splash {
-  background: linear-gradient(165deg, #00B67A 0%, #009963 55%, #007A52 100%);
+  background: linear-gradient(165deg, var(--primary) 0%, var(--primary-dark) 55%, #0C4D40 100%);
   align-items: center; justify-content: center;
 }
 #screen-splash .splash-content {
@@ -357,7 +368,7 @@ a { color: inherit; text-decoration: none; }
 }
 .splash-name {
   font-family: var(--font-display);
-  font-size: 38px; font-weight: 800; color: #fff; letter-spacing: -1.2px;
+  font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -1px;
 }
 .splash-tagline { font-size: 15px; color: rgba(255, 255, 255, 0.88); font-weight: 600; }
 .splash-loader {
@@ -535,8 +546,8 @@ button.dot.active::before { width: 28px; background: var(--primary); }
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--primary);
-  color: var(--text-on-primary);
+  background: var(--yellow);
+  color: var(--text-on-yellow);
   box-shadow: var(--shadow-fab);
   display: flex;
   align-items: center;
@@ -548,17 +559,17 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 }
 .nav-fab:hover { transform: translateY(-14px) scale(1.06); }
 .nav-fab:active { transform: translateY(-14px) scale(0.94); }
-.nav-fab .ms { font-size: 28px; color: #fff; font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24; }
+.nav-fab .ms { font-size: 28px; color: var(--text-on-yellow); font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24; }
 @keyframes fab-pulse {
   0%, 100% { box-shadow: var(--shadow-fab); }
-  50% { box-shadow: 0 10px 32px var(--primary-glow), 0 0 0 10px rgba(0, 182, 122, 0.12); }
+  50% { box-shadow: 0 8px 24px var(--yellow-glow), 0 0 0 8px rgba(246, 201, 69, 0.16); }
 }
 .nav-fab.pulse { animation: fab-pulse 1.5s var(--ease) 2; }
 
 /* ---------- Home ---------- */
 .home-header {
   padding: var(--space-lg) var(--space-xl) 28px;
-  background: linear-gradient(160deg, #00B67A 0%, #009963 70%, #00855A 100%);
+  background: linear-gradient(160deg, var(--primary) 0%, var(--primary-dark) 70%, #0C4D40 100%);
   border-radius: 0 0 36px 36px;
   color: #fff; position: relative; overflow: hidden;
 }
@@ -818,7 +829,7 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 /* ---------- Budget ---------- */
 .budget-summary {
   margin: 0 var(--space-xl) var(--space-lg);
-  background: linear-gradient(140deg, #00B67A 0%, #009963 100%);
+  background: linear-gradient(140deg, var(--primary) 0%, var(--primary-dark) 100%);
   border-radius: var(--radius-lg); padding: 22px; color: #fff;
   position: relative; overflow: hidden;
   box-shadow: 0 12px 32px var(--primary-glow);
@@ -952,7 +963,7 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 /* ---------- Statistics ---------- */
 .stats-insight {
   margin: 0 var(--space-xl) var(--space-lg);
-  background: linear-gradient(140deg, #00B67A, #009963);
+  background: linear-gradient(140deg, var(--primary), var(--primary-dark));
   border-radius: var(--radius-lg); padding: 20px 22px; color: #fff;
   position: relative; overflow: hidden;
   box-shadow: 0 12px 32px var(--primary-glow);
@@ -1075,7 +1086,7 @@ button.dot.active::before { width: 28px; background: var(--primary); }
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 800; color: var(--text-secondary); flex-shrink: 0;
 }
-.rank.gold { background: #FFF3E0; color: #F57C00; }
+.rank.gold { background: var(--yellow-soft); color: var(--yellow-text); }
 .rank.silver { background: #ECEFF1; color: #546E7A; }
 .rank.bronze { background: #FBE9E7; color: #D84315; }
 
