@@ -16,8 +16,6 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
-    - tool/seed_on_device.dart
-    - tool/seed_payload.local.g.dart
 include: package:flutter_lints/flutter.yaml
 
 linter:

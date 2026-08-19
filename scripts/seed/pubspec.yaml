@@ -1,0 +1,16 @@
+name: tien_day_excel_seed
+description: One-time development seed from ChiTieu Excel. Not part of the Flutter app.
+publish_to: none
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  path: ^1.9.1
+  spreadsheet_decoder: ^2.3.0
+  sqlite3: ^2.7.5
+  uuid: ^4.5.1
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.0

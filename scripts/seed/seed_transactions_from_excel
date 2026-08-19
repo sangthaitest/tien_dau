@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-SEED_DIR="$(cd "$(dirname "$0")/seed" && pwd)"
-cd "$SEED_DIR"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT/seed"
 dart pub get --offline >/dev/null 2>&1 || dart pub get
 exec dart run seed_transactions_from_excel.dart "$@"

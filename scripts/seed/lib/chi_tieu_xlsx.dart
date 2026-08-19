@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
-import 'package:tien_day/data/dev/excel_chi_tieu_map.dart';
+
+import 'chi_tieu_map.dart';
 
 const chiTieuSheetName = 'ChiTieu';
 
@@ -33,27 +34,26 @@ List<ExcelChiTieuRow> readChiTieuSheet(List<int> bytes) {
   final ghiChu = col('Ghi chú');
   final tag = col('Tag');
 
-  final rows = <ExcelChiTieuRow>[];
-  for (var i = 1; i < table.rows.length; i++) {
-    final raw = table.rows[i];
-    Object? at(int index) => index < raw.length ? raw[index] : null;
-    rows.add(
+  return [
+    for (var i = 1; i < table.rows.length; i++)
       ExcelChiTieuRow(
         excelRowNumber: i + 1,
-        ngay: at(ngay),
-        nhom: at(nhom),
-        doiTuong: at(doiTuong),
-        khoanChi: at(khoanChi),
-        soTien: at(soTien),
-        thanhToan: at(thanhToan),
-        ghiChu: at(ghiChu),
-        tag: at(tag),
+        ngay: _at(table.rows[i], ngay),
+        nhom: _at(table.rows[i], nhom),
+        doiTuong: _at(table.rows[i], doiTuong),
+        khoanChi: _at(table.rows[i], khoanChi),
+        soTien: _at(table.rows[i], soTien),
+        thanhToan: _at(table.rows[i], thanhToan),
+        ghiChu: _at(table.rows[i], ghiChu),
+        tag: _at(table.rows[i], tag),
       ),
-    );
-  }
-  return rows;
+  ];
 }
 
 List<ExcelChiTieuRow> readChiTieuFile(String path) {
   return readChiTieuSheet(File(path).readAsBytesSync());
+}
+
+Object? _at(List<dynamic> raw, int index) {
+  return index < raw.length ? raw[index] : null;
 }
