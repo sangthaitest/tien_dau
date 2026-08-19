@@ -9,6 +9,7 @@ import 'package:tien_day/data/db/app_database.dart';
 import 'package:tien_day/data/repositories/transaction_repository_impl.dart';
 import 'package:tien_day/domain/entities/new_transaction.dart';
 import 'package:tien_day/domain/entities/payment_method_kind.dart';
+import 'package:tien_day/domain/entities/transaction_query.dart';
 import 'package:tien_day/domain/entities/transaction_type.dart';
 import 'package:tien_day/domain/failures/app_failure.dart';
 import 'package:tien_day/domain/failures/result.dart';
@@ -64,9 +65,11 @@ void main() {
   });
 
   test('fresh database has no transactions', () async {
-    final result = await service.list();
+    final result = await service.query(
+      const TransactionQuerySpec(type: TransactionType.expense),
+    );
     expect(result, isA<Ok>());
-    expect((result as Ok).value, isEmpty);
+    expect((result as Ok<TransactionPage>).value.items, isEmpty);
   });
 
   test('create persists and can be read', () async {
@@ -85,8 +88,85 @@ void main() {
     final result = await service.add(_sample(amount: 0));
     expect(result, isA<Err>());
     expect((result as Err).failure, isA<ValidationFailure>());
-    final list = await service.list();
-    expect((list as Ok).value, isEmpty);
+    final page = await service.query(
+      const TransactionQuerySpec(type: TransactionType.expense),
+    );
+    expect((page as Ok<TransactionPage>).value.items, isEmpty);
+  });
+
+  test('indexed queries page and summarize 10k transactions', () async {
+    final batch = db.raw.batch();
+    for (var i = 0; i < 10000; i++) {
+      final day = (i % 28) + 1;
+      final category = 'category-${i % 5}';
+      batch.insert('transactions', {
+        'id': 'bulk-$i',
+        'amount': 1000,
+        'type': 'expense',
+        'category_id': category,
+        'detail': null,
+        'occurred_date': '2026-08-${day.toString().padLeft(2, '0')}',
+        'occurred_time': '${(i % 24).toString().padLeft(2, '0')}:00',
+        'payment_source_id': 'cash',
+        'payment_source_name': 'Tiền mặt',
+        'payment_method': 'cash',
+        'note': null,
+        'created_at': DateTime.utc(
+          2026,
+          8,
+          day,
+        ).add(Duration(seconds: i)).toIso8601String(),
+        'updated_at': DateTime.utc(
+          2026,
+          8,
+          day,
+        ).add(Duration(seconds: i)).toIso8601String(),
+      });
+    }
+    await batch.commit(noResult: true);
+
+    final watch = Stopwatch()..start();
+    final page = await service.query(
+      TransactionQuerySpec(
+        fromInclusive: DateTime(2026, 8),
+        toExclusive: DateTime(2026, 9),
+        type: TransactionType.expense,
+        limit: 50,
+      ),
+    );
+    final summary = await service.summarizeExpenses(
+      fromInclusive: DateTime(2026, 8),
+      toExclusive: DateTime(2026, 9),
+    );
+    watch.stop();
+
+    final pageValue = (page as Ok<TransactionPage>).value;
+    expect(pageValue.items, hasLength(50));
+    expect(pageValue.expenseSum, 10000000);
+    expect(pageValue.hasMore, isTrue);
+    final summaryValue = (summary as Ok<ExpenseSummary>).value;
+    expect(summaryValue.total, 10000000);
+    expect(summaryValue.byCategory, hasLength(5));
+    expect(watch.elapsed, lessThan(const Duration(seconds: 3)));
+
+    final indexes = await db.raw.rawQuery("PRAGMA index_list('transactions')");
+    final names = indexes.map((row) => row['name']).toSet();
+    expect(names, contains('idx_transactions_type_date_time'));
+    expect(names, contains('idx_transactions_type_category_date'));
+
+    final plan = await db.raw.rawQuery(
+      '''
+EXPLAIN QUERY PLAN
+SELECT *
+FROM transactions
+WHERE type = ? AND occurred_date >= ? AND occurred_date < ?
+ORDER BY occurred_date DESC, occurred_time DESC, created_at DESC
+LIMIT 51
+''',
+      ['expense', '2026-08-01', '2026-09-01'],
+    );
+    final planText = plan.map((row) => row['detail']).join(' ');
+    expect(planText, contains('idx_transactions_type_date_time'));
   });
 
   test('update changes amount', () async {

@@ -1,5 +1,6 @@
 import '../domain/entities/new_transaction.dart';
 import '../domain/entities/transaction.dart';
+import '../domain/entities/transaction_query.dart';
 import '../domain/failures/result.dart';
 import '../domain/repositories/transaction_repository.dart';
 
@@ -17,8 +18,18 @@ class TransactionService {
     return _repository.getById(id);
   }
 
-  Future<Result<List<Transaction>>> list() {
-    return _repository.getAll();
+  Future<Result<TransactionPage>> query(TransactionQuerySpec spec) {
+    return _repository.query(spec);
+  }
+
+  Future<Result<ExpenseSummary>> summarizeExpenses({
+    required DateTime fromInclusive,
+    required DateTime toExclusive,
+  }) {
+    return _repository.summarizeExpenses(
+      fromInclusive: fromInclusive,
+      toExclusive: toExclusive,
+    );
   }
 
   Future<Result<Transaction>> update(Transaction transaction) {

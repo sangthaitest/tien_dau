@@ -65,9 +65,7 @@ class TransactionListSnapshot {
   final List<TransactionDayGroup> groups;
   final TransactionListFilter filter;
 
-  List<Transaction> get items => [
-        for (final group in groups) ...group.items,
-      ];
+  List<Transaction> get items => [for (final group in groups) ...group.items];
 
   bool get isEmpty => items.isEmpty;
 }
@@ -80,6 +78,7 @@ class TransactionListQuery {
     required List<Transaction> all,
     required DateTime now,
     required TransactionListFilter filter,
+    int? expenseSumOverride,
   }) {
     final month = monthStart(now);
     final previous = previousMonthStart(now);
@@ -110,7 +109,8 @@ class TransactionListQuery {
 
     list.sort(_byRecency);
 
-    final expenseSum = list.fold<int>(0, (sum, tx) => sum + tx.amount);
+    final expenseSum =
+        expenseSumOverride ?? list.fold<int>(0, (sum, tx) => sum + tx.amount);
     final groups = <TransactionDayGroup>[];
     for (final tx in list) {
       final day = dateOnly(tx.occurredOn);

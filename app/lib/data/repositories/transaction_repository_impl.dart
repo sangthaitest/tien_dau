@@ -1,5 +1,6 @@
 import '../../domain/entities/new_transaction.dart';
 import '../../domain/entities/transaction.dart';
+import '../../domain/entities/transaction_query.dart';
 import '../../domain/failures/app_failure.dart';
 import '../../domain/failures/result.dart';
 import '../../domain/repositories/transaction_repository.dart';
@@ -11,9 +12,9 @@ class TransactionRepositoryImpl implements TransactionRepository {
     required TransactionLocalDataSource local,
     required String Function() idFactory,
     required DateTime Function() clock,
-  })  : _local = local,
-        _idFactory = idFactory,
-        _clock = clock;
+  }) : _local = local,
+       _idFactory = idFactory,
+       _clock = clock;
 
   final TransactionLocalDataSource _local;
   final String Function() _idFactory;
@@ -31,7 +32,11 @@ class TransactionRepositoryImpl implements TransactionRepository {
       type: input.type,
       categoryId: input.categoryId.trim(),
       detail: _emptyToNull(input.detail),
-      occurredOn: DateTime(input.occurredOn.year, input.occurredOn.month, input.occurredOn.day),
+      occurredOn: DateTime(
+        input.occurredOn.year,
+        input.occurredOn.month,
+        input.occurredOn.day,
+      ),
       occurredTime: _emptyToNull(input.occurredTime),
       paymentSourceId: input.paymentSourceId.trim(),
       paymentSourceName: input.paymentSourceName.trim(),
@@ -67,13 +72,32 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @override
-  Future<Result<List<Transaction>>> getAll() async {
+  Future<Result<TransactionPage>> query(TransactionQuerySpec spec) async {
     try {
-      return Ok(await _local.findAll());
+      return Ok(await _local.findPage(spec));
     } on PersistenceFailure catch (e) {
       return Err(e);
     } catch (e) {
-      return Err(PersistenceFailure('Failed to list transactions', cause: e));
+      return Err(PersistenceFailure('Failed to query transactions', cause: e));
+    }
+  }
+
+  @override
+  Future<Result<ExpenseSummary>> summarizeExpenses({
+    required DateTime fromInclusive,
+    required DateTime toExclusive,
+  }) async {
+    try {
+      return Ok(
+        await _local.summarizeExpenses(
+          fromInclusive: fromInclusive,
+          toExclusive: toExclusive,
+        ),
+      );
+    } on PersistenceFailure catch (e) {
+      return Err(e);
+    } catch (e) {
+      return Err(PersistenceFailure('Failed to summarize expenses', cause: e));
     }
   }
 

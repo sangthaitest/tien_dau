@@ -95,8 +95,18 @@ void main() {
     const query = TransactionListQuery();
     final snap = query.apply(
       all: [
-        _tx(id: 'cafe', amount: 10000, date: DateTime(2026, 8, 2), category: 'cafe'),
-        _tx(id: 'grab', amount: 20000, date: DateTime(2026, 8, 2), category: 'transport'),
+        _tx(
+          id: 'cafe',
+          amount: 10000,
+          date: DateTime(2026, 8, 2),
+          category: 'cafe',
+        ),
+        _tx(
+          id: 'grab',
+          amount: 20000,
+          date: DateTime(2026, 8, 2),
+          category: 'transport',
+        ),
         _tx(
           id: 'pay',
           amount: 99999,
@@ -110,11 +120,21 @@ void main() {
     expect(snap.items.single.id, 'grab');
   });
 
-  test('list controller loads then filters without refetching', () async {
+  test('list controller loads and refetches the selected date range', () async {
     final repo = MemoryTransactionRepository(
       seed: [
-        _tx(id: '1', amount: 10000, date: DateTime(2026, 8, 2), category: 'cafe'),
-        _tx(id: '2', amount: 20000, date: DateTime(2026, 7, 2), category: 'market'),
+        _tx(
+          id: '1',
+          amount: 10000,
+          date: DateTime(2026, 8, 2),
+          category: 'cafe',
+        ),
+        _tx(
+          id: '2',
+          amount: 20000,
+          date: DateTime(2026, 7, 2),
+          category: 'market',
+        ),
       ],
     );
     final controller = TransactionListController(
@@ -123,8 +143,39 @@ void main() {
     );
     await controller.load();
     expect(controller.snapshot.items.single.id, '1');
-    controller.setDateFilter(TxDateFilter.lastMonth);
+    await controller.setDateFilter(TxDateFilter.lastMonth);
     expect(controller.snapshot.items.single.id, '2');
+  });
+
+  test('list controller loads transaction pages incrementally', () async {
+    final repo = MemoryTransactionRepository(
+      seed: [
+        for (var i = 0; i < 125; i++)
+          _tx(
+            id: 'tx-$i',
+            amount: 1000,
+            date: DateTime(2026, 8, (i % 28) + 1),
+            time: '${(i % 24).toString().padLeft(2, '0')}:00',
+          ),
+      ],
+    );
+    final controller = TransactionListController(
+      TransactionService(repo),
+      clock: () => now,
+    );
+
+    await controller.load();
+    expect(controller.snapshot.items, hasLength(50));
+    expect(controller.snapshot.expenseSum, 125000);
+    expect(controller.hasMore, isTrue);
+
+    await controller.loadMore();
+    expect(controller.snapshot.items, hasLength(100));
+    expect(controller.hasMore, isTrue);
+
+    await controller.loadMore();
+    expect(controller.snapshot.items, hasLength(125));
+    expect(controller.hasMore, isFalse);
   });
 
   test('list controller surfaces repository errors', () async {
@@ -139,7 +190,14 @@ void main() {
 
   test('detail loads a transaction and reports not found', () async {
     final repo = MemoryTransactionRepository(
-      seed: [_tx(id: '1', amount: 45000, date: DateTime(2026, 8, 7), detail: 'Highlands')],
+      seed: [
+        _tx(
+          id: '1',
+          amount: 45000,
+          date: DateTime(2026, 8, 7),
+          detail: 'Highlands',
+        ),
+      ],
     );
     final service = TransactionService(repo);
     final found = TransactionDetailController(service);
@@ -154,7 +212,14 @@ void main() {
 
   test('edit and delete go through the service and refresh Home', () async {
     final repo = MemoryTransactionRepository(
-      seed: [_tx(id: '1', amount: 10000, date: DateTime(2026, 8, 18), detail: 'Highlands')],
+      seed: [
+        _tx(
+          id: '1',
+          amount: 10000,
+          date: DateTime(2026, 8, 18),
+          detail: 'Highlands',
+        ),
+      ],
     );
     final service = TransactionService(repo);
     final home = HomeController(HomeQuery(service, clock: () => now));
@@ -182,7 +247,9 @@ void main() {
   });
 
   test('delete missing id is not found', () async {
-    final result = await TransactionService(MemoryTransactionRepository()).remove('nope');
+    final result = await TransactionService(
+      MemoryTransactionRepository(),
+    ).remove('nope');
     expect(result, isA<Err>());
     expect((result as Err).failure, isA<NotFoundFailure>());
   });

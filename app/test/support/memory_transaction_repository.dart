@@ -1,5 +1,7 @@
 import 'package:tien_day/domain/entities/new_transaction.dart';
 import 'package:tien_day/domain/entities/transaction.dart';
+import 'package:tien_day/domain/entities/transaction_query.dart';
+import 'package:tien_day/domain/entities/transaction_type.dart';
 import 'package:tien_day/domain/failures/app_failure.dart';
 import 'package:tien_day/domain/failures/result.dart';
 import 'package:tien_day/domain/repositories/transaction_repository.dart';
@@ -56,11 +58,65 @@ class MemoryTransactionRepository implements TransactionRepository {
   }
 
   @override
-  Future<Result<List<Transaction>>> getAll() async {
+  Future<Result<TransactionPage>> query(TransactionQuerySpec spec) async {
     if (failList) {
       return const Err(PersistenceFailure('read failed'));
     }
-    return Ok(List.of(_items));
+    final filtered = _items.where((tx) => _matches(tx, spec)).toList()
+      ..sort(_byRecency);
+    final expenseSum = spec.includeExpenseSum
+        ? _items
+              .where(
+                (tx) =>
+                    tx.type == TransactionType.expense &&
+                    _matches(
+                      tx,
+                      TransactionQuerySpec(
+                        fromInclusive: spec.fromInclusive,
+                        toExclusive: spec.toExclusive,
+                        type: TransactionType.expense,
+                        categoryId: spec.categoryId,
+                      ),
+                    ),
+              )
+              .fold<int>(0, (sum, tx) => sum + tx.amount)
+        : 0;
+    final end = (spec.offset + spec.limit).clamp(0, filtered.length);
+    final items = spec.offset >= filtered.length
+        ? const <Transaction>[]
+        : filtered.sublist(spec.offset, end);
+    return Ok(
+      TransactionPage(
+        items: items,
+        expenseSum: expenseSum,
+        hasMore: end < filtered.length,
+      ),
+    );
+  }
+
+  @override
+  Future<Result<ExpenseSummary>> summarizeExpenses({
+    required DateTime fromInclusive,
+    required DateTime toExclusive,
+  }) async {
+    if (failList) {
+      return const Err(PersistenceFailure('read failed'));
+    }
+    final byCategory = <String, int>{};
+    for (final tx in _items) {
+      if (tx.type != TransactionType.expense ||
+          tx.occurredOn.isBefore(fromInclusive) ||
+          !tx.occurredOn.isBefore(toExclusive)) {
+        continue;
+      }
+      byCategory[tx.categoryId] = (byCategory[tx.categoryId] ?? 0) + tx.amount;
+    }
+    return Ok(
+      ExpenseSummary(
+        total: byCategory.values.fold(0, (sum, amount) => sum + amount),
+        byCategory: byCategory,
+      ),
+    );
   }
 
   @override
@@ -77,5 +133,27 @@ class MemoryTransactionRepository implements TransactionRepository {
     if (i < 0) return const Err(NotFoundFailure('Transaction not found'));
     _items[i] = transaction;
     return Ok(transaction);
+  }
+
+  bool _matches(Transaction tx, TransactionQuerySpec spec) {
+    if (spec.fromInclusive != null &&
+        tx.occurredOn.isBefore(spec.fromInclusive!)) {
+      return false;
+    }
+    if (spec.toExclusive != null &&
+        !tx.occurredOn.isBefore(spec.toExclusive!)) {
+      return false;
+    }
+    if (spec.type != null && tx.type != spec.type) return false;
+    if (spec.categoryId != null && tx.categoryId != spec.categoryId) {
+      return false;
+    }
+    return true;
+  }
+
+  int _byRecency(Transaction a, Transaction b) {
+    final date = b.occurredOn.compareTo(a.occurredOn);
+    if (date != 0) return date;
+    return (b.occurredTime ?? '').compareTo(a.occurredTime ?? '');
   }
 }

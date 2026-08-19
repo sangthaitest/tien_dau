@@ -1,5 +1,4 @@
 import '../domain/entities/finance.dart';
-import '../domain/entities/transaction_type.dart';
 import '../domain/failures/app_failure.dart';
 import '../domain/failures/result.dart';
 import '../domain/repositories/finance_repository.dart';
@@ -32,8 +31,8 @@ class FinanceService {
     this._transactions, {
     required String Function() idFactory,
     required DateTime Function() clock,
-  })  : _idFactory = idFactory,
-        _clock = clock;
+  }) : _idFactory = idFactory,
+       _clock = clock;
 
   final FinanceRepository _finance;
   final TransactionService _transactions;
@@ -46,7 +45,11 @@ class FinanceService {
     final salary = await _finance.getSalary();
     final budget = await _finance.getBudget(currentMonthKey: key);
     final goals = await _finance.getGoals();
-    final txs = await _transactions.list();
+    final month = monthStart(now);
+    final txs = await _transactions.summarizeExpenses(
+      fromInclusive: month,
+      toExclusive: DateTime(month.year, month.month + 1),
+    );
 
     if (salary is Err<MonthlySalary>) return Err(salary.failure);
     if (budget is Err<MonthlyBudget>) return Err(budget.failure);
@@ -56,10 +59,10 @@ class FinanceService {
         return Err(failure);
       case Ok(:final value):
         final limit = (budget as Ok<MonthlyBudget>).value.totalLimit;
-        final used = value.where((tx) {
-          return tx.type == TransactionType.expense && inMonth(tx.occurredOn, now);
-        }).fold<int>(0, (sum, tx) => sum + tx.amount);
-        final pct = limit > 0 ? ((used / limit) * 100).round().clamp(0, 100) : 0;
+        final used = value.total;
+        final pct = limit > 0
+            ? ((used / limit) * 100).round().clamp(0, 100)
+            : 0;
         return Ok(
           FinanceSnapshot(
             month: monthStart(now),

@@ -10,7 +10,7 @@ class AppDatabase {
   Database get raw => _db;
 
   static const _fileName = 'tien_day.db';
-  static const _version = 2;
+  static const _version = 3;
 
   static Future<AppDatabase> openFile() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -24,11 +24,15 @@ class AppDatabase {
       version: _version,
       onCreate: (db, version) async {
         await _createTransactions(db);
+        await _createTransactionIndexes(db);
         await _createFinance(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await _createFinance(db);
+        }
+        if (oldVersion < 3) {
+          await _createTransactionIndexes(db);
         }
       },
     );
@@ -52,6 +56,17 @@ CREATE TABLE transactions (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 )
+''');
+  }
+
+  static Future<void> _createTransactionIndexes(Database db) async {
+    await db.execute('''
+CREATE INDEX IF NOT EXISTS idx_transactions_type_date_time
+ON transactions(type, occurred_date DESC, occurred_time DESC, created_at DESC)
+''');
+    await db.execute('''
+CREATE INDEX IF NOT EXISTS idx_transactions_type_category_date
+ON transactions(type, category_id, occurred_date DESC, occurred_time DESC)
 ''');
   }
 

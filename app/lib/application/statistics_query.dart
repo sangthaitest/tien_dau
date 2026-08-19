@@ -1,4 +1,5 @@
 import '../domain/entities/transaction.dart';
+import '../domain/entities/transaction_query.dart';
 import '../domain/entities/transaction_type.dart';
 import '../domain/failures/result.dart';
 import '../domain/time/clock_format.dart';
@@ -43,17 +44,33 @@ class StatisticsSnapshot {
 /// Expenses only. No salary, budget, or savings.
 class StatisticsQuery {
   StatisticsQuery(this._service, {DateTime Function()? clock})
-      : _clock = clock ?? DateTime.now;
+    : _clock = clock ?? DateTime.now;
 
   final TransactionService _service;
   final DateTime Function() _clock;
 
   Future<Result<StatisticsSnapshot>> load({DateTime? month}) async {
-    final result = await _service.list();
-    return switch (result) {
-      Err(:final failure) => Err(failure),
-      Ok(:final value) => Ok(build(value, month ?? _clock())),
-    };
+    final currentMonth = monthStart(month ?? _clock());
+    final previousMonth = previousMonthStart(currentMonth);
+    final current = await _service.summarizeExpenses(
+      fromInclusive: currentMonth,
+      toExclusive: DateTime(currentMonth.year, currentMonth.month + 1),
+    );
+    if (current case Err(:final failure)) return Err(failure);
+
+    final previous = await _service.summarizeExpenses(
+      fromInclusive: previousMonth,
+      toExclusive: currentMonth,
+    );
+    if (previous case Err(:final failure)) return Err(failure);
+
+    return Ok(
+      _buildFromSummaries(
+        month: currentMonth,
+        current: (current as Ok<ExpenseSummary>).value,
+        previous: (previous as Ok<ExpenseSummary>).value,
+      ),
+    );
   }
 
   StatisticsSnapshot build(List<Transaction> all, DateTime now) {
@@ -65,8 +82,41 @@ class StatisticsQuery {
       month: month,
       totalExpense: currentTotal,
       previousExpense: previousTotal,
-      deltaPercent: deltaPercent(current: currentTotal, previous: previousTotal),
+      deltaPercent: deltaPercent(
+        current: currentTotal,
+        previous: previousTotal,
+      ),
       categories: _categories(all, month, currentTotal),
+    );
+  }
+
+  StatisticsSnapshot _buildFromSummaries({
+    required DateTime month,
+    required ExpenseSummary current,
+    required ExpenseSummary previous,
+  }) {
+    final categories =
+        [
+          for (final entry in current.byCategory.entries)
+            CategorySpend(
+              categoryId: entry.key,
+              amount: entry.value,
+              percent: percentOf(entry.value, current.total),
+            ),
+        ]..sort((a, b) {
+          final byAmount = b.amount.compareTo(a.amount);
+          if (byAmount != 0) return byAmount;
+          return a.categoryId.compareTo(b.categoryId);
+        });
+    return StatisticsSnapshot(
+      month: month,
+      totalExpense: current.total,
+      previousExpense: previous.total,
+      deltaPercent: deltaPercent(
+        current: current.total,
+        previous: previous.total,
+      ),
+      categories: categories,
     );
   }
 
@@ -84,7 +134,9 @@ class StatisticsQuery {
   }
 
   int _expenseInMonth(List<Transaction> all, DateTime month) {
-    return all.where((tx) => _isExpenseInMonth(tx, month)).fold<int>(0, (sum, tx) => sum + tx.amount);
+    return all
+        .where((tx) => _isExpenseInMonth(tx, month))
+        .fold<int>(0, (sum, tx) => sum + tx.amount);
   }
 
   List<CategorySpend> _categories(
@@ -97,18 +149,19 @@ class StatisticsQuery {
       if (!_isExpenseInMonth(tx, month)) continue;
       sums[tx.categoryId] = (sums[tx.categoryId] ?? 0) + tx.amount;
     }
-    final rows = [
-      for (final entry in sums.entries)
-        CategorySpend(
-          categoryId: entry.key,
-          amount: entry.value,
-          percent: percentOf(entry.value, total),
-        ),
-    ]..sort((a, b) {
-        final byAmount = b.amount.compareTo(a.amount);
-        if (byAmount != 0) return byAmount;
-        return a.categoryId.compareTo(b.categoryId);
-      });
+    final rows =
+        [
+          for (final entry in sums.entries)
+            CategorySpend(
+              categoryId: entry.key,
+              amount: entry.value,
+              percent: percentOf(entry.value, total),
+            ),
+        ]..sort((a, b) {
+          final byAmount = b.amount.compareTo(a.amount);
+          if (byAmount != 0) return byAmount;
+          return a.categoryId.compareTo(b.categoryId);
+        });
     return rows;
   }
 

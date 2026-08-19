@@ -33,10 +33,27 @@ class TransactionListPage extends StatefulWidget {
 }
 
 class _TransactionListPageState extends State<TransactionListPage> {
+  late final ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController()..addListener(_onScroll);
     widget.controller.load();
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.extentAfter < 400) {
+      widget.controller.loadMore();
+    }
   }
 
   @override
@@ -50,6 +67,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
           children: [
             Expanded(
               child: ListView(
+                controller: _scrollController,
                 padding: EdgeInsets.only(
                   top: MediaQuery.paddingOf(context).top + 12,
                   bottom: 24,
@@ -70,7 +88,10 @@ class _TransactionListPageState extends State<TransactionListPage> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.card,
                         borderRadius: BorderRadius.circular(14),
@@ -92,7 +113,10 @@ class _TransactionListPageState extends State<TransactionListPage> {
                           Text(
                             '−${formatVndShort(c.snapshot.expenseSum)}',
                             key: const Key('tx-sum-expense'),
-                            style: moneyStyle(size: 17, color: AppColors.expense),
+                            style: moneyStyle(
+                              size: 17,
+                              color: AppColors.expense,
+                            ),
                           ),
                         ],
                       ),
@@ -177,14 +201,25 @@ class _TransactionListPageState extends State<TransactionListPage> {
                   else if (c.loading)
                     Padding(
                       padding: const EdgeInsets.all(32),
-                      child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      ),
                     )
                   else if (c.snapshot.isEmpty)
                     _Empty(onAdd: widget.onAddPressed)
                   else
-                    for (final group in c.snapshot.groups) _DayGroup(
-                      group: group,
-                      onTap: widget.onTransactionTap,
+                    for (final group in c.snapshot.groups)
+                      _DayGroup(group: group, onTap: widget.onTransactionTap),
+                  if (c.loadingMore)
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ),
                 ],
               ),
@@ -200,10 +235,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
       },
     );
 
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: body,
-    );
+    return Scaffold(backgroundColor: AppColors.bg, body: body);
   }
 
   Future<void> _pickFrom(TransactionListController c) async {
@@ -236,12 +268,14 @@ class _ChipRow extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-      child: Row(children: [
-        for (var i = 0; i < children.length; i++) ...[
-          if (i > 0) const SizedBox(width: 8),
-          children[i],
+      child: Row(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            children[i],
+          ],
         ],
-      ]),
+      ),
     );
   }
 }
@@ -326,11 +360,19 @@ class _Empty extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
       child: Column(
         children: [
-          Icon(Icons.account_balance_wallet_outlined, size: 64, color: AppColors.textTertiary.withValues(alpha: 0.7)),
+          Icon(
+            Icons.account_balance_wallet_outlined,
+            size: 64,
+            color: AppColors.textTertiary.withValues(alpha: 0.7),
+          ),
           const SizedBox(height: 12),
           Text(
             'Chưa có giao dịch',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.text),
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: AppColors.text,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
@@ -350,7 +392,10 @@ class _Empty extends StatelessWidget {
               backgroundColor: AppColors.primary,
               foregroundColor: AppColors.onPrimary,
             ),
-            child: const Text('Thêm giao dịch', style: TextStyle(fontWeight: FontWeight.w800)),
+            child: const Text(
+              'Thêm giao dịch',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),

@@ -12,7 +12,7 @@ class TransactionMapper {
       'type': tx.type.storageValue,
       'category_id': tx.categoryId,
       'detail': tx.detail,
-      'occurred_date': _date(tx.occurredOn),
+      'occurred_date': dateToStorage(tx.occurredOn),
       'occurred_time': tx.occurredTime,
       'payment_source_id': tx.paymentSourceId,
       'payment_source_name': tx.paymentSourceName,
@@ -34,14 +34,16 @@ class TransactionMapper {
       occurredTime: row['occurred_time'] as String?,
       paymentSourceId: row['payment_source_id']! as String,
       paymentSourceName: row['payment_source_name']! as String,
-      paymentMethod: PaymentMethodKind.fromStorage(row['payment_method']! as String),
+      paymentMethod: PaymentMethodKind.fromStorage(
+        row['payment_method']! as String,
+      ),
       note: row['note'] as String?,
       createdAt: DateTime.parse(row['created_at']! as String),
       updatedAt: DateTime.parse(row['updated_at']! as String),
     );
   }
 
-  static String _date(DateTime d) {
+  static String dateToStorage(DateTime d) {
     final local = DateTime(d.year, d.month, d.day);
     final y = local.year.toString().padLeft(4, '0');
     final m = local.month.toString().padLeft(2, '0');
