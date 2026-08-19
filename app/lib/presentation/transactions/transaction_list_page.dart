@@ -101,22 +101,6 @@ class _TransactionListPageState extends State<TransactionListPage> {
                   _ChipRow(
                     children: [
                       _FilterChip(
-                        key: const Key('type-all'),
-                        label: 'Tất cả',
-                        selected: c.filter.type == TxTypeFilter.all,
-                        onTap: () => c.setTypeFilter(TxTypeFilter.all),
-                      ),
-                      _FilterChip(
-                        key: const Key('type-expense'),
-                        label: 'Chi tiêu',
-                        selected: c.filter.type == TxTypeFilter.expense,
-                        onTap: () => c.setTypeFilter(TxTypeFilter.expense),
-                      ),
-                    ],
-                  ),
-                  _ChipRow(
-                    children: [
-                      _FilterChip(
                         key: const Key('cat-all'),
                         label: 'Tất cả',
                         selected: c.filter.categoryId == 'all',
