@@ -199,7 +199,7 @@ void main() {
     expect(find.byKey(const Key('tx-list-error')), findsOneWidget);
   });
 
-  testWidgets('type filter chips are on the transaction list', (tester) async {
+  testWidgets('type filter chips are not on the transaction list', (tester) async {
     _phone(tester);
     await _pumpShell(
       tester,
@@ -208,11 +208,8 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-transactions')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    expect(find.byKey(const Key('type-all')), findsOneWidget);
-    expect(find.byKey(const Key('type-expense')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('type-expense')));
-    await tester.pump();
-    expect(find.text('Chi tiêu'), findsWidgets);
+    expect(find.byKey(const Key('type-all')), findsNothing);
+    expect(find.byKey(const Key('type-expense')), findsNothing);
   });
 
   testWidgets('swipe-to-delete removes a transaction after confirm', (

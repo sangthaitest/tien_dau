@@ -1670,8 +1670,7 @@ select.form-input {
   outline: none;
 }
 #screen-statistics .compare-card.income,
-#screen-transactions .tx-summary-card.income,
-#tx-type-chips [data-type-filter="income"] {
+#screen-transactions .tx-summary-card.income {
   display: none !important;
 }
 .add-sheet-v3 .quick-amounts {

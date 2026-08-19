@@ -473,7 +473,6 @@ const state = {
   currentScreen: 'splash',
   onboardingStep: 0,
   onboardingMax: 1,
-  txTypeFilter: 'all',
   txCatFilter: 'all',
   txDateFilter: 'thisMonth',
   txDateFrom: '',
@@ -700,7 +699,7 @@ function renderHome() {
   const spendEl = $('#home-month-spend');
   if (spendEl) spendEl.textContent = maskMoney(formatVND(spend));
 
-  const recent = sortedTransactions().filter(t => inMonth(t.date, viewMonth())).slice(0, 3);
+  const recent = sortedTransactions().filter(t => inMonth(t.date, viewMonth())).slice(0, 5);
   $('#home-tx-list').innerHTML = recent.length
     ? recent.map(t => renderTxItem(t, { compact: true })).join('')
     : `<p class="caption">Chưa có giao dịch. Nhấn + để thêm.</p>`;
@@ -746,10 +745,6 @@ function getFilteredTransactions() {
     const from = state.txDateFrom || '0000-01-01';
     const to = state.txDateTo || '9999-12-31';
     list = list.filter(t => t.date >= from && t.date <= to);
-  }
-
-  if (state.txTypeFilter === 'expense' || state.txTypeFilter === 'income') {
-    list = list.filter(t => t.type === state.txTypeFilter);
   }
 
   if (state.txCatFilter !== 'all') {
@@ -1841,13 +1836,6 @@ function bindEvents() {
 
   $('#btn-edit-salary')?.addEventListener('click', openSalarySheet);
 
-  $$('#tx-type-chips .chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      state.txTypeFilter = chip.dataset.typeFilter;
-      $$('#tx-type-chips .chip').forEach(c => c.classList.toggle('active', c === chip));
-      renderTransactions();
-    });
-  });
   $$('#tx-date-chips .chip').forEach(chip => {
     chip.addEventListener('click', () => {
       state.txDateFilter = chip.dataset.dateFilter;
