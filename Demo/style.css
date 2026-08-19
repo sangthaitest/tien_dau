@@ -1,16 +1,16 @@
 /* ============================================================
-   Tiền đâu nè — fresh green + yellow accent (color only)
+   Tiền đâu nè — V2 fresh green + yellow accent (color only)
    ============================================================ */
 
 :root {
-  /* Brand — fresh, friendly green */
-  --primary: #1B9A78;
-  --primary-dark: #126B56;
-  --primary-light: #4EC4A8;
-  --primary-container: #E8F6F1;
-  --primary-glow: rgba(27, 154, 120, 0.24);
-  --secondary: #8FD4BC;
-  --success: #1B9A78;
+  /* Brand — V2 bright emerald (baseline, do not darken) */
+  --primary: #00B67A;
+  --primary-dark: #009963;
+  --primary-light: #7BD3C0;
+  --primary-container: #E6F8EF;
+  --primary-glow: rgba(0, 182, 122, 0.28);
+  --secondary: #7BD3C0;
+  --success: #00B67A;
   --warning: #FFB020;
   --warning-container: #FFF6E5;
   --warning-text: #C47E00;
@@ -25,10 +25,10 @@
   --yellow-soft: #FFF5CC;
   --yellow-text: #9A7400;
   --yellow-glow: rgba(246, 201, 69, 0.38);
-  --text-on-yellow: #126B56;
+  --text-on-yellow: var(--primary-dark);
 
-  /* Surfaces — clean & airy */
-  --bg: #F5FAF8;
+  /* Surfaces — soft & airy (V2) */
+  --bg: #F3F5F8;
   --bg-elevated: #FFFFFF;
   --card: #FFFFFF;
   --surface: #FFFFFF;
@@ -89,13 +89,13 @@
 }
 
 [data-theme="dark"] {
-  --primary: #4EC4A8;
-  --primary-dark: #7ED4B8;
-  --primary-light: #6DD4B5;
-  --primary-container: #163D32;
-  --primary-glow: rgba(78, 196, 168, 0.28);
-  --secondary: #5BAF96;
-  --success: #4EC4A8;
+  --primary: #3DDBA0;
+  --primary-dark: #7BD3C0;
+  --primary-light: #A8E6D0;
+  --primary-container: #0F2E24;
+  --primary-glow: rgba(61, 219, 160, 0.3);
+  --secondary: #7BD3C0;
+  --success: #3DDBA0;
   --warning: #FFC857;
   --warning-container: #3A2E12;
   --expense: #FF8A8A;
@@ -109,7 +109,7 @@
   --yellow-soft: #3A3214;
   --yellow-text: #F6C945;
   --yellow-glow: rgba(255, 214, 90, 0.4);
-  --text-on-yellow: #126B56;
+  --text-on-yellow: var(--primary-dark);
   --bg: #0E1116;
   --bg-elevated: #161A21;
   --card: #1A1F28;
@@ -353,43 +353,29 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- Splash ---------- */
 #screen-splash {
-  background: linear-gradient(165deg, var(--primary) 0%, var(--primary-light) 100%);
-  align-items: center; justify-content: center;
+  background: #00B67A;
+  align-items: center;
+  justify-content: center;
+  padding:
+    max(24px, env(safe-area-inset-top, 0px))
+    max(24px, env(safe-area-inset-right, 0px))
+    max(24px, env(safe-area-inset-bottom, 0px))
+    max(24px, env(safe-area-inset-left, 0px));
 }
 #screen-splash .splash-content {
-  display: flex; flex-direction: column; align-items: center; gap: 16px;
-  animation: splash-enter 900ms var(--ease-out) both;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 220px;
 }
 .splash-logo {
-  width: 108px; height: 108px;
-  animation: logo-float 2.8s var(--ease) infinite alternate;
-  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.18));
-}
-.splash-name {
-  font-family: var(--font-display);
-  font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -1px;
-}
-.splash-tagline { font-size: 15px; color: rgba(255, 255, 255, 0.88); font-weight: 600; }
-.splash-loader {
-  width: 48px; height: 4px; background: rgba(255, 255, 255, 0.25);
-  border-radius: 4px; margin-top: 36px; overflow: hidden;
-}
-.splash-loader::after {
-  content: ''; display: block; height: 100%; width: 40%;
-  background: #fff; border-radius: 4px;
-  animation: loader-slide 1.1s var(--ease) infinite;
-}
-@keyframes splash-enter {
-  from { opacity: 0; transform: translateY(24px) scale(0.94); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes logo-float {
-  from { transform: translateY(0) rotate(-2deg); }
-  to { transform: translateY(-10px) rotate(2deg); }
-}
-@keyframes loader-slide {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(300%); }
+  display: block;
+  width: min(168px, 42vw);
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  object-position: center;
 }
 
 /* ---------- Onboarding ---------- */
@@ -568,7 +554,7 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 /* ---------- Home ---------- */
 .home-header {
   padding: var(--space-lg) var(--space-xl) 28px;
-  background: linear-gradient(165deg, var(--primary) 0%, #2AB88E 55%, var(--primary-light) 100%);
+  background: linear-gradient(160deg, #00B67A 0%, #009963 70%, #00855A 100%);
   border-radius: 0 0 36px 36px;
   color: #fff; position: relative; overflow: hidden;
 }
@@ -828,7 +814,7 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 /* ---------- Budget ---------- */
 .budget-summary {
   margin: 0 var(--space-xl) var(--space-lg);
-  background: linear-gradient(140deg, var(--primary) 0%, var(--primary-light) 100%);
+  background: linear-gradient(140deg, #00B67A 0%, #009963 100%);
   border-radius: var(--radius-lg); padding: 22px; color: #fff;
   position: relative; overflow: hidden;
   box-shadow: 0 12px 32px var(--primary-glow);
@@ -962,7 +948,7 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 /* ---------- Statistics ---------- */
 .stats-insight {
   margin: 0 var(--space-xl) var(--space-lg);
-  background: linear-gradient(140deg, var(--primary), var(--primary-light));
+  background: linear-gradient(140deg, #00B67A, #009963);
   border-radius: var(--radius-lg); padding: 20px 22px; color: #fff;
   position: relative; overflow: hidden;
   box-shadow: 0 12px 32px var(--primary-glow);
@@ -1101,7 +1087,7 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 .profile-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .profile-avatar {
   width: 64px; height: 64px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-family: var(--font-display); font-size: 22px; font-weight: 800;
   flex-shrink: 0; box-shadow: 0 6px 16px var(--primary-glow);

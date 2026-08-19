@@ -1,21 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 220" fill="none">
-  <circle cx="140" cy="110" r="96" fill="#E8F6F1"/>
+  <circle cx="140" cy="110" r="96" fill="#E6F8EF"/>
   <circle cx="48" cy="52" r="14" fill="#F6C945" opacity="0.9"/>
   <circle cx="230" cy="48" r="10" fill="#8FC9B8" opacity="0.7"/>
   <circle cx="236" cy="168" r="16" fill="#B8E6D0" opacity="0.8"/>
   <!-- Phone -->
-  <rect x="95" y="28" width="90" height="148" rx="18" fill="#fff" stroke="#1B9A78" stroke-width="3.5"/>
-  <rect x="108" y="46" width="64" height="18" rx="8" fill="#E8F6F1"/>
+  <rect x="95" y="28" width="90" height="148" rx="18" fill="#fff" stroke="#00B67A" stroke-width="3.5"/>
+  <rect x="108" y="46" width="64" height="18" rx="8" fill="#E6F8EF"/>
   <rect x="108" y="74" width="40" height="10" rx="5" fill="#B8E6D0"/>
   <rect x="108" y="92" width="52" height="10" rx="5" fill="#8FC9B8"/>
-  <rect x="108" y="110" width="36" height="10" rx="5" fill="#1B9A78"/>
-  <circle cx="140" cy="150" r="10" fill="#E8F6F1" stroke="#1B9A78" stroke-width="2"/>
+  <rect x="108" y="110" width="36" height="10" rx="5" fill="#00B67A"/>
+  <circle cx="140" cy="150" r="10" fill="#E6F8EF" stroke="#00B67A" stroke-width="2"/>
   <!-- Floating coin -->
   <circle cx="58" cy="100" r="20" fill="#F6C945" stroke="#C99A12" stroke-width="2.5"/>
   <text x="58" y="106" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="800" fill="#9A7400">?</text>
   <circle cx="220" cy="100" r="16" fill="#F6C945" stroke="#C99A12" stroke-width="2"/>
   <text x="220" y="105" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="800" fill="#9A7400">?</text>
   <!-- Sparkles -->
-  <path d="M70 40l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="#1B9A78"/>
+  <path d="M70 40l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="#00B67A"/>
   <path d="M210 150l1.5 4.5 4.5 1.5-4.5 1.5-1.5 4.5-1.5-4.5-4.5-1.5 4.5-1.5z" fill="#F6C945"/>
 </svg>

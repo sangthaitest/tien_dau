@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" fill="none">
   <ellipse cx="100" cy="142" rx="58" ry="10" fill="#E8EEF2" opacity="0.7"/>
-  <rect x="38" y="48" width="124" height="82" rx="22" fill="#E8F6F1" stroke="#8FC9B8" stroke-width="3"/>
+  <rect x="38" y="48" width="124" height="82" rx="22" fill="#E6F8EF" stroke="#8FC9B8" stroke-width="3"/>
   <path d="M38 72h124v16c0 0-16 12-62 12S38 88 38 88V72z" fill="#C5E6DA"/>
   <circle cx="132" cy="102" r="18" fill="#8FC9B8"/>
-  <circle cx="132" cy="102" r="9" fill="#1B9A78"/>
+  <circle cx="132" cy="102" r="9" fill="#00B67A"/>
   <path d="M58 100h36M58 114h24" stroke="#8FC9B8" stroke-width="4" stroke-linecap="round"/>
   <circle cx="150" cy="40" r="14" fill="#F6C945"/>
   <text x="150" y="45" text-anchor="middle" font-family="system-ui" font-size="11" font-weight="800" fill="#9A7400">₫</text>
