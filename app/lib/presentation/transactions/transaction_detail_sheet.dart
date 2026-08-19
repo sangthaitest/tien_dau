@@ -110,7 +110,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Chi tiết',
                         style: TextStyle(
@@ -128,8 +128,8 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                   ],
                 ),
                 if (c.loading)
-                  const Padding(
-                    padding: EdgeInsets.all(32),
+                  Padding(
+                    padding: const EdgeInsets.all(32),
                     child: CircularProgressIndicator(color: AppColors.primary),
                   )
                 else if (c.error != null && c.transaction == null)
@@ -139,7 +139,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                       c.error!,
                       key: const Key('detail-error'),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.expense,
                         fontWeight: FontWeight.w700,
                       ),
@@ -188,7 +188,7 @@ class _Body extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           transactionTitle(transaction),
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 17,
             color: AppColors.text,
@@ -202,7 +202,7 @@ class _Body extends StatelessWidget {
         _Row(label: 'Ghi chú', value: _orDash(transaction.note)),
         if (error != null) ...[
           const SizedBox(height: 12),
-          Text(error!, style: const TextStyle(color: AppColors.expense)),
+          Text(error!, style: TextStyle(color: AppColors.expense)),
         ],
         const SizedBox(height: 16),
         Row(
@@ -213,7 +213,7 @@ class _Body extends StatelessWidget {
                 onPressed: onDelete,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.text,
-                  side: const BorderSide(color: AppColors.divider),
+                  side: BorderSide(color: AppColors.divider),
                   minimumSize: const Size.fromHeight(48),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                 ),
@@ -261,7 +261,7 @@ class _Row extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
@@ -271,7 +271,7 @@ class _Row extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w800,
                 color: AppColors.text,
               ),

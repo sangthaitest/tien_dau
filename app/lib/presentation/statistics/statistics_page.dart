@@ -35,15 +35,15 @@ class StatisticsPage extends StatelessWidget {
                   child: Text(
                     controller.error!,
                     key: const Key('stats-error'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.expense,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 )
               else if (controller.loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 48),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 48),
                   child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
                 )
               else ...[
@@ -136,7 +136,7 @@ class _Header extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 2),
-            const Text(
+            Text(
               'so với tháng trước',
               style: TextStyle(
                 fontSize: 10,
@@ -182,7 +182,7 @@ class _InsightCard extends StatelessWidget {
           Text(
             'Chi tiêu ${monthLabel(snapshot.month)}',
             key: const Key('stats-month-label'),
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -229,7 +229,7 @@ class _CategoryChart extends StatelessWidget {
             Text(
               'Chưa có chi tiêu tháng này.',
               key: const Key('stats-empty'),
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.textSecondary,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
@@ -291,7 +291,7 @@ class _Pie extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
+                  Text(
                     'Tổng chi',
                     style: TextStyle(
                       fontSize: 10,
@@ -304,7 +304,7 @@ class _Pie extends StatelessWidget {
                     key: const Key('pie-total'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
                   ),
                 ],
               ),
@@ -378,7 +378,7 @@ class _LegendRow extends StatelessWidget {
                   look.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textSecondary,
@@ -386,7 +386,7 @@ class _LegendRow extends StatelessWidget {
                 ),
                 Text(
                   formatVndShort(row.amount),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textTertiary,
@@ -397,7 +397,7 @@ class _LegendRow extends StatelessWidget {
           ),
           Text(
             '${row.percent}%',
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
           ),
         ],
       ),
@@ -413,8 +413,8 @@ class _TopSpending extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (snapshot.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(12),
+      return Padding(
+        padding: const EdgeInsets.all(12),
         child: Text(
           'Chưa có dữ liệu.',
           style: TextStyle(
@@ -500,11 +500,11 @@ class _RankRow extends StatelessWidget {
                   look.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                 ),
                 Text(
                   '${row.percent}% chi tiêu',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,
@@ -517,7 +517,7 @@ class _RankRow extends StatelessWidget {
             formatVnd(row.amount),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 14,
               color: AppColors.expense,

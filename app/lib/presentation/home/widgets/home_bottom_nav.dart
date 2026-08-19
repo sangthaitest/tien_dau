@@ -20,7 +20,7 @@ class HomeBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
     return Material(
-      color: const Color(0xEBFFFFFF),
+      color: AppColors.navBar,
       elevation: 0,
       child: SizedBox(
         height: 76 + bottom,

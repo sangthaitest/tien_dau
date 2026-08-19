@@ -4,6 +4,7 @@ import '../../../domain/entities/transaction.dart';
 import '../../../domain/entities/transaction_type.dart';
 import '../../../domain/transaction_display.dart';
 import '../../format/money_format.dart';
+import '../../settings/settings_scope.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/category_look.dart';
 
@@ -22,6 +23,8 @@ class HomeTransactionTile extends StatelessWidget {
     final look = categoryLook(transaction.categoryId);
     final title = transactionTitle(transaction);
     final sign = transaction.type == TransactionType.income ? '+' : '−';
+    final hidden = SettingsScope.hideMoney(context);
+    final amountText = hidden ? kHiddenMoneyShort : '$sign${formatVnd(transaction.amount)}';
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -62,7 +65,7 @@ class HomeTransactionTile extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 14,
                     color: AppColors.text,
@@ -73,7 +76,7 @@ class HomeTransactionTile extends StatelessWidget {
                   '${look.name} · ${transaction.paymentSourceName}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textSecondary,
@@ -83,7 +86,7 @@ class HomeTransactionTile extends StatelessWidget {
             ),
           ),
           Text(
-            '$sign${formatVnd(transaction.amount)}',
+            amountText,
             style: moneyStyle(size: 14, color: AppColors.expense, weight: FontWeight.w700),
           ),
         ],

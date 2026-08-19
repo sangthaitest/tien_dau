@@ -110,14 +110,14 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             elevation: 0,
             scrolledUnderElevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppColors.text),
+              icon: Icon(Icons.arrow_back, color: AppColors.text),
               tooltip: 'Quay lại',
               onPressed: () => Navigator.of(context).pop(false),
             ),
             centerTitle: true,
             title: Text(
               _c.isEditing ? AddTransactionCopy.editTitle : AddTransactionCopy.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 18,
                 color: AppColors.text,
@@ -200,7 +200,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                       decoration: _filledDecoration(
                         hint: AddTransactionCopy.noteHint,
                       ),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: AppColors.text,
@@ -225,7 +225,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                         Text(
                           _c.error!,
                           key: const Key('add-tx-error'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.expense,
                             fontWeight: FontWeight.w700,
                             fontSize: 13,
@@ -247,7 +247,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                           ),
                           child: Text(
                             _c.isEditing ? AddTransactionCopy.update : AddTransactionCopy.save,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 16,
                             ),
@@ -276,7 +276,7 @@ class _FieldLabel extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w800,
           color: AppColors.textSecondary,
@@ -290,7 +290,7 @@ class _FieldLabel extends StatelessWidget {
 InputDecoration _filledDecoration({String? hint}) {
   return InputDecoration(
     hintText: hint,
-    hintStyle: const TextStyle(
+    hintStyle: TextStyle(
       color: AppColors.textTertiary,
       fontWeight: FontWeight.w600,
     ),
@@ -504,7 +504,7 @@ class _CatOption extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textSecondary,
@@ -622,7 +622,7 @@ class _PaySelectState extends State<_PaySelect> {
                           SizedBox(
                             width: 28,
                             child: option.source.id == widget.selected.source.id
-                                ? const Icon(Icons.check, color: AppColors.primary, size: 20)
+                                ? Icon(Icons.check, color: AppColors.primary, size: 20)
                                 : null,
                           ),
                           Expanded(
@@ -631,7 +631,7 @@ class _PaySelectState extends State<_PaySelect> {
                               children: [
                                 Text(
                                   option.source.name,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontWeight: FontWeight.w800,
                                     fontSize: 15,
                                     color: AppColors.text,
@@ -639,7 +639,7 @@ class _PaySelectState extends State<_PaySelect> {
                                 ),
                                 Text(
                                   option.typeLabel,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.textTertiary,
@@ -689,7 +689,7 @@ class _BoxButton extends StatelessWidget {
                 Expanded(
                   child: Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: AppColors.text,

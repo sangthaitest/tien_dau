@@ -14,6 +14,15 @@ String formatVnd(int amount, {bool withSymbol = true}) {
   return '$buffer ₫';
 }
 
+const kHiddenMoney = '••••••••';
+const kHiddenMoneyShort = '••••';
+
+/// Privacy mask used by Home (full/short) and Tài chính. Matches Demo `maskMoney`.
+String displayVnd(int amount, {required bool hidden, bool short = false}) {
+  if (hidden) return short ? kHiddenMoneyShort : kHiddenMoney;
+  return short ? formatVndShort(amount) : formatVnd(amount);
+}
+
 /// V3 compact amounts for list summary / day totals (50k, 1.2tr).
 String formatVndShort(int amount) {
   final abs = amount.abs();

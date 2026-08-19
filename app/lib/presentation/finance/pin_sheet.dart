@@ -109,12 +109,12 @@ class _PinSheetState extends State<PinSheet> {
           const SizedBox(height: 12),
           Text(
             _title,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(
             _hint,
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
@@ -135,7 +135,7 @@ class _PinSheetState extends State<PinSheet> {
             Text(
               _error!,
               key: const Key('pin-error'),
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.expense,
                 fontWeight: FontWeight.w700,
               ),
@@ -150,7 +150,7 @@ class _PinSheetState extends State<PinSheet> {
               style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
               child: Text(
                 widget.mode == PinSheetMode.setup ? 'Lưu mật khẩu' : 'Xác nhận',
-                style: const TextStyle(fontWeight: FontWeight.w800),
+                style: TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
           ),
@@ -177,7 +177,7 @@ class _PinField extends StatelessWidget {
       children: [
         Text(
           label.toUpperCase(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w800,
             color: AppColors.textSecondary,
@@ -192,7 +192,7 @@ class _PinField extends StatelessWidget {
           maxLength: 4,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w700,
             letterSpacing: 8,

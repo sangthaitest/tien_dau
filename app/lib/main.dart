@@ -1,15 +1,18 @@
 import 'package:flutter/widgets.dart';
 import 'package:uuid/uuid.dart';
 
+import 'application/app_settings_service.dart';
 import 'application/finance_service.dart';
 import 'application/session_sensitive_access.dart';
 import 'application/transaction_service.dart';
 import 'data/datasources/finance_local_datasource.dart';
 import 'data/datasources/transaction_local_datasource.dart';
 import 'data/db/app_database.dart';
+import 'data/repositories/app_settings_repository_impl.dart';
 import 'data/repositories/finance_repository_impl.dart';
 import 'data/repositories/transaction_repository_impl.dart';
 import 'presentation/app.dart';
+import 'presentation/settings/app_settings_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +36,10 @@ Future<void> main() async {
     idFactory: uuid.v4,
     clock: DateTime.now,
   );
+  final settingsController = AppSettingsController(
+    AppSettingsService(AppSettingsRepositoryImpl(prefs)),
+  );
+  await settingsController.load();
 
   runApp(
     TienDayApp(
@@ -42,6 +49,7 @@ Future<void> main() async {
         repository: PinRepositoryImpl(prefs),
         saltFactory: uuid.v4,
       ),
+      settingsController: settingsController,
     ),
   );
 }

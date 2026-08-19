@@ -6,6 +6,7 @@ import '../../domain/entities/transaction.dart';
 import '../add_transaction/add_transaction_controller.dart';
 import '../add_transaction/add_transaction_page.dart';
 import '../format/money_format.dart';
+import '../settings/settings_scope.dart';
 import '../theme/app_colors.dart';
 import '../transactions/transaction_detail_controller.dart';
 import '../transactions/transaction_detail_sheet.dart';
@@ -127,12 +128,15 @@ class _HomePageState extends State<HomePage> {
           listenable: widget.controller,
           builder: (context, _) {
             final c = widget.controller;
+            final hide = SettingsScope.hideMoney(context);
             return Column(
               children: [
                 Expanded(
                   child: CustomScrollView(
                     slivers: [
-                      SliverToBoxAdapter(child: _Header(controller: c, page: widget)),
+                      SliverToBoxAdapter(
+                        child: _Header(controller: c, page: widget, hidden: hide),
+                      ),
                       SliverToBoxAdapter(
                         child: _Recent(
                           controller: c,
@@ -165,10 +169,11 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.controller, required this.page});
+  const _Header({required this.controller, required this.page, required this.hidden});
 
   final HomeController controller;
   final HomePage page;
+  final bool hidden;
 
   @override
   Widget build(BuildContext context) {
@@ -297,7 +302,10 @@ class _Header extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      controller.loading ? '…' : formatVnd(snapshot.monthExpense),
+                      controller.loading
+                          ? '…'
+                          : displayVnd(snapshot.monthExpense, hidden: hidden),
+                      key: const Key('home-month-spend'),
                       style: moneyStyle(size: 16),
                     ),
                   ],
@@ -352,7 +360,7 @@ class _Recent extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Gần đây',
                   style: TextStyle(
@@ -366,7 +374,7 @@ class _Recent extends StatelessWidget {
               TextButton(
                 key: const Key('see-all'),
                 onPressed: onSeeAll,
-                child: const Text(
+                child: Text(
                   'Xem tất cả',
                   style: TextStyle(
                     fontSize: 13,
@@ -380,15 +388,15 @@ class _Recent extends StatelessWidget {
           if (controller.error != null)
             Text(
               controller.error!,
-              style: const TextStyle(color: AppColors.expense, fontWeight: FontWeight.w600),
+              style: TextStyle(color: AppColors.expense, fontWeight: FontWeight.w600),
             )
           else if (controller.loading)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+              child: Center(child: CircularProgressIndicator()),
             )
           else if (recent.isEmpty)
-            const Text(
+            Text(
               'Chưa có giao dịch. Nhấn + để thêm.',
               style: TextStyle(
                 fontSize: 13,

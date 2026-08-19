@@ -14,6 +14,7 @@ import '../home/home_controller.dart';
 import '../home/home_page.dart';
 import '../home/widgets/home_bottom_nav.dart';
 import '../settings/settings_page.dart';
+import '../settings/settings_scope.dart';
 import '../statistics/statistics_controller.dart';
 import '../statistics/statistics_page.dart';
 import '../theme/app_colors.dart';
@@ -161,8 +162,18 @@ class _MainShellState extends State<MainShell> {
     };
   }
 
+  Future<void> _logout() async {
+    await widget.sensitiveAccess.lock();
+    if (!mounted) return;
+    setState(() => _showFinance = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Đã khóa khu vực tài chính')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    SettingsScope.maybeOf(context);
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: Column(
@@ -195,6 +206,7 @@ class _MainShellState extends State<MainShell> {
                       SettingsPage(
                         onOpenFinance: _openFinance,
                         onChangePin: _changePin,
+                        onLogout: _logout,
                       ),
                     ],
                   ),

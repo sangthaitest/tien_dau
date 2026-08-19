@@ -55,8 +55,8 @@ class _TransactionListPageState extends State<TransactionListPage> {
                   bottom: 24,
                 ),
                 children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 0, 20, 16),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                     child: Text(
                       'Giao dịch',
                       style: TextStyle(
@@ -79,7 +79,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'CHI TIÊU',
                             style: TextStyle(
                               fontSize: 11,
@@ -184,15 +184,15 @@ class _TransactionListPageState extends State<TransactionListPage> {
                       child: Text(
                         c.error!,
                         key: const Key('tx-list-error'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.expense,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     )
                   else if (c.loading)
-                    const Padding(
-                      padding: EdgeInsets.all(32),
+                    Padding(
+                      padding: const EdgeInsets.all(32),
                       child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
                     )
                   else if (c.snapshot.isEmpty)
@@ -323,7 +323,7 @@ class _DateBox extends StatelessWidget {
           child: Center(
             child: Text(
               label,
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
             ),
           ),
         ),
@@ -344,12 +344,12 @@ class _Empty extends StatelessWidget {
         children: [
           Icon(Icons.account_balance_wallet_outlined, size: 64, color: AppColors.textTertiary.withValues(alpha: 0.7)),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Chưa có giao dịch',
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.text),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Nhấn + để thêm giao dịch đầu tiên.',
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -393,7 +393,7 @@ class _DayGroup extends StatelessWidget {
                 Expanded(
                   child: Text(
                     group.label.toUpperCase(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textTertiary,
@@ -403,7 +403,7 @@ class _DayGroup extends StatelessWidget {
                 ),
                 Text(
                   '−${formatVndShort(group.dayExpense)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textSecondary,
