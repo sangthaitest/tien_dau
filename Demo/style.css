@@ -1,17 +1,16 @@
 /* ============================================================
-   Tiền đâu nè — color exploration (green identity + yellow accent)
-   Layout / UX unchanged from v3 prototype
+   Tiền đâu nè — fresh green + yellow accent (color only)
    ============================================================ */
 
 :root {
-  /* Brand — calm premium green (identity) */
-  --primary: #16856A;
-  --primary-dark: #0F5F4F;
-  --primary-light: #5BAF96;
-  --primary-container: #E8F5F0;
-  --primary-glow: rgba(22, 133, 106, 0.28);
-  --secondary: #8FC9B8;
-  --success: #16856A;
+  /* Brand — fresh, friendly green */
+  --primary: #1B9A78;
+  --primary-dark: #126B56;
+  --primary-light: #4EC4A8;
+  --primary-container: #E8F6F1;
+  --primary-glow: rgba(27, 154, 120, 0.24);
+  --secondary: #8FD4BC;
+  --success: #1B9A78;
   --warning: #FFB020;
   --warning-container: #FFF6E5;
   --warning-text: #C47E00;
@@ -26,10 +25,10 @@
   --yellow-soft: #FFF5CC;
   --yellow-text: #9A7400;
   --yellow-glow: rgba(246, 201, 69, 0.38);
-  --text-on-yellow: #0F5F4F;
+  --text-on-yellow: #126B56;
 
-  /* Surfaces — soft & airy */
-  --bg: #F4FAF7;
+  /* Surfaces — clean & airy */
+  --bg: #F5FAF8;
   --bg-elevated: #FFFFFF;
   --card: #FFFFFF;
   --surface: #FFFFFF;
@@ -90,13 +89,13 @@
 }
 
 [data-theme="dark"] {
-  --primary: #3BB894;
+  --primary: #4EC4A8;
   --primary-dark: #7ED4B8;
-  --primary-light: #8FD4BE;
-  --primary-container: #12382E;
-  --primary-glow: rgba(59, 184, 148, 0.3);
+  --primary-light: #6DD4B5;
+  --primary-container: #163D32;
+  --primary-glow: rgba(78, 196, 168, 0.28);
   --secondary: #5BAF96;
-  --success: #3BB894;
+  --success: #4EC4A8;
   --warning: #FFC857;
   --warning-container: #3A2E12;
   --expense: #FF8A8A;
@@ -110,7 +109,7 @@
   --yellow-soft: #3A3214;
   --yellow-text: #F6C945;
   --yellow-glow: rgba(255, 214, 90, 0.4);
-  --text-on-yellow: #0F5F4F;
+  --text-on-yellow: #126B56;
   --bg: #0E1116;
   --bg-elevated: #161A21;
   --card: #1A1F28;
@@ -354,7 +353,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ---------- Splash ---------- */
 #screen-splash {
-  background: linear-gradient(165deg, var(--primary) 0%, var(--primary-dark) 55%, #0C4D40 100%);
+  background: linear-gradient(165deg, var(--primary) 0%, var(--primary-light) 100%);
   align-items: center; justify-content: center;
 }
 #screen-splash .splash-content {
@@ -569,7 +568,7 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 /* ---------- Home ---------- */
 .home-header {
   padding: var(--space-lg) var(--space-xl) 28px;
-  background: linear-gradient(160deg, var(--primary) 0%, var(--primary-dark) 70%, #0C4D40 100%);
+  background: linear-gradient(165deg, var(--primary) 0%, #2AB88E 55%, var(--primary-light) 100%);
   border-radius: 0 0 36px 36px;
   color: #fff; position: relative; overflow: hidden;
 }
@@ -829,7 +828,7 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 /* ---------- Budget ---------- */
 .budget-summary {
   margin: 0 var(--space-xl) var(--space-lg);
-  background: linear-gradient(140deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(140deg, var(--primary) 0%, var(--primary-light) 100%);
   border-radius: var(--radius-lg); padding: 22px; color: #fff;
   position: relative; overflow: hidden;
   box-shadow: 0 12px 32px var(--primary-glow);
@@ -963,7 +962,7 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 /* ---------- Statistics ---------- */
 .stats-insight {
   margin: 0 var(--space-xl) var(--space-lg);
-  background: linear-gradient(140deg, var(--primary), var(--primary-dark));
+  background: linear-gradient(140deg, var(--primary), var(--primary-light));
   border-radius: var(--radius-lg); padding: 20px 22px; color: #fff;
   position: relative; overflow: hidden;
   box-shadow: 0 12px 32px var(--primary-glow);
@@ -1102,7 +1101,7 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 .profile-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .profile-avatar {
   width: 64px; height: 64px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
   display: flex; align-items: center; justify-content: center;
   color: #fff; font-family: var(--font-display); font-size: 22px; font-weight: 800;
   flex-shrink: 0; box-shadow: 0 6px 16px var(--primary-glow);
