@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT/app"
+dart run tool/seed_transactions_from_excel.dart "$@"
+echo
+echo "Then insert into the app database (does not add Import UI):"
+echo "  flutter run -t tool/seed_on_device.dart"
