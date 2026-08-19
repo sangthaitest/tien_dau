@@ -36,6 +36,9 @@ class AppColors {
       dark ? const Color(0xFFFFC857) : const Color(0xFFFFB020);
   static Color get warningContainer =>
       dark ? const Color(0xFF3A2E12) : const Color(0xFFFFF6E5);
+  static Color get yellow =>
+      dark ? const Color(0xFFFFD65A) : const Color(0xFFF6C945);
+  static const Color onYellow = Color(0xFF007A52);
   static Color get divider =>
       dark ? const Color(0xFF2C3440) : const Color(0xFFE4E8EE);
   static Color get onPrimary =>

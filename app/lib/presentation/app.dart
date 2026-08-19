@@ -51,7 +51,7 @@ class _TienDayAppState extends State<TienDayApp> {
       builder: (context, _) {
         final dark = widget.settingsController.settings.darkMode;
         return MaterialApp(
-          title: 'Tiền Đây',
+          title: 'Tiền đâu nè',
           debugShowCheckedModeBanner: false,
           theme: buildAppTheme(Brightness.light),
           darkTheme: buildAppTheme(Brightness.dark),

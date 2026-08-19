@@ -49,8 +49,8 @@ class HomeBottomNav extends StatelessWidget {
                     key: const Key('fab-add'),
                     onPressed: onAddPressed,
                     tooltip: 'Thêm giao dịch',
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.onPrimary,
+                    backgroundColor: AppColors.yellow,
+                    foregroundColor: AppColors.onYellow,
                     elevation: 6,
                     heroTag: 'home-add',
                     child: const Icon(Icons.add, size: 28),
@@ -100,32 +100,32 @@ class _NavItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (active)
-            Container(
-              width: 56,
-              height: 34,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.primaryContainer,
-                borderRadius: BorderRadius.circular(18),
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (active)
+              Container(
+                width: 56,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryContainer,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Icon(icon, color: color, size: 26),
+              )
+            else
+              Icon(icon, color: color, size: 26),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                color: color,
+                letterSpacing: 0.1,
               ),
-              child: Icon(icon, color: color, size: 26),
-            )
-          else
-            Icon(icon, color: color, size: 26),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              color: color,
-              letterSpacing: 0.1,
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );
