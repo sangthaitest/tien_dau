@@ -113,6 +113,31 @@ void main() {
     expect(find.textContaining('Cafe'), findsOneWidget);
   });
 
+  testWidgets('Home load error does not fake a zero monthly total', (
+    tester,
+  ) async {
+    _phone(tester);
+    final service = TransactionService(
+      MemoryTransactionRepository(failList: true),
+    );
+    final controller = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(
+          controller: controller,
+          transactionService: service,
+          catalogController: buildTestCatalogController(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('home-error')), findsOneWidget);
+    expect(find.text('0 ₫'), findsNothing);
+    expect(find.text('—'), findsOneWidget);
+  });
+
   testWidgets('avatar opens Settings', (tester) async {
     _phone(tester);
     final service = TransactionService(MemoryTransactionRepository());

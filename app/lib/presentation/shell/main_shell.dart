@@ -53,6 +53,9 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   AppTab _tab = AppTab.home;
   bool _showFinance = false;
+  bool _openingAdd = false;
+  bool _openingSensitive = false;
+  bool _openingDetail = false;
   late final TransactionListController _listController;
   late final FinanceController _financeController;
   late final StatisticsController _statsController;
@@ -102,50 +105,62 @@ class _MainShellState extends State<MainShell> {
   }
 
   Future<void> _openAdd() async {
-    final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => AddTransactionPage(
-          controller: AddTransactionController(
-            service: widget.transactionService,
-            catalogController: widget.catalogController,
-            clock: widget.clock,
+    if (_openingAdd) return;
+    _openingAdd = true;
+    try {
+      final saved = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (_) => AddTransactionPage(
+            controller: AddTransactionController(
+              service: widget.transactionService,
+              catalogController: widget.catalogController,
+              clock: widget.clock,
+            ),
           ),
         ),
-      ),
-    );
-    if (saved == true && mounted) await _refresh();
+      );
+      if (saved == true && mounted) await _refresh();
+    } finally {
+      _openingAdd = false;
+    }
   }
 
   Future<void> _openDetail(Transaction tx) async {
-    final changed = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        final height = MediaQuery.sizeOf(ctx).height;
-        final inset = MediaQuery.viewInsetsOf(ctx).bottom;
-        return Padding(
-          padding: EdgeInsets.only(bottom: inset),
-          child: SizedBox(
-            height: height * 0.85 - inset,
-            child: TransactionDetailSheet(
-              controller: TransactionDetailController(
-                widget.transactionService,
+    if (_openingDetail) return;
+    _openingDetail = true;
+    try {
+      final changed = await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: AppColors.card,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        builder: (ctx) {
+          final height = MediaQuery.sizeOf(ctx).height;
+          final inset = MediaQuery.viewInsetsOf(ctx).bottom;
+          return Padding(
+            padding: EdgeInsets.only(bottom: inset),
+            child: SizedBox(
+              height: height * 0.85 - inset,
+              child: TransactionDetailSheet(
+                controller: TransactionDetailController(
+                  widget.transactionService,
+                ),
+                transactionService: widget.transactionService,
+                catalogController: widget.catalogController,
+                clock: widget.clock,
+                transactionId: tx.id,
               ),
-              transactionService: widget.transactionService,
-              catalogController: widget.catalogController,
-              clock: widget.clock,
-              transactionId: tx.id,
             ),
-          ),
-        );
-      },
-    );
-    if (changed == true && mounted) await _refresh();
+          );
+        },
+      );
+      if (changed == true && mounted) await _refresh();
+    } finally {
+      _openingDetail = false;
+    }
   }
 
   Future<bool> _deleteTransaction(Transaction tx) async {
@@ -192,25 +207,37 @@ class _MainShellState extends State<MainShell> {
   }
 
   Future<void> _openFinance() async {
-    final ok = await _ensureUnlocked();
-    if (!ok || !mounted) return;
-    await _financeController.load();
-    setState(() {
-      _tab = AppTab.settings;
-      _showFinance = true;
-    });
+    if (_openingSensitive) return;
+    _openingSensitive = true;
+    try {
+      final ok = await _ensureUnlocked();
+      if (!ok || !mounted) return;
+      await _financeController.load();
+      setState(() {
+        _tab = AppTab.settings;
+        _showFinance = true;
+      });
+    } finally {
+      _openingSensitive = false;
+    }
   }
 
   Future<void> _changePin() async {
-    final unlocked = await _ensureUnlocked();
-    if (!unlocked || !mounted) return;
-    final hasPin = await widget.sensitiveAccess.hasPin();
-    if (!mounted) return;
-    await PinSheet.show(
-      context,
-      access: widget.sensitiveAccess,
-      mode: hasPin ? PinSheetMode.change : PinSheetMode.setup,
-    );
+    if (_openingSensitive) return;
+    _openingSensitive = true;
+    try {
+      final unlocked = await _ensureUnlocked();
+      if (!unlocked || !mounted) return;
+      final hasPin = await widget.sensitiveAccess.hasPin();
+      if (!mounted) return;
+      await PinSheet.show(
+        context,
+        access: widget.sensitiveAccess,
+        mode: hasPin ? PinSheetMode.change : PinSheetMode.setup,
+      );
+    } finally {
+      _openingSensitive = false;
+    }
   }
 
   int get _stackIndex {

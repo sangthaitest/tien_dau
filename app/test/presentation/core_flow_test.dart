@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tien_day/application/home_query.dart';
 import 'package:tien_day/application/transaction_service.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
+import 'package:tien_day/presentation/home/widgets/home_bottom_nav.dart';
 
 import '../support/memory_transaction_repository.dart';
 import '../support/shell_harness.dart';
@@ -110,5 +111,64 @@ void main() {
     await _submitPin(tester, '5820');
     expect(find.text('Tài chính'), findsOneWidget);
     expect(find.text('Lương'), findsOneWidget);
+  });
+
+  testWidgets('duplicate + taps open only one add screen', (tester) async {
+    _phone(tester);
+    final service = TransactionService(MemoryTransactionRepository());
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: buildShell(
+          transactions: service,
+          home: home,
+          clock: () => DateTime(2026, 8, 18, 9),
+        ).shell,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    final add = tester.widget<FloatingActionButton>(
+      find.byKey(const Key('fab-add')),
+    );
+    add.onPressed!();
+    add.onPressed!();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Thêm giao dịch'), findsOneWidget);
+  });
+
+  testWidgets('iPhone home indicator padding lifts nav and PIN sheet', (
+    tester,
+  ) async {
+    _phone(tester);
+    tester.view.padding = const FakeViewPadding(bottom: 34, top: 47);
+    final service = TransactionService(MemoryTransactionRepository());
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: buildShell(
+          transactions: service,
+          home: home,
+          clock: () => DateTime(2026, 8, 18, 9),
+        ).shell,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(tester.getSize(find.byType(HomeBottomNav)).height, 78 + 34);
+
+    await tester.tap(find.byKey(const Key('nav-settings')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('settings-finance')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Tạo mật khẩu'), findsWidgets);
+    expect(find.byKey(const Key('btn-submit-pin')), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

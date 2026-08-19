@@ -55,6 +55,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  bool _openingAdd = false;
+
   @override
   void initState() {
     super.initState();
@@ -62,21 +64,27 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _openAdd(BuildContext context) async {
-    final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => AddTransactionPage(
-          controller: AddTransactionController(
-            service: widget.transactionService,
-            catalogController: widget.catalogController,
-            clock: widget.clock,
+    if (_openingAdd) return;
+    _openingAdd = true;
+    try {
+      final saved = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (_) => AddTransactionPage(
+            controller: AddTransactionController(
+              service: widget.transactionService,
+              catalogController: widget.catalogController,
+              clock: widget.clock,
+            ),
           ),
         ),
-      ),
-    );
-    if (!context.mounted) return;
-    if (saved == true) {
-      await widget.controller.load(month: widget.viewMonthController?.month);
+      );
+      if (!context.mounted) return;
+      if (saved == true) {
+        await widget.controller.load(month: widget.viewMonthController?.month);
+      }
+    } finally {
+      _openingAdd = false;
     }
   }
 
@@ -246,7 +254,7 @@ class _Header extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          greetingFor(DateTime.now()),
+                          greetingFor(page.clock()),
                           style: const TextStyle(
                             color: Color(0xD9FFFFFF),
                             fontWeight: AppTypography.bodyWeight,
@@ -373,6 +381,8 @@ class _Header extends StatelessWidget {
                       child: Text(
                         controller.loading
                             ? '…'
+                            : controller.error != null
+                            ? '—'
                             : displayVnd(snapshot.monthExpense, hidden: hidden),
                         key: const Key('home-month-spend'),
                         style: moneyStyle(size: 28),
@@ -458,6 +468,7 @@ class _Recent extends StatelessWidget {
           if (controller.error != null)
             Text(
               controller.error!,
+              key: const Key('home-error'),
               style: TextStyle(
                 color: AppColors.expense,
                 fontWeight: FontWeight.w600,

@@ -29,7 +29,11 @@ class PinSheet extends StatefulWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
+        padding: EdgeInsets.only(
+          bottom:
+              MediaQuery.viewInsetsOf(ctx).bottom +
+              MediaQuery.paddingOf(ctx).bottom,
+        ),
         child: PinSheet(access: access, mode: mode),
       ),
     );
@@ -68,6 +72,7 @@ class _PinSheetState extends State<PinSheet> {
       };
 
   Future<void> _submit() async {
+    if (_busy) return;
     setState(() {
       _busy = true;
       _error = null;

@@ -35,6 +35,8 @@ class TransactionDetailSheet extends StatefulWidget {
 }
 
 class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
+  bool _busy = false;
+
   @override
   void initState() {
     super.initState();
@@ -45,49 +47,61 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
   }
 
   Future<void> _delete() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xóa giao dịch?'),
-        content: const Text('Thao tác này không thể hoàn tác.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Xác nhận'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    final result = await widget.controller.delete();
-    if (!mounted) return;
-    if (result is Ok) {
-      Navigator.pop(context, true);
+    if (_busy) return;
+    _busy = true;
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Xóa giao dịch?'),
+          content: const Text('Thao tác này không thể hoàn tác.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Xác nhận'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+      final result = await widget.controller.delete();
+      if (!mounted) return;
+      if (result is Ok) {
+        Navigator.pop(context, true);
+      }
+    } finally {
+      _busy = false;
     }
   }
 
   Future<void> _edit(Transaction tx) async {
-    final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => AddTransactionPage(
-          controller: AddTransactionController(
-            service: widget.transactionService,
-            catalogController: widget.catalogController,
-            clock: widget.clock,
-            existing: tx,
-            draft: AddTransactionDraft.fromTransaction(tx),
+    if (_busy) return;
+    _busy = true;
+    try {
+      final saved = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          fullscreenDialog: true,
+          builder: (_) => AddTransactionPage(
+            controller: AddTransactionController(
+              service: widget.transactionService,
+              catalogController: widget.catalogController,
+              clock: widget.clock,
+              existing: tx,
+              draft: AddTransactionDraft.fromTransaction(tx),
+            ),
           ),
         ),
-      ),
-    );
-    if (!mounted) return;
-    if (saved == true) {
-      Navigator.pop(context, true);
+      );
+      if (!mounted) return;
+      if (saved == true) {
+        Navigator.pop(context, true);
+      }
+    } finally {
+      _busy = false;
     }
   }
 
