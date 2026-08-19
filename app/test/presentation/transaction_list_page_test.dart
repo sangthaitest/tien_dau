@@ -135,6 +135,8 @@ void main() {
     expect(find.text('Highlands'), findsWidgets);
     expect(find.text('Chi cho'), findsOneWidget);
     expect(find.text('MoMo'), findsOneWidget);
+    expect(tester.getRect(find.byKey(const Key('btn-detail-edit'))).bottom, lessThan(844));
+    expect(tester.getRect(find.byKey(const Key('btn-detail-delete'))).bottom, lessThan(844));
   });
 
   testWidgets('detail not found', (tester) async {

@@ -104,12 +104,22 @@ class _MainShellState extends State<MainShell> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => TransactionDetailSheet(
-        controller: TransactionDetailController(widget.transactionService),
-        transactionService: widget.transactionService,
-        clock: widget.clock,
-        transactionId: tx.id,
-      ),
+      builder: (ctx) {
+        final height = MediaQuery.sizeOf(ctx).height;
+        final inset = MediaQuery.viewInsetsOf(ctx).bottom;
+        return Padding(
+          padding: EdgeInsets.only(top: height * 0.15, bottom: inset),
+          child: SizedBox(
+            height: height * 0.85 - inset,
+            child: TransactionDetailSheet(
+              controller: TransactionDetailController(widget.transactionService),
+              transactionService: widget.transactionService,
+              clock: widget.clock,
+              transactionId: tx.id,
+            ),
+          ),
+        );
+      },
     );
     if (changed == true && mounted) await _refresh();
   }

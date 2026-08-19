@@ -94,38 +94,44 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
       builder: (context, _) {
         final c = widget.controller;
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Chi tiết',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.text,
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.divider,
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                    ),
-                    IconButton(
-                      key: const Key('btn-close-detail'),
-                      onPressed: () => Navigator.pop(context, false),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Chi tiết',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.text,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            key: const Key('btn-close-detail'),
+                            onPressed: () => Navigator.pop(context, false),
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 if (c.loading)
                   Padding(
@@ -145,33 +151,36 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
                       ),
                     ),
                   )
-                else if (c.transaction != null)
-                  _Body(
-                    transaction: c.transaction!,
-                    error: c.error,
+                else if (c.transaction != null) ...[
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                      child: _BodyContent(
+                        transaction: c.transaction!,
+                        error: c.error,
+                      ),
+                    ),
+                  ),
+                  _ActionFooter(
                     onDelete: _delete,
                     onEdit: () => _edit(c.transaction!),
                   ),
+                ],
               ],
             ),
-          ),
         );
       },
     );
   }
 }
 
-class _Body extends StatelessWidget {
-  const _Body({
+class _BodyContent extends StatelessWidget {
+  const _BodyContent({
     required this.transaction,
-    required this.onDelete,
-    required this.onEdit,
     this.error,
   });
 
   final Transaction transaction;
-  final VoidCallback onDelete;
-  final VoidCallback onEdit;
   final String? error;
 
   @override
@@ -204,38 +213,6 @@ class _Body extends StatelessWidget {
           const SizedBox(height: 12),
           Text(error!, style: TextStyle(color: AppColors.expense)),
         ],
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                key: const Key('btn-detail-delete'),
-                onPressed: onDelete,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.text,
-                  side: BorderSide(color: AppColors.divider),
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-                ),
-                child: const Text('Xóa', style: TextStyle(fontWeight: FontWeight.w800)),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton(
-                key: const Key('btn-detail-edit'),
-                onPressed: onEdit,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.onPrimary,
-                  minimumSize: const Size.fromHeight(48),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
-                ),
-                child: const Text('Sửa', style: TextStyle(fontWeight: FontWeight.w800)),
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -244,6 +221,57 @@ class _Body extends StatelessWidget {
     final trimmed = value?.trim();
     if (trimmed == null || trimmed.isEmpty) return '—';
     return trimmed;
+  }
+}
+
+class _ActionFooter extends StatelessWidget {
+  const _ActionFooter({
+    required this.onDelete,
+    required this.onEdit,
+  });
+
+  final VoidCallback onDelete;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.divider)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              key: const Key('btn-detail-delete'),
+              onPressed: onDelete,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.text,
+                side: BorderSide(color: AppColors.divider),
+                minimumSize: const Size.fromHeight(52),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+              ),
+              child: const Text('Xóa', style: TextStyle(fontWeight: FontWeight.w800)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: FilledButton(
+              key: const Key('btn-detail-edit'),
+              onPressed: onEdit,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.onPrimary,
+                minimumSize: const Size.fromHeight(52),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+              ),
+              child: const Text('Sửa', style: TextStyle(fontWeight: FontWeight.w800)),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
