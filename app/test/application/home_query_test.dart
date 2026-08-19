@@ -65,15 +65,17 @@ void main() {
     expect((result as Ok).value.monthExpense, 30000);
   });
 
-  test('recent is the three newest expenses this month', () async {
+  test('recent is the five newest expenses this month', () async {
     final result = await query([
       _tx(id: '1', amount: 1, date: DateTime(2026, 8, 1), time: '09:00'),
       _tx(id: '2', amount: 2, date: DateTime(2026, 8, 18), time: '08:00'),
       _tx(id: '3', amount: 3, date: DateTime(2026, 8, 18), time: '10:00'),
       _tx(id: '4', amount: 4, date: DateTime(2026, 8, 17), time: '12:00'),
+      _tx(id: '5', amount: 5, date: DateTime(2026, 8, 16), time: '12:00'),
+      _tx(id: '6', amount: 6, date: DateTime(2026, 8, 15), time: '12:00'),
     ]).load();
     final ids = (result as Ok).value.recent.map((e) => e.id).toList();
-    expect(ids, ['3', '2', '4']);
+    expect(ids, ['3', '2', '4', '5', '6']);
   });
 
   test('load uses the requested month instead of the clock', () async {

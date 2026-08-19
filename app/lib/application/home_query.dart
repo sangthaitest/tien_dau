@@ -25,7 +25,7 @@ class HomeQuery {
   final TransactionService _service;
   final DateTime Function() _clock;
 
-  static const recentLimit = 3;
+  static const recentLimit = 5;
 
   Future<Result<HomeSnapshot>> load({DateTime? month}) async {
     final selected = monthStart(month ?? _clock());

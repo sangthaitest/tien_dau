@@ -7,6 +7,7 @@ import 'package:tien_day/domain/entities/transaction.dart';
 import 'package:tien_day/domain/entities/transaction_type.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
 import 'package:tien_day/presentation/home/home_page.dart';
+import 'package:tien_day/presentation/home/widgets/home_transaction_tile.dart';
 
 import '../support/memory_transaction_catalog_repository.dart';
 import '../support/memory_transaction_repository.dart';
@@ -199,5 +200,80 @@ void main() {
     expect(find.text('Tháng 7 · 2026'), findsOneWidget);
     expect(find.text('12.000 ₫'), findsWidgets);
     expect(find.text('45.000 ₫'), findsNothing);
+  });
+
+  Future<void> pumpHome(
+    WidgetTester tester, {
+    required int count,
+    Size size = const Size(390, 844),
+  }) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final seed = [
+      for (var i = 0; i < count; i++)
+        _tx(
+          id: '${i + 1}',
+          amount: (i + 1) * 1000,
+          date: DateTime(2026, 8, 18 - i),
+          detail: 'Tx ${i + 1}',
+        ),
+    ];
+    final service = TransactionService(MemoryTransactionRepository(seed: seed));
+    final controller = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomePage(
+          controller: controller,
+          transactionService: service,
+          catalogController: buildTestCatalogController(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('Home shows 1 recent transaction', (tester) async {
+    await pumpHome(tester, count: 1);
+    expect(find.byType(HomeTransactionTile), findsOneWidget);
+    expect(find.text('Xem tất cả'), findsOneWidget);
+  });
+
+  testWidgets('Home shows 3 recent transactions', (tester) async {
+    await pumpHome(tester, count: 3);
+    expect(find.byType(HomeTransactionTile), findsNWidgets(3));
+  });
+
+  testWidgets('Home shows 4 recent transactions', (tester) async {
+    await pumpHome(tester, count: 4);
+    expect(find.byType(HomeTransactionTile), findsNWidgets(4));
+  });
+
+  testWidgets('Home shows 5 recent transactions', (tester) async {
+    await pumpHome(tester, count: 5);
+    expect(find.byType(HomeTransactionTile), findsNWidgets(5));
+  });
+
+  testWidgets('Home shows at most 5 of 10 recent transactions', (tester) async {
+    await pumpHome(tester, count: 10);
+    expect(find.byType(HomeTransactionTile), findsNWidgets(5));
+    expect(find.text('Xem tất cả'), findsOneWidget);
+  });
+
+  testWidgets('short Home keeps 5 recent rows and scrolls instead of clipping', (
+    tester,
+  ) async {
+    await pumpHome(tester, count: 10, size: const Size(390, 640));
+    expect(tester.takeException(), isNull);
+    expect(find.byType(HomeTransactionTile), findsNWidgets(5));
+    expect(find.byKey(const Key('fab-add')), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.byKey(const Key('nav-home'))).dy,
+      lessThan(640),
+    );
   });
 }
