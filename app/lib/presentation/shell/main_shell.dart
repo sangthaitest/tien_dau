@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../application/finance_service.dart';
+import '../../application/statistics_query.dart';
 import '../../application/transaction_service.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/security/sensitive_access_port.dart';
@@ -13,6 +14,8 @@ import '../home/home_controller.dart';
 import '../home/home_page.dart';
 import '../home/widgets/home_bottom_nav.dart';
 import '../settings/settings_page.dart';
+import '../statistics/statistics_controller.dart';
+import '../statistics/statistics_page.dart';
 import '../theme/app_colors.dart';
 import '../transactions/transaction_detail_controller.dart';
 import '../transactions/transaction_detail_sheet.dart';
@@ -44,6 +47,7 @@ class _MainShellState extends State<MainShell> {
   bool _showFinance = false;
   late final TransactionListController _listController;
   late final FinanceController _financeController;
+  late final StatisticsController _statsController;
 
   @override
   void initState() {
@@ -53,12 +57,17 @@ class _MainShellState extends State<MainShell> {
       clock: widget.clock,
     );
     _financeController = FinanceController(widget.financeService);
+    _statsController = StatisticsController(
+      StatisticsQuery(widget.transactionService, clock: widget.clock),
+      clock: widget.clock,
+    );
   }
 
   @override
   void dispose() {
     _listController.dispose();
     _financeController.dispose();
+    _statsController.dispose();
     super.dispose();
   }
 
@@ -67,6 +76,7 @@ class _MainShellState extends State<MainShell> {
       widget.homeController.load(),
       _listController.load(),
       if (_showFinance) _financeController.load(),
+      if (_tab == AppTab.statistics) _statsController.load(),
     ]);
   }
 
@@ -109,6 +119,7 @@ class _MainShellState extends State<MainShell> {
       if (tab != AppTab.settings) _showFinance = false;
     });
     if (tab == AppTab.transactions) _listController.load();
+    if (tab == AppTab.statistics) _statsController.load();
   }
 
   Future<bool> _ensureUnlocked() async {
@@ -145,7 +156,8 @@ class _MainShellState extends State<MainShell> {
     return switch (_tab) {
       AppTab.home => 0,
       AppTab.transactions => 1,
-      AppTab.settings => 2,
+      AppTab.statistics => 2,
+      AppTab.settings => 3,
     };
   }
 
@@ -179,6 +191,7 @@ class _MainShellState extends State<MainShell> {
                         onAddPressed: _openAdd,
                         onTransactionTap: _openDetail,
                       ),
+                      StatisticsPage(controller: _statsController),
                       SettingsPage(
                         onOpenFinance: _openFinance,
                         onChangePin: _changePin,

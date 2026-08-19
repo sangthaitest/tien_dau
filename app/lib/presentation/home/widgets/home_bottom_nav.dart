@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 
-enum AppTab { home, transactions, settings }
+enum AppTab { home, transactions, statistics, settings }
 
 class HomeBottomNav extends StatelessWidget {
   const HomeBottomNav({
@@ -58,8 +58,11 @@ class HomeBottomNav extends StatelessWidget {
                 ),
               ),
               _NavItem(
+                key: const Key('nav-statistics'),
                 icon: Icons.bar_chart_outlined,
                 label: 'Thống kê',
+                active: tab == AppTab.statistics,
+                onTap: () => onTabSelected?.call(AppTab.statistics),
               ),
               _NavItem(
                 key: const Key('nav-settings'),
