@@ -2,6 +2,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart' hide Transaction;
 
+import 'migrations/normalize_categories.dart';
+
 class AppDatabase {
   AppDatabase._(this._db);
 
@@ -10,7 +12,7 @@ class AppDatabase {
   Database get raw => _db;
 
   static const _fileName = 'tien_day.db';
-  static const _version = 3;
+  static const _version = 4;
 
   static Future<AppDatabase> openFile() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -33,6 +35,9 @@ class AppDatabase {
         }
         if (oldVersion < 3) {
           await _createTransactionIndexes(db);
+        }
+        if (oldVersion < 4) {
+          await normalizeCategories(db);
         }
       },
     );

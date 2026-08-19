@@ -20,9 +20,11 @@ const categoryVisualKeys = <String>[
   'lunch',
   'dinner',
   'cafe',
+  'snacks',
   'market',
   'transport',
   'shopping',
+  'bills',
   'other',
 ];
 
@@ -56,6 +58,12 @@ CategoryLook categoryLook(
       color: Color(0xFFA0785A),
       background: Color(0xFFF5EDE6),
     ),
+    'snacks' => const CategoryLook(
+      name: 'Ăn vặt',
+      icon: Icons.local_drink_outlined,
+      color: Color(0xFF2BBBAD),
+      background: Color(0xFFE6F8F6),
+    ),
     'market' => const CategoryLook(
       name: 'Đi chợ',
       icon: Icons.local_grocery_store_outlined,
@@ -73,6 +81,12 @@ CategoryLook categoryLook(
       icon: Icons.shopping_bag_outlined,
       color: Color(0xFFB57BFF),
       background: Color(0xFFF3EBFF),
+    ),
+    'bills' => const CategoryLook(
+      name: 'Hóa đơn',
+      icon: Icons.receipt_long_outlined,
+      color: Color(0xFF6B7C93),
+      background: Color(0xFFEEF2F6),
     ),
     _ => const CategoryLook(
       name: 'Khác',

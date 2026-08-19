@@ -61,6 +61,12 @@ class ChiChoCatalog {
       visualKey: 'cafe',
     ),
     ChiChoCategory(
+      id: 'snacks',
+      name: 'Ăn vặt',
+      details: ['Nước cam', 'Nước dừa', 'Nước mía', 'Khác'],
+      visualKey: 'snacks',
+    ),
+    ChiChoCategory(
       id: 'market',
       name: 'Đi chợ',
       details: ['Rau', 'Thịt', 'Cá', 'Trái cây', 'Đồ khô', 'Khác'],
@@ -77,6 +83,12 @@ class ChiChoCatalog {
       name: 'Mua sắm',
       details: ['Quần áo', 'Đồ gia dụng', 'Mỹ phẩm', 'Khác'],
       visualKey: 'shopping',
+    ),
+    ChiChoCategory(
+      id: 'bills',
+      name: 'Hóa đơn',
+      details: ['Điện', 'Nước', 'Khác'],
+      visualKey: 'bills',
     ),
     ChiChoCategory(
       id: 'other',
