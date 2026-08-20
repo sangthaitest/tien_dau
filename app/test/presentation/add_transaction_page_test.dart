@@ -13,8 +13,10 @@ import '../support/memory_transaction_catalog_repository.dart';
 void _phone(WidgetTester tester) {
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1;
+  tester.view.viewInsets = FakeViewPadding.zero;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.view.resetViewInsets);
 }
 
 Future<void> _pumpHome(
@@ -37,6 +39,27 @@ Future<void> _pumpHome(
   await tester.pumpAndSettle();
 }
 
+Future<void> _openAdd(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('fab-add')));
+  await tester.pumpAndSettle();
+  tester.view.viewInsets = FakeViewPadding.zero;
+  FocusManager.instance.primaryFocus?.unfocus();
+  await tester.pumpAndSettle();
+}
+
+Future<void> _scrollAddTo(WidgetTester tester, Finder finder) async {
+  await tester.scrollUntilVisible(
+    finder,
+    300,
+    scrollable: find
+        .descendant(
+          of: find.byType(AddTransactionPage),
+          matching: find.byType(Scrollable),
+        )
+        .first,
+  );
+}
+
 void main() {
   setUpAll(() {});
 
@@ -47,8 +70,7 @@ void main() {
       service: TransactionService(MemoryTransactionRepository()),
     );
 
-    await tester.tap(find.byKey(const Key('fab-add')));
-    await tester.pumpAndSettle();
+    await _openAdd(tester);
 
     expect(find.text('Thêm giao dịch'), findsOneWidget);
     expect(find.text('Số tiền'), findsOneWidget);
@@ -56,6 +78,7 @@ void main() {
     expect(find.text('200k'), findsOneWidget);
     expect(find.text('Chi cho'), findsOneWidget);
     expect(find.text('Chi tiết'), findsOneWidget);
+    await _scrollAddTo(tester, find.text('Thanh toán bằng'));
     expect(find.text('Thanh toán bằng'), findsOneWidget);
     expect(find.text('Lưu giao dịch'), findsOneWidget);
     expect(find.text('Cafe'), findsWidgets);
@@ -70,8 +93,7 @@ void main() {
       service: TransactionService(MemoryTransactionRepository()),
     );
 
-    await tester.tap(find.byKey(const Key('fab-add')));
-    await tester.pumpAndSettle();
+    await _openAdd(tester);
     await tester.tap(find.byKey(const Key('btn-save-tx')));
     await tester.pumpAndSettle();
 
@@ -88,8 +110,7 @@ void main() {
       service: TransactionService(MemoryTransactionRepository()),
     );
 
-    await tester.tap(find.byKey(const Key('fab-add')));
-    await tester.pumpAndSettle();
+    await _openAdd(tester);
     await tester.tap(find.byKey(const Key('quick-amt-100000')));
     await tester.pumpAndSettle();
     expect(find.text('100.000'), findsOneWidget);
@@ -110,8 +131,7 @@ void main() {
     final repo = MemoryTransactionRepository();
     await _pumpHome(tester, service: TransactionService(repo));
 
-    await tester.tap(find.byKey(const Key('fab-add')));
-    await tester.pumpAndSettle();
+    await _openAdd(tester);
 
     await tester.enterText(find.byKey(const Key('input-amount')), '25000');
     await tester.pump();
@@ -122,6 +142,7 @@ void main() {
     await tester.tap(find.text('Grab'));
     await tester.pumpAndSettle();
 
+    await _scrollAddTo(tester, find.byKey(const Key('pay-select')));
     await tester.ensureVisible(find.byKey(const Key('pay-select')));
     await tester.tap(find.byKey(const Key('pay-select')));
     await tester.pumpAndSettle();
@@ -158,8 +179,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byKey(const Key('fab-add')));
-    await tester.pumpAndSettle();
+    await _openAdd(tester);
     await tester.tap(find.byKey(const Key('quick-amt-200000')));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('btn-save-tx')));

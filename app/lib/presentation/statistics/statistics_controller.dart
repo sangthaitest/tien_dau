@@ -19,13 +19,16 @@ class StatisticsController extends ChangeNotifier {
   final DateTime Function() _clock;
 
   bool loading = false;
+  bool _hasLoaded = false;
   String? error;
   StatisticsSnapshot snapshot;
 
   Future<void> load() async {
-    loading = true;
     error = null;
-    notifyListeners();
+    if (!_hasLoaded) {
+      loading = true;
+      notifyListeners();
+    }
     final result = await _query.load(month: _clock());
     switch (result) {
       case Ok(:final value):
@@ -35,6 +38,7 @@ class StatisticsController extends ChangeNotifier {
         error = failure.message;
     }
     loading = false;
+    _hasLoaded = true;
     notifyListeners();
   }
 }

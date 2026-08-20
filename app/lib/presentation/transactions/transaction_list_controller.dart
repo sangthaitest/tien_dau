@@ -63,10 +63,12 @@ class TransactionListController extends ChangeNotifier {
       return;
     }
     final generation = ++_requestGeneration;
-    loading = true;
     loadingMore = false;
     error = null;
-    notifyListeners();
+    if (_loaded.isEmpty) {
+      loading = true;
+      notifyListeners();
+    }
 
     final result = await _service.query(_spec(offset: 0));
     if (generation != _requestGeneration) return;

@@ -30,6 +30,42 @@ class TransactionDetailSheet extends StatefulWidget {
   final DateTime Function() clock;
   final String? transactionId;
 
+  static Future<bool?> show({
+    required BuildContext context,
+    required TransactionService transactionService,
+    required TransactionCatalogController catalogController,
+    required DateTime Function() clock,
+    required String transactionId,
+  }) {
+    final controller = TransactionDetailController(transactionService);
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        final height = MediaQuery.sizeOf(ctx).height;
+        final inset = MediaQuery.viewInsetsOf(ctx).bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: inset),
+          child: SizedBox(
+            height: height * 0.85 - inset,
+            child: TransactionDetailSheet(
+              controller: controller,
+              transactionService: transactionService,
+              catalogController: catalogController,
+              clock: clock,
+              transactionId: transactionId,
+            ),
+          ),
+        );
+      },
+    ).whenComplete(controller.dispose);
+  }
+
   @override
   State<TransactionDetailSheet> createState() => _TransactionDetailSheetState();
 }
@@ -107,11 +143,13 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: widget.controller,
-      builder: (context, _) {
-        final c = widget.controller;
-        return SafeArea(
+    return ScrollConfiguration(
+      behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
+      child: ListenableBuilder(
+        listenable: widget.controller,
+        builder: (context, _) {
+          final c = widget.controller;
+          return SafeArea(
           top: false,
           child: Column(
             mainAxisSize: MainAxisSize.max,
@@ -183,6 +221,7 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
               else if (c.transaction != null) ...[
                 Expanded(
                   child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
                     child: _BodyContent(
                       transaction: c.transaction!,
@@ -204,7 +243,8 @@ class _TransactionDetailSheetState extends State<TransactionDetailSheet> {
             ],
           ),
         );
-      },
+        },
+      ),
     );
   }
 }

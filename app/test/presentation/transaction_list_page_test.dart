@@ -166,6 +166,66 @@ void main() {
     );
   });
 
+  testWidgets('detail sheet swipe up does not show a progress indicator', (
+    tester,
+  ) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(
+          seed: [
+            _tx(
+              id: '1',
+              amount: 45000,
+              date: DateTime(2026, 8, 7),
+              detail: 'Highlands',
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('nav-transactions')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const Key('tx-tile-1')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Chi tiết'), findsWidgets);
+
+    await tester.drag(find.text('Chi cho'), const Offset(0, -240));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    final sheet = find.byType(TransactionDetailSheet);
+    expect(
+      find.descendant(of: sheet, matching: find.byType(CircularProgressIndicator)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: sheet, matching: find.byType(LinearProgressIndicator)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: sheet, matching: find.byType(RefreshProgressIndicator)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: sheet,
+        matching: find.byType(StretchingOverscrollIndicator),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: sheet,
+        matching: find.byType(GlowingOverscrollIndicator),
+      ),
+      findsNothing,
+    );
+  });
+
   testWidgets('detail not found', (tester) async {
     _phone(tester);
     final service = TransactionService(MemoryTransactionRepository());

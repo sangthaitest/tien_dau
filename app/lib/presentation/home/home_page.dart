@@ -10,7 +10,6 @@ import '../format/money_format.dart';
 import '../settings/settings_scope.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
-import '../transactions/transaction_detail_controller.dart';
 import '../transactions/transaction_detail_sheet.dart';
 import '../transactions/transaction_list_controller.dart';
 import '../transactions/transaction_list_page.dart';
@@ -120,32 +119,12 @@ class _HomePageState extends State<HomePage> {
       if (match.isNotEmpty) widget.onTransactionTap!(match.first);
       return;
     }
-    final changed = await showModalBottomSheet<bool>(
+    final changed = await TransactionDetailSheet.show(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        final height = MediaQuery.sizeOf(ctx).height;
-        final inset = MediaQuery.viewInsetsOf(ctx).bottom;
-        return Padding(
-          padding: EdgeInsets.only(bottom: inset),
-          child: SizedBox(
-            height: height * 0.85 - inset,
-            child: TransactionDetailSheet(
-              controller: TransactionDetailController(
-                widget.transactionService,
-              ),
-              transactionService: widget.transactionService,
-              catalogController: widget.catalogController,
-              clock: widget.clock,
-              transactionId: id,
-            ),
-          ),
-        );
-      },
+      transactionService: widget.transactionService,
+      catalogController: widget.catalogController,
+      clock: widget.clock,
+      transactionId: id,
     );
     if (changed == true && context.mounted) {
       await widget.controller.load(month: widget.viewMonthController?.month);

@@ -14,9 +14,16 @@ import 'add_transaction_copy.dart';
 import 'catalog_management_sheets.dart';
 
 class AddTransactionPage extends StatefulWidget {
-  const AddTransactionPage({super.key, required this.controller});
+  const AddTransactionPage({
+    super.key,
+    required this.controller,
+    this.autofocusAmount = true,
+    this.onFinished,
+  });
 
   final AddTransactionController controller;
+  final bool autofocusAmount;
+  final ValueChanged<bool>? onFinished;
 
   @override
   State<AddTransactionPage> createState() => _AddTransactionPageState();
@@ -26,6 +33,8 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
   late final TextEditingController _amount;
   late final TextEditingController _note;
   late final FocusNode _amountFocus;
+  Animation<double>? _routeAnimation;
+  AnimationStatusListener? _routeListener;
 
   AddTransactionController get _c => widget.controller;
 
@@ -38,9 +47,71 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     _note = TextEditingController(text: _c.draft.note);
     _amountFocus = FocusNode();
     _c.addListener(_syncFields);
+    if (widget.autofocusAmount) _queueAmountFocus();
+  }
+
+  @override
+  void didUpdateWidget(covariant AddTransactionPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_syncFields);
+      widget.controller.addListener(_syncFields);
+      _syncFields();
+    }
+    if (widget.autofocusAmount && !oldWidget.autofocusAmount) {
+      _queueAmountFocus();
+    }
+    if (!widget.autofocusAmount && oldWidget.autofocusAmount) {
+      _amountFocus.unfocus();
+    }
+  }
+
+  void _finish(bool saved) {
+    _amountFocus.unfocus();
+    final onFinished = widget.onFinished;
+    if (onFinished != null) {
+      onFinished(saved);
+      return;
+    }
+    Navigator.of(context).pop(saved);
+  }
+
+  void _queueAmountFocus() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_c.isEditing) _amountFocus.requestFocus();
+      if (!mounted || _c.isEditing || !widget.autofocusAmount) return;
+      final route = ModalRoute.of(context);
+      if (route != null && !route.isCurrent) return;
+      if (route == null) {
+        _amountFocus.requestFocus();
+        return;
+      }
+      final animation = route.animation;
+      if (animation == null ||
+          animation.status == AnimationStatus.completed ||
+          animation.status == AnimationStatus.dismissed) {
+        _amountFocus.requestFocus();
+        return;
+      }
+      _routeAnimation = animation;
+      _routeListener = (status) {
+        if (status != AnimationStatus.completed) return;
+        _clearRouteListener();
+        if (mounted && !_c.isEditing && route.isCurrent) {
+          _amountFocus.requestFocus();
+        }
+      };
+      animation.addStatusListener(_routeListener!);
     });
+  }
+
+  void _clearRouteListener() {
+    final animation = _routeAnimation;
+    final listener = _routeListener;
+    if (animation != null && listener != null) {
+      animation.removeStatusListener(listener);
+    }
+    _routeAnimation = null;
+    _routeListener = null;
   }
 
   void _syncFields() {
@@ -51,10 +122,14 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
         selection: TextSelection.collapsed(offset: formatted.length),
       );
     }
+    if (_note.text != _c.draft.note) {
+      _note.value = TextEditingValue(text: _c.draft.note);
+    }
   }
 
   @override
   void dispose() {
+    _clearRouteListener();
     _c.removeListener(_syncFields);
     _amount.dispose();
     _note.dispose();
@@ -66,7 +141,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     final result = await _c.save();
     if (!mounted) return;
     if (result is Ok) {
-      Navigator.of(context).pop(true);
+      _finish(true);
       return;
     }
     if (_c.draft.amount <= 0) {
@@ -132,7 +207,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
             leading: IconButton(
               icon: Icon(Icons.arrow_back, color: AppColors.text),
               tooltip: 'Quay lại',
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () => _finish(false),
             ),
             centerTitle: true,
             title: Text(

@@ -53,6 +53,8 @@ class HomeBottomNav extends StatelessWidget {
                     child: FloatingActionButton(
                       key: const Key('fab-add'),
                       onPressed: onAddPressed,
+                      splashColor: Colors.transparent,
+                      hoverColor: Colors.transparent,
                       tooltip: 'Thêm giao dịch',
                       backgroundColor: AppColors.yellow,
                       foregroundColor: AppColors.onYellow,
@@ -107,9 +109,11 @@ class _NavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = active ? AppColors.primary : AppColors.textSecondary;
     return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          onTap: onTap,
+          splashFactory: NoSplash.splashFactory,
+          overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+          borderRadius: BorderRadius.circular(18),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

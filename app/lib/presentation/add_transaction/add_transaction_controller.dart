@@ -4,6 +4,7 @@ import '../../application/add_transaction_draft.dart';
 import '../../application/transaction_service.dart';
 import '../../domain/catalog/chi_cho_catalog.dart';
 import '../../domain/catalog/payment_option_catalog.dart';
+import '../../domain/time/clock_format.dart';
 import '../../domain/entities/payment_source.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/failures/app_failure.dart';
@@ -106,6 +107,18 @@ class AddTransactionController extends ChangeNotifier {
 
   void setNote(String value) {
     draft.setNote(value);
+    notifyListeners();
+  }
+
+  void reset({required DateTime now}) {
+    draft.amount = 0;
+    draft.note = '';
+    draft.selectCategory(ChiChoCatalog.defaultId);
+    draft.selectPayment(PaymentOptionCatalog.defaultId);
+    draft.setOccurredOn(now);
+    draft.setOccurredTime(formatHHmm(now));
+    saving = false;
+    error = null;
     notifyListeners();
   }
 

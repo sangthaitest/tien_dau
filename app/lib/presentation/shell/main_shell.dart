@@ -9,6 +9,7 @@ import '../../domain/security/sensitive_access_port.dart';
 import '../add_transaction/add_transaction_controller.dart';
 import '../add_transaction/add_transaction_page.dart';
 import '../catalog/transaction_catalog_controller.dart';
+import '../debug/interaction_trace.dart';
 import '../finance/finance_controller.dart';
 import '../finance/finance_page.dart';
 import '../finance/pin_sheet.dart';
@@ -20,7 +21,6 @@ import '../settings/settings_scope.dart';
 import '../statistics/statistics_controller.dart';
 import '../statistics/statistics_page.dart';
 import '../theme/app_colors.dart';
-import '../transactions/transaction_detail_controller.dart';
 import '../transactions/transaction_detail_sheet.dart';
 import '../transactions/transaction_list_controller.dart';
 import '../transactions/transaction_list_page.dart';
@@ -53,16 +53,22 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   AppTab _tab = AppTab.home;
   bool _showFinance = false;
+  bool _showAdd = false;
   bool _openingAdd = false;
   bool _openingSensitive = false;
   bool _openingDetail = false;
+  bool _paintWarm = true;
   late final TransactionListController _listController;
   late final FinanceController _financeController;
   late final StatisticsController _statsController;
+  late final AddTransactionController _addController;
+  late final Map<AppTab, GlobalKey> _tabKeys;
+  final GlobalKey _addKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
+    _tabKeys = {for (final tab in AppTab.values) tab: GlobalKey()};
     _listController = TransactionListController(
       widget.transactionService,
       clock: widget.clock,
@@ -79,16 +85,31 @@ class _MainShellState extends State<MainShell> {
       ),
       clock: () => widget.viewMonthController.month,
     );
+    _addController = AddTransactionController(
+      service: widget.transactionService,
+      catalogController: widget.catalogController,
+      clock: widget.clock,
+    );
     widget.viewMonthController.addListener(_onViewMonthChanged);
+    _statsController.load();
+    WidgetsBinding.instance.addPostFrameCallback(_onPaintWarmFrame);
   }
 
   @override
   void dispose() {
     widget.viewMonthController.removeListener(_onViewMonthChanged);
+    _addController.dispose();
     _listController.dispose();
     _financeController.dispose();
     _statsController.dispose();
     super.dispose();
+  }
+
+  void _onPaintWarmFrame(Duration _) {
+    if (!mounted) return;
+    if (_paintWarm) {
+      setState(() => _paintWarm = false);
+    }
   }
 
   void _onViewMonthChanged() {
@@ -100,62 +121,36 @@ class _MainShellState extends State<MainShell> {
       widget.homeController.load(month: widget.viewMonthController.month),
       _listController.load(),
       if (_showFinance) _financeController.load(),
-      if (_tab == AppTab.statistics) _statsController.load(),
+      _statsController.load(),
     ]);
   }
 
-  Future<void> _openAdd() async {
-    if (_openingAdd) return;
+  void _openAdd() {
+    if (_openingAdd || _showAdd) return;
     _openingAdd = true;
-    try {
-      final saved = await Navigator.of(context).push<bool>(
-        MaterialPageRoute(
-          fullscreenDialog: true,
-          builder: (_) => AddTransactionPage(
-            controller: AddTransactionController(
-              service: widget.transactionService,
-              catalogController: widget.catalogController,
-              clock: widget.clock,
-            ),
-          ),
-        ),
-      );
-      if (saved == true && mounted) await _refresh();
-    } finally {
-      _openingAdd = false;
-    }
+    traceInteraction('openAdd.start');
+    _addController.reset(now: widget.clock());
+    setState(() => _showAdd = true);
+    _openingAdd = false;
+  }
+
+  Future<void> _onAddFinished(bool saved) async {
+    if (!_showAdd) return;
+    setState(() => _showAdd = false);
+    _addController.reset(now: widget.clock());
+    if (saved && mounted) await _refresh();
   }
 
   Future<void> _openDetail(Transaction tx) async {
     if (_openingDetail) return;
     _openingDetail = true;
     try {
-      final changed = await showModalBottomSheet<bool>(
+      final changed = await TransactionDetailSheet.show(
         context: context,
-        isScrollControlled: true,
-        backgroundColor: AppColors.card,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        builder: (ctx) {
-          final height = MediaQuery.sizeOf(ctx).height;
-          final inset = MediaQuery.viewInsetsOf(ctx).bottom;
-          return Padding(
-            padding: EdgeInsets.only(bottom: inset),
-            child: SizedBox(
-              height: height * 0.85 - inset,
-              child: TransactionDetailSheet(
-                controller: TransactionDetailController(
-                  widget.transactionService,
-                ),
-                transactionService: widget.transactionService,
-                catalogController: widget.catalogController,
-                clock: widget.clock,
-                transactionId: tx.id,
-              ),
-            ),
-          );
-        },
+        transactionService: widget.transactionService,
+        catalogController: widget.catalogController,
+        clock: widget.clock,
+        transactionId: tx.id,
       );
       if (changed == true && mounted) await _refresh();
     } finally {
@@ -190,12 +185,11 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _selectTab(AppTab tab) {
+    if (_tab == tab && !_showFinance) return;
     setState(() {
       _tab = tab;
       if (tab != AppTab.settings) _showFinance = false;
     });
-    if (tab == AppTab.transactions) _listController.load();
-    if (tab == AppTab.statistics) _statsController.load();
   }
 
   Future<bool> _ensureUnlocked() async {
@@ -240,15 +234,6 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
-  int get _stackIndex {
-    return switch (_tab) {
-      AppTab.home => 0,
-      AppTab.transactions => 1,
-      AppTab.statistics => 2,
-      AppTab.settings => 3,
-    };
-  }
-
   Future<void> _logout() async {
     await widget.sensitiveAccess.lock();
     if (!mounted) return;
@@ -261,56 +246,139 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     SettingsScope.maybeOf(context);
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: Column(
-        children: [
-          Expanded(
-            child: _showFinance
-                ? FinancePage(
-                    controller: _financeController,
-                    onBack: () => setState(() => _showFinance = false),
-                  )
-                : IndexedStack(
-                    index: _stackIndex,
-                    children: [
-                      HomePage(
-                        controller: widget.homeController,
-                        transactionService: widget.transactionService,
-                        catalogController: widget.catalogController,
-                        viewMonthController: widget.viewMonthController,
-                        clock: widget.clock,
-                        embedNavigation: false,
-                        onSeeAll: () => _selectTab(AppTab.transactions),
-                        onTransactionTap: _openDetail,
-                        onAvatarTap: () => _selectTab(AppTab.settings),
-                      ),
-                      TransactionListPage(
-                        controller: _listController,
-                        clock: widget.clock,
-                        embedNavigation: false,
-                        onAddPressed: _openAdd,
-                        onTransactionTap: _openDetail,
-                        onDelete: _deleteTransaction,
-                      ),
-                      StatisticsPage(controller: _statsController),
-                      SettingsPage(
-                        onOpenFinance: _openFinance,
-                        onChangePin: _changePin,
-                        onLogout: _logout,
-                      ),
-                    ],
-                  ),
-          ),
-          HomeBottomNav(
-            tab: _tab == AppTab.settings || _showFinance
-                ? AppTab.settings
-                : _tab,
-            onAddPressed: _openAdd,
-            onTabSelected: _selectTab,
-          ),
-        ],
+    return PopScope(
+      canPop: !_showAdd,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || !_showAdd) return;
+        _onAddFinished(false);
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.bg,
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                Expanded(
+                  child: _showFinance
+                      ? FinancePage(
+                          controller: _financeController,
+                          onBack: () => setState(() => _showFinance = false),
+                        )
+                      : _tabHost(),
+                ),
+                HomeBottomNav(
+                  tab: _tab == AppTab.settings || _showFinance
+                      ? AppTab.settings
+                      : _tab,
+                  onAddPressed: _openAdd,
+                  onTabSelected: _selectTab,
+                ),
+              ],
+            ),
+            _PaintWarmSlot(
+              visible: _showAdd,
+              paintWarm: _paintWarm,
+              child: AddTransactionPage(
+                key: _addKey,
+                controller: _addController,
+                autofocusAmount: _showAdd,
+                onFinished: _onAddFinished,
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _tabHost() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        for (final tab in AppTab.values)
+          _PaintWarmSlot(
+            visible: _tab == tab,
+            paintWarm: _paintWarm,
+            child: KeyedSubtree(key: _tabKeys[tab]!, child: _pageFor(tab)),
+          ),
+      ],
+    );
+  }
+
+  Widget _pageFor(AppTab tab) {
+    return switch (tab) {
+      AppTab.home => HomePage(
+        controller: widget.homeController,
+        transactionService: widget.transactionService,
+        catalogController: widget.catalogController,
+        viewMonthController: widget.viewMonthController,
+        clock: widget.clock,
+        embedNavigation: false,
+        onSeeAll: () => _selectTab(AppTab.transactions),
+        onTransactionTap: _openDetail,
+        onAvatarTap: () => _selectTab(AppTab.settings),
+      ),
+      AppTab.transactions => TransactionListPage(
+        controller: _listController,
+        clock: widget.clock,
+        embedNavigation: false,
+        onAddPressed: _openAdd,
+        onTransactionTap: _openDetail,
+        onDelete: _deleteTransaction,
+      ),
+      AppTab.statistics => StatisticsPage(controller: _statsController),
+      AppTab.settings => SettingsPage(
+        onOpenFinance: _openFinance,
+        onChangePin: _changePin,
+        onLogout: _logout,
+      ),
+    };
+  }
+}
+
+class _PaintWarmSlot extends StatelessWidget {
+  const _PaintWarmSlot({
+    required this.visible,
+    required this.paintWarm,
+    required this.child,
+  });
+
+  final bool visible;
+  final bool paintWarm;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (visible) {
+      return TickerMode(enabled: true, child: child);
+    }
+    if (paintWarm) {
+      final size = MediaQuery.sizeOf(context);
+      return IgnorePointer(
+        child: ExcludeSemantics(
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 2,
+              height: 2,
+              child: ClipRect(
+                child: OverflowBox(
+                  alignment: Alignment.topLeft,
+                  minWidth: size.width,
+                  maxWidth: size.width,
+                  minHeight: size.height,
+                  maxHeight: size.height,
+                  child: Opacity(opacity: 0.01, child: child),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return Offstage(
+      offstage: true,
+      child: TickerMode(enabled: false, child: child),
     );
   }
 }
