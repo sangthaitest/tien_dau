@@ -18,17 +18,14 @@ class StatisticsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return ColoredBox(
       color: AppColors.bg,
-      child: ListenableBuilder(
-        listenable: controller,
-        builder: (context, _) {
+      child: SafeArea(
+        bottom: false,
+        child: ListenableBuilder(
+          listenable: controller,
+          builder: (context, _) {
           final snap = controller.snapshot;
           return ListView(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              MediaQuery.paddingOf(context).top + 12,
-              20,
-              24,
-            ),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             children: [
               _Header(
                 snapshot: snap,
@@ -68,7 +65,8 @@ class StatisticsPage extends StatelessWidget {
               ],
             ],
           );
-        },
+          },
+        ),
       ),
     );
   }
@@ -222,21 +220,21 @@ class _CategoryChart extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0x0D1A1D26)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
             'Chi tiêu theo danh mục',
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
           ),
-          const SizedBox(height: 18),
-          if (snapshot.isEmpty)
+          if (snapshot.isEmpty) ...[
+            const SizedBox(height: 12),
             Text(
               'Chưa có chi tiêu tháng này.',
               key: const Key('stats-empty'),
@@ -245,22 +243,52 @@ class _CategoryChart extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
-            )
-          else
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Pie(snapshot: snapshot),
-                const SizedBox(width: 18),
-                Expanded(
-                  child: Column(
-                    children: [
-                      for (final row in snapshot.categories)
-                        _LegendRow(row: row),
-                    ],
+            ),
+          ] else ...[
+            const SizedBox(height: 14),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final side = math.min(176.0, constraints.maxWidth);
+                return Center(child: _Pie(snapshot: snapshot, size: side));
+              },
+            ),
+            const SizedBox(height: 16),
+            _CategoryGrid(categories: snapshot.categories),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryGrid extends StatelessWidget {
+  const _CategoryGrid({required this.categories});
+
+  final List<CategorySpend> categories;
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyedSubtree(
+      key: const Key('stats-category-grid'),
+      child: Column(
+        children: [
+          for (var i = 0; i < categories.length; i += 2)
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: i + 2 < categories.length ? 12 : 0,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: _LegendRow(row: categories[i])),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: i + 1 < categories.length
+                        ? _LegendRow(row: categories[i + 1])
+                        : const SizedBox.shrink(),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
         ],
       ),
@@ -269,9 +297,10 @@ class _CategoryChart extends StatelessWidget {
 }
 
 class _Pie extends StatelessWidget {
-  const _Pie({required this.snapshot});
+  const _Pie({required this.snapshot, required this.size});
 
   final StatisticsSnapshot snapshot;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -282,19 +311,20 @@ class _Pie extends StatelessWidget {
           fraction: row.amount / snapshot.totalExpense,
         ),
     ];
+    final hole = size * 0.59;
     return SizedBox(
-      width: 148,
-      height: 148,
+      width: size,
+      height: size,
       child: Stack(
         alignment: Alignment.center,
         children: [
           CustomPaint(
-            size: const Size(148, 148),
+            size: Size.square(size),
             painter: _PiePainter(slices: slices),
           ),
           Container(
-            width: 88,
-            height: 88,
+            width: hole,
+            height: hole,
             decoration: BoxDecoration(
               color: AppColors.card,
               shape: BoxShape.circle,
@@ -302,7 +332,7 @@ class _Pie extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -319,7 +349,10 @@ class _Pie extends StatelessWidget {
                     key: const Key('pie-total'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -373,16 +406,18 @@ class _LegendRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final look = _catalogLook(context, row.categoryId);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
+    return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(
-              color: look.color,
-              borderRadius: BorderRadius.circular(4),
+          Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: look.color,
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
           ),
           const SizedBox(width: 8),
@@ -390,20 +425,36 @@ class _LegendRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        look.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.text,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${row.percent}%',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
                 Text(
-                  look.name,
+                  formatVnd(row.amount),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                Text(
-                  formatVndShort(row.amount),
-                  style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textTertiary,
                   ),
@@ -411,12 +462,7 @@ class _LegendRow extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            '${row.percent}%',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
-          ),
         ],
-      ),
     );
   }
 }

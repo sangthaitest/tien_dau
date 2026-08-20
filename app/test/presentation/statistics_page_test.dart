@@ -141,4 +141,130 @@ void main() {
     expect(find.byKey(const Key('stats-expense-total')), findsNothing);
     expect(find.byKey(const Key('stats-empty')), findsNothing);
   });
+
+  testWidgets('category card shows all categories in a two-column grid', (
+    tester,
+  ) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(
+          seed: [
+            _tx(id: 'b', amount: 1529157, date: DateTime(2026, 8, 1), category: 'bills'),
+            _tx(id: 't', amount: 672000, date: DateTime(2026, 8, 2), category: 'transport'),
+            _tx(id: 'o', amount: 460000, date: DateTime(2026, 8, 3), category: 'other'),
+            _tx(id: 'bf', amount: 432000, date: DateTime(2026, 8, 4), category: 'breakfast'),
+            _tx(id: 'd', amount: 383000, date: DateTime(2026, 8, 5), category: 'dinner'),
+            _tx(id: 'l', amount: 377000, date: DateTime(2026, 8, 6), category: 'lunch'),
+            _tx(id: 'c', amount: 342000, date: DateTime(2026, 8, 7), category: 'cafe'),
+            _tx(id: 's', amount: 284000, date: DateTime(2026, 8, 8), category: 'snacks'),
+            _tx(id: 'm', amount: 147000, date: DateTime(2026, 8, 9), category: 'market'),
+          ],
+        ),
+      ),
+    );
+    await _openStats(tester);
+    final grid = find.byKey(const Key('stats-category-grid'));
+    expect(grid, findsOneWidget);
+    expect(find.descendant(of: grid, matching: find.text('Hóa đơn')), findsOneWidget);
+    expect(find.descendant(of: grid, matching: find.text('Di chuyển')), findsOneWidget);
+    expect(find.descendant(of: grid, matching: find.text('Ăn sáng')), findsOneWidget);
+    expect(find.descendant(of: grid, matching: find.text('Đi chợ')), findsOneWidget);
+    expect(find.text('1.529.157 ₫'), findsWidgets);
+    expect(find.byKey(const Key('stats-see-all-categories')), findsNothing);
+    expect(find.textContaining('Xem tất cả'), findsNothing);
+    expect(tester.getRect(grid).width, greaterThan(300));
+  });
+
+  testWidgets('three categories fill the grid without a leftover action', (
+    tester,
+  ) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(
+          seed: [
+            _tx(id: '1', amount: 50000, date: DateTime(2026, 8, 1), category: 'cafe'),
+            _tx(id: '2', amount: 40000, date: DateTime(2026, 8, 2), category: 'market'),
+            _tx(id: '3', amount: 30000, date: DateTime(2026, 8, 3), category: 'transport'),
+          ],
+        ),
+      ),
+    );
+    await _openStats(tester);
+    final grid = find.byKey(const Key('stats-category-grid'));
+    expect(find.descendant(of: grid, matching: find.text('Cafe')), findsOneWidget);
+    expect(find.descendant(of: grid, matching: find.text('Đi chợ')), findsOneWidget);
+    expect(find.descendant(of: grid, matching: find.text('Di chuyển')), findsOneWidget);
+    expect(find.byKey(const Key('stats-see-all-categories')), findsNothing);
+  });
+
+  testWidgets('one category and a large amount stay on one grid cell', (
+    tester,
+  ) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(
+          seed: [
+            _tx(id: '1', amount: 999999999, date: DateTime(2026, 8, 1), category: 'cafe'),
+          ],
+        ),
+      ),
+    );
+    await _openStats(tester);
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('stats-category-grid')), findsOneWidget);
+    expect(find.byKey(const Key('pie-total')), findsOneWidget);
+    expect(find.text('999.999.999 ₫'), findsWidgets);
+    expect(find.byKey(const Key('stats-see-all-categories')), findsNothing);
+  });
+
+  testWidgets('category grid follows the viewed month', (tester) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(
+          seed: [
+            _tx(id: 'aug', amount: 200000, date: DateTime(2026, 8, 8), category: 'bills'),
+            _tx(id: 'jul', amount: 150000, date: DateTime(2026, 7, 8), category: 'cafe'),
+          ],
+        ),
+      ),
+    );
+    await _openStats(tester);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('stats-category-grid')),
+        matching: find.text('Hóa đơn'),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('nav-home')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const Key('home-month-chip')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('month-pick-2026-07')));
+    await tester.pumpAndSettle();
+    await _openStats(tester);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('stats-category-grid')),
+        matching: find.text('Cafe'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('stats-category-grid')),
+        matching: find.text('Hóa đơn'),
+      ),
+      findsNothing,
+    );
+  });
 }
