@@ -144,7 +144,7 @@ class SettingsPage extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: const Text('Hồ sơ'),
         content: const Text(
-          'Minh Khuê · minhanh@email.com\n(UI prototype — không có backend)',
+          'Minh Khuê · minhkhue@email.com\n(UI prototype — không có backend)',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK')),
@@ -244,7 +244,7 @@ class _ProfileCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'minhanh@email.com',
+                      'minhkhue@email.com',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,

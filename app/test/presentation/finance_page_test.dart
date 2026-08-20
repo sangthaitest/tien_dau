@@ -52,6 +52,7 @@ void main() {
     expect(find.text('Ngân sách tháng'), findsNothing);
     expect(find.text('Mục tiêu tiết kiệm'), findsNothing);
     expect(find.text('Khoản sắp trả'), findsNothing);
+    expect(find.text('Khoản định kỳ'), findsNothing);
   });
 
   testWidgets('Settings → PIN setup → Tài chính', (tester) async {
@@ -74,13 +75,23 @@ void main() {
     expect(find.text('Tạo mật khẩu'), findsWidgets);
     await _submitPin(tester, '5820');
     expect(find.text('Tài chính'), findsOneWidget);
-    expect(find.text('Lương'), findsOneWidget);
+    expect(find.text('Lương · Tháng 8/2026'), findsOneWidget);
     expect(find.text('Ngân sách tháng'), findsOneWidget);
-    expect(find.text('Khoản sắp trả'), findsOneWidget);
+    expect(find.text('Khoản định kỳ'), findsOneWidget);
     expect(find.text('Thẻ tín dụng'), findsOneWidget);
     expect(find.text('Chuyển cho Minh'), findsOneWidget);
     expect(find.text('Điện nước'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Mục tiêu tiết kiệm'),
+      80,
+      scrollable: find.descendant(
+        of: find.byType(FinancePage),
+        matching: find.byType(Scrollable),
+      ),
+    );
     expect(find.text('Mục tiêu tiết kiệm'), findsOneWidget);
+    expect(find.text('Quản lý →'), findsWidgets);
+    expect(find.text('+ Tạo mới'), findsNothing);
   });
 
   testWidgets('wrong PIN stays locked', (tester) async {
@@ -176,6 +187,10 @@ void main() {
     expect(find.text('100.000 ₫'), findsOneWidget);
     expect(find.text('120.000 ₫'), findsOneWidget);
     expect(find.text('−20.000 ₫'), findsOneWidget);
+    final bar = tester.getRect(find.byType(LinearProgressIndicator));
+    expect(tester.getRect(find.textContaining('Đã dùng')).left, closeTo(bar.left, 1));
+    expect(tester.getRect(find.textContaining('Còn lại ·')).right, closeTo(bar.right, 1));
+    expect(tester.getRect(find.text('−20.000 ₫')).right, closeTo(bar.right, 1));
     expect(tester.takeException(), isNull);
   });
 
@@ -236,31 +251,75 @@ void main() {
 
     expect(find.byKey(const Key('finance-upcoming-section')), findsOneWidget);
     expect(find.text('5.000.000 ₫'), findsWidgets);
-    expect(find.text('Hạn 25/08'), findsOneWidget);
-
-    await tester.ensureVisible(find.byKey(const Key('finance-upcoming-see-all')));
-    await tester.tap(find.byKey(const Key('finance-upcoming-see-all')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('finance-upcoming-sheet')), findsOneWidget);
+    expect(find.text('Ngày 25/08'), findsOneWidget);
+    expect(find.text('Ngày 28/08'), findsOneWidget);
+    expect(find.text('Ngày 30/08'), findsOneWidget);
+    expect(find.text('Tổng định kỳ'), findsOneWidget);
+    expect(find.text('3 khoản'), findsOneWidget);
+    expect(find.text('Còn lại dự kiến'), findsOneWidget);
     expect(find.byKey(const Key('finance-upcoming-total')), findsOneWidget);
     expect(find.text('7.500.000 ₫'), findsWidgets);
     expect(find.byKey(const Key('finance-upcoming-expected')), findsOneWidget);
     expect(find.text('7.873.843 ₫'), findsOneWidget);
-    expect(find.text('Sau khi trừ các khoản đã chi và khoản sắp trả'), findsOneWidget);
+    expect(find.text('Sau khi trừ khoản đã dùng\nvà khoản định kỳ'), findsOneWidget);
     expect(find.text('Ngân sách tháng'), findsOneWidget);
+    expect(find.text('+ Tạo mới'), findsNothing);
 
-    await tester.tap(
-      find.descendant(
-        of: find.byKey(const Key('finance-upcoming-sheet')),
-        matching: find.byKey(const Key('finance-upcoming-row-card')),
+    double rightEdge(Finder finder) => tester.getRect(finder).right;
+    final amountRights = [
+      rightEdge(
+        find.descendant(
+          of: find.byKey(const Key('finance-upcoming-row-card')),
+          matching: find.text('5.000.000 ₫'),
+        ),
       ),
+      rightEdge(
+        find.descendant(
+          of: find.byKey(const Key('finance-upcoming-row-transfer')),
+          matching: find.text('2.000.000 ₫'),
+        ),
+      ),
+      rightEdge(
+        find.descendant(
+          of: find.byKey(const Key('finance-upcoming-row-utility')),
+          matching: find.text('500.000 ₫'),
+        ),
+      ),
+      rightEdge(find.byKey(const Key('finance-upcoming-total'))),
+      rightEdge(find.byKey(const Key('finance-upcoming-expected'))),
+    ];
+    for (final right in amountRights.skip(1)) {
+      expect(right, closeTo(amountRights.first, 0.5));
+    }
+    expect(
+      rightEdge(find.byKey(const Key('salary-amount'))),
+      isNot(closeTo(amountRights.first, 0.5)),
     );
+
+    await tester.ensureVisible(find.byKey(const Key('finance-upcoming-row-card')));
+    await tester.tap(find.byKey(const Key('finance-upcoming-row-card')));
     await tester.pumpAndSettle();
     expect(find.text('Trạng thái: Chưa thanh toán'), findsOneWidget);
     await tester.tap(find.byKey(const Key('finance-upcoming-mark-paid')));
     await tester.pumpAndSettle();
     expect(find.text('Đã thanh toán'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Ngân sách tháng'),
+      -80,
+      scrollable: find.descendant(
+        of: find.byType(FinancePage),
+        matching: find.byType(Scrollable),
+      ),
+    );
     expect(find.text('Ngân sách tháng'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Mục tiêu tiết kiệm'),
+      80,
+      scrollable: find.descendant(
+        of: find.byType(FinancePage),
+        matching: find.byType(Scrollable),
+      ),
+    );
     expect(find.text('Mục tiêu tiết kiệm'), findsOneWidget);
   });
 
@@ -318,6 +377,17 @@ void main() {
     expect(find.text('Điện nước'), findsNothing);
     expect(find.text('Thẻ Visa'), findsWidgets);
     expect(find.text('Wifi'), findsWidgets);
+    await tester.tap(find.byTooltip('Đóng'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Ngân sách tháng'),
+      -80,
+      scrollable: find.descendant(
+        of: find.byType(FinancePage),
+        matching: find.byType(Scrollable),
+      ),
+    );
     expect(find.text('Ngân sách tháng'), findsOneWidget);
+    expect(find.byKey(const Key('finance-upcoming-section')), findsOneWidget);
   });
 }

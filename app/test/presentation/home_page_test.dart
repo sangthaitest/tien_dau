@@ -71,7 +71,7 @@ void main() {
     expect(find.text('Gần đây'), findsOneWidget);
     expect(find.text('Chưa có giao dịch. Nhấn + để thêm.'), findsOneWidget);
     expect(find.text('Trang chủ'), findsOneWidget);
-    expect(find.byIcon(Icons.add), findsOneWidget);
+    expect(find.byKey(const Key('fab-add')), findsOneWidget);
     expect(find.text('Lương'), findsNothing);
     expect(find.text('Ngân sách'), findsNothing);
     expect(find.text('Mục tiêu tiết kiệm'), findsNothing);

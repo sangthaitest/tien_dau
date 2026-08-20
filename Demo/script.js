@@ -2226,7 +2226,7 @@ function bindEvents() {
   });
 
   $('#profile-card').addEventListener('click', () => {
-    showDialog({ title: 'Hồ sơ', msg: 'Minh Khuê · minhanh@email.com\n(UI prototype — không có backend)', icon: 'person' });
+    showDialog({ title: 'Hồ sơ', msg: 'Minh Khuê · minhkhue@email.com\n(UI prototype — không có backend)', icon: 'person' });
   });
 
   $('#btn-logout').addEventListener('click', () => {

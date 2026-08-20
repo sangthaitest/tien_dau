@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tien_day/application/home_query.dart';
 import 'package:tien_day/application/transaction_service.dart';
+import 'package:tien_day/domain/entities/payment_method_kind.dart';
+import 'package:tien_day/domain/entities/transaction.dart';
+import 'package:tien_day/domain/entities/transaction_type.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
 import 'package:tien_day/presentation/home/widgets/home_bottom_nav.dart';
 
@@ -110,7 +113,7 @@ void main() {
     expect(find.text('Tạo mật khẩu'), findsWidgets);
     await _submitPin(tester, '5820');
     expect(find.text('Tài chính'), findsOneWidget);
-    expect(find.text('Lương'), findsOneWidget);
+    expect(find.textContaining('Lương'), findsOneWidget);
   });
 
   testWidgets('duplicate + taps open only one add screen', (tester) async {
@@ -130,13 +133,60 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    final add = tester.widget<FloatingActionButton>(
+    final add = tester.widget<GestureDetector>(
       find.byKey(const Key('fab-add')),
     );
-    add.onPressed!();
-    add.onPressed!();
+    add.onTap!();
+    add.onTap!();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Thêm giao dịch'), findsOneWidget);
+  });
+
+  testWidgets('tap on the protruding plus opens add not the item below', (
+    tester,
+  ) async {
+    _phone(tester);
+    final now = DateTime.utc(2026, 8, 18);
+    final service = TransactionService(
+      MemoryTransactionRepository(
+        seed: [
+          Transaction(
+            id: 'under-fab',
+            amount: 32000,
+            type: TransactionType.expense,
+            categoryId: 'cafe',
+            detail: 'Highlands',
+            occurredOn: DateTime(2026, 8, 18),
+            paymentSourceId: 'momo',
+            paymentSourceName: 'MoMo',
+            paymentMethod: PaymentMethodKind.eWallet,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        ],
+      ),
+    );
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: buildShell(
+          transactions: service,
+          home: home,
+          clock: () => DateTime(2026, 8, 18, 9),
+        ).shell,
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    final fab = tester.getRect(find.byKey(const Key('fab-add')));
+    await tester.tapAt(Offset(fab.center.dx, fab.top + 6));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
     expect(find.text('Thêm giao dịch'), findsOneWidget);
   });
 

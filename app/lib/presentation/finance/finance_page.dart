@@ -63,41 +63,62 @@ class FinancePage extends StatelessWidget {
                         children: [
                           if (controller.error != null)
                             Text(controller.error!, style: TextStyle(color: AppColors.expense)),
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Text('Lương', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                              ),
-                              TextButton(
-                                key: const Key('btn-edit-salary'),
-                                onPressed: () => _editSalary(context),
-                                child: Text('Sửa', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary)),
-                              ),
-                            ],
-                          ),
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
                             decoration: BoxDecoration(
                               color: AppColors.card,
                               borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.cardShadow,
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Lương ${monthLabel(snap.month)}',
-                                  style: TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                  ),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        'Lương · Tháng ${snap.month.month}/${snap.month.year}',
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ),
+                                    InkWell(
+                                      key: const Key('btn-edit-salary'),
+                                      onTap: () => _editSalary(context),
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Padding(
+                                        padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+                                        child: Text(
+                                          'Sửa',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 6),
                                 Text(
                                   displayVnd(snap.salary, hidden: SettingsScope.hideMoney(context)),
                                   key: const Key('salary-amount'),
-                                  style: moneyStyle(size: 22, color: AppColors.income),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: moneyStyle(
+                                    size: 22,
+                                    color: AppColors.income,
+                                    weight: FontWeight.w800,
+                                  ),
                                 ),
                               ],
                             ),
@@ -115,7 +136,7 @@ class FinancePage extends StatelessWidget {
                               TextButton(
                                 key: const Key('btn-create-goal'),
                                 onPressed: () => _goalSheet(context, mode: _GoalMode.create),
-                                child: Text('+ Tạo mới', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary)),
+                                child: Text('Quản lý →', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary)),
                               ),
                             ],
                           ),
@@ -317,6 +338,9 @@ class _BudgetCard extends StatelessWidget {
     } else if (pct >= 75) {
       fill = AppColors.warning;
     }
+    final remainingPct = snapshot.budgetLimit <= 0
+        ? 0
+        : ((snapshot.remaining / snapshot.budgetLimit) * 100).round().clamp(0, 100);
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -332,7 +356,12 @@ class _BudgetCard extends StatelessWidget {
         children: [
           const Text('Ngân sách tháng', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
-          Text(displayVnd(snapshot.budgetLimit, hidden: SettingsScope.hideMoney(context)), style: moneyStyle(size: 24)),
+          Text(
+            displayVnd(snapshot.budgetLimit, hidden: SettingsScope.hideMoney(context)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: moneyStyle(size: 24),
+          ),
           const SizedBox(height: 14),
           ClipRRect(
             borderRadius: BorderRadius.circular(5),
@@ -350,17 +379,34 @@ class _BudgetCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Đã dùng', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
-                    Text(displayVnd(snapshot.used, hidden: SettingsScope.hideMoney(context)), style: moneyStyle(size: 16)),
+                    Text(
+                      snapshot.budgetLimit > 0 ? 'Đã dùng · $pct%' : 'Đã dùng',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      displayVnd(snapshot.used, hidden: SettingsScope.hideMoney(context)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: moneyStyle(size: 16),
+                    ),
                   ],
                 ),
               ),
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text('Còn lại', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
-                    Text(displayVnd(snapshot.remaining, hidden: SettingsScope.hideMoney(context)), style: moneyStyle(size: 16)),
+                    Text(
+                      snapshot.budgetLimit > 0 ? 'Còn lại · $remainingPct%' : 'Còn lại',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      displayVnd(snapshot.remaining, hidden: SettingsScope.hideMoney(context)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
+                      style: moneyStyle(size: 16),
+                    ),
                   ],
                 ),
               ),

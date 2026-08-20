@@ -47,21 +47,21 @@ List<DemoUpcomingPayment> seedDemoUpcomingPayments() => [
         id: 'card',
         title: 'Thẻ tín dụng',
         amount: 5000000,
-        dueLabel: 'Hạn 25/08',
+        dueLabel: 'Ngày 25/08',
         icon: Icons.credit_card,
       ),
       const DemoUpcomingPayment(
         id: 'transfer',
         title: 'Chuyển cho Minh',
         amount: 2000000,
-        dueLabel: 'Hạn 28/08',
+        dueLabel: 'Ngày 28/08',
         icon: Icons.person_outline,
       ),
       const DemoUpcomingPayment(
         id: 'utility',
         title: 'Điện nước',
         amount: 500000,
-        dueLabel: 'Hạn 30/08',
+        dueLabel: 'Ngày 30/08',
         icon: Icons.bolt_outlined,
       ),
     ];
@@ -74,12 +74,18 @@ int demoExpectedRemaining(int upcomingTotal) {
   return demoCashOnHand - demoSpentThisMonth - upcomingTotal;
 }
 
-String normalizeDueLabel(String raw) {
+String stripDuePrefix(String raw) {
   final trimmed = raw.trim();
-  if (trimmed.isEmpty) return '';
   final lower = trimmed.toLowerCase();
-  if (lower.startsWith('hạn ') || lower == 'hạn') return trimmed;
-  return 'Hạn $trimmed';
+  if (lower.startsWith('ngày ')) return trimmed.substring(5);
+  if (lower.startsWith('hạn ')) return trimmed.substring(4);
+  return trimmed;
+}
+
+String normalizeDueLabel(String raw) {
+  final rest = stripDuePrefix(raw).trim();
+  if (rest.isEmpty) return '';
+  return 'Ngày $rest';
 }
 
 class UpcomingPaymentsDemoSection extends StatefulWidget {
@@ -170,7 +176,7 @@ class _UpcomingPaymentsDemoSectionState
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xóa khoản sắp trả?'),
+        title: const Text('Xóa khoản định kỳ?'),
         content: Text('Bạn có chắc muốn xóa “${item.title}”?'),
         actions: [
           TextButton(
@@ -242,7 +248,7 @@ class _UpcomingPaymentsDemoSectionState
           children: [
             const Expanded(
               child: Text(
-                'Khoản sắp trả',
+                'Khoản định kỳ',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
             ),
@@ -264,6 +270,13 @@ class _UpcomingPaymentsDemoSectionState
           decoration: BoxDecoration(
             color: AppColors.card,
             borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.cardShadow,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             children: [
@@ -271,7 +284,7 @@ class _UpcomingPaymentsDemoSectionState
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
                   child: Text(
-                    'Chưa có khoản sắp trả. Quản lý để thêm.',
+                    'Chưa có khoản định kỳ. Quản lý để thêm.',
                     key: const Key('finance-upcoming-empty'),
                     style: TextStyle(
                       color: AppColors.textSecondary,
@@ -289,119 +302,59 @@ class _UpcomingPaymentsDemoSectionState
                     onTap: () => _openDetail(context, _items[i]),
                   ),
                 ],
-              Divider(height: 1, color: AppColors.divider),
-              InkWell(
-                key: const Key('finance-upcoming-see-all'),
-                onTap: () => _openAll(context),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      'Xem tất cả →',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
+              if (_items.isNotEmpty) ...[
+                Divider(height: 1, color: AppColors.divider),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Tổng định kỳ',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            displayVnd(
+                              demoUpcomingTotal(_items),
+                              hidden: SettingsScope.hideMoney(context),
+                            ),
+                            key: const Key('finance-upcoming-total'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.right,
+                            style: moneyStyle(size: 16, color: AppColors.text),
+                          ),
+                        ],
                       ),
-                    ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${_items.length} khoản',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
+        const SizedBox(height: 12),
+        _ExpectedRemainingCard(
+          amount: demoExpectedRemaining(demoUpcomingTotal(_unpaid)),
+        ),
       ],
-    );
-  }
-
-  Future<void> _openAll(BuildContext context) async {
-    final unpaid = _unpaid;
-    final total = demoUpcomingTotal(unpaid);
-    final expected = demoExpectedRemaining(total);
-    final hidden = SettingsScope.hideMoney(context);
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.card,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-            child: SingleChildScrollView(
-              child: Column(
-                key: const Key('finance-upcoming-sheet'),
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppColors.divider,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Khoản sắp trả',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
-                  ),
-                  const SizedBox(height: 12),
-                  if (_items.isEmpty)
-                    Text(
-                      'Chưa có khoản sắp trả.',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    )
-                  else
-                    for (final item in _items)
-                      _UpcomingRow(
-                        item: item,
-                        paid: _isPaid(item.id),
-                        onTap: () async {
-                          Navigator.pop(ctx);
-                          await _openDetail(context, item);
-                        },
-                      ),
-                  const SizedBox(height: 8),
-                  Divider(color: AppColors.divider),
-                  const SizedBox(height: 8),
-                  _SummaryLine(
-                    label: 'Tổng sắp trả',
-                    valueKey: const Key('finance-upcoming-total'),
-                    value: displayVnd(total, hidden: hidden),
-                  ),
-                  const SizedBox(height: 10),
-                  _SummaryLine(
-                    label: 'Còn lại dự kiến',
-                    valueKey: const Key('finance-upcoming-expected'),
-                    value: displayVnd(expected, hidden: hidden),
-                    emphasize: true,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Sau khi trừ các khoản đã chi và khoản sắp trả',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -550,7 +503,7 @@ class _UpcomingManager extends StatelessWidget {
                   ),
                   const Expanded(
                     child: Text(
-                      'Quản lý khoản sắp trả',
+                      'Quản lý khoản định kỳ',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,
@@ -696,9 +649,7 @@ class _UpcomingEditorSheetState extends State<_UpcomingEditorSheet> {
       text: AmountInput.formatGrouped(item?.amount ?? 0),
     );
     final due = item?.dueLabel ?? '';
-    _due = TextEditingController(
-      text: due.toLowerCase().startsWith('hạn ') ? due.substring(4) : due,
-    );
+    _due = TextEditingController(text: stripDuePrefix(due));
   }
 
   @override
@@ -724,7 +675,7 @@ class _UpcomingEditorSheetState extends State<_UpcomingEditorSheet> {
     final amount = AmountInput.parse(_amount.text);
     final dueLabel = normalizeDueLabel(_due.text);
     if (title.isEmpty || amount <= 0 || dueLabel.isEmpty) {
-      setState(() => _error = 'Nhập tên, số tiền và hạn.');
+      setState(() => _error = 'Nhập tên, số tiền và ngày.');
       return;
     }
     Navigator.pop(
@@ -748,7 +699,7 @@ class _UpcomingEditorSheetState extends State<_UpcomingEditorSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                widget.item == null ? 'Thêm khoản sắp trả' : 'Sửa khoản sắp trả',
+                widget.item == null ? 'Thêm khoản định kỳ' : 'Sửa khoản định kỳ',
                 style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
@@ -775,7 +726,7 @@ class _UpcomingEditorSheetState extends State<_UpcomingEditorSheet> {
               ),
               const SizedBox(height: 12),
               const Text(
-                'Hạn',
+                'Ngày',
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
               ),
               TextField(
@@ -810,6 +761,67 @@ class _UpcomingEditorSheetState extends State<_UpcomingEditorSheet> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ExpectedRemainingCard extends StatelessWidget {
+  const _ExpectedRemainingCard({required this.amount});
+
+  final int amount;
+
+  @override
+  Widget build(BuildContext context) {
+    final hidden = SettingsScope.hideMoney(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.cardShadow,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Còn lại dự kiến',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Sau khi trừ khoản đã dùng\nvà khoản định kỳ',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            displayVnd(amount, hidden: hidden),
+            key: const Key('finance-upcoming-expected'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
+            style: moneyStyle(size: 18, color: AppColors.primary),
+          ),
+        ],
       ),
     );
   }
@@ -876,51 +888,12 @@ class _UpcomingRow extends StatelessWidget {
               displayVnd(item.amount, hidden: hidden),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
               style: moneyStyle(size: 15, color: AppColors.text),
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _SummaryLine extends StatelessWidget {
-  const _SummaryLine({
-    required this.label,
-    required this.value,
-    this.valueKey,
-    this.emphasize = false,
-  });
-
-  final String label;
-  final String value;
-  final Key? valueKey;
-  final bool emphasize;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: emphasize ? 15 : 14,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ),
-        Text(
-          value,
-          key: valueKey,
-          style: moneyStyle(
-            size: emphasize ? 18 : 16,
-            color: AppColors.text,
-          ),
-        ),
-      ],
     );
   }
 }

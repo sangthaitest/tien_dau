@@ -170,7 +170,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     await _submitPin(tester, '5820');
-    expect(find.text('Lương'), findsOneWidget);
+    expect(find.textContaining('Lương'), findsOneWidget);
     expect(find.text(kHiddenMoney), findsWidgets);
     expect(find.text('18.500.000 ₫'), findsNothing);
   });
@@ -222,7 +222,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     await tester.tap(find.byKey(const Key('nav-settings')));
     await tester.pump();
-    await tester.tap(find.byKey(const Key('settings-logout')));
+    final logout = tester.getRect(find.byKey(const Key('settings-logout')));
+    await tester.tapAt(Offset(logout.left + 24, logout.center.dy));
     await tester.pump();
     expect(find.text('Dữ liệu cục bộ vẫn được giữ trên thiết bị.'), findsOneWidget);
     await tester.tap(find.byKey(const Key('dialog-logout-confirm')));
