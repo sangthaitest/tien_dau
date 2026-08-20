@@ -9,6 +9,7 @@ import '../format/money_format.dart';
 import '../settings/settings_scope.dart';
 import '../theme/app_colors.dart';
 import 'finance_controller.dart';
+import 'upcoming_payments_demo.dart';
 
 class FinancePage extends StatelessWidget {
   const FinancePage({
@@ -58,7 +59,7 @@ class FinancePage extends StatelessWidget {
                 child: controller.loading
                     ? Center(child: CircularProgressIndicator(color: AppColors.primary))
                     : ListView(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 88),
                         children: [
                           if (controller.error != null)
                             Text(controller.error!, style: TextStyle(color: AppColors.expense)),
@@ -103,6 +104,8 @@ class FinancePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                           _BudgetCard(snapshot: snap),
+                          const SizedBox(height: 20),
+                          const UpcomingPaymentsDemoSection(),
                           const SizedBox(height: 20),
                           Row(
                             children: [

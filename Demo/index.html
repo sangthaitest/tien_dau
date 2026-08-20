@@ -210,6 +210,13 @@
             </div>
             <section class="section">
               <div class="section-header">
+                <span class="section-title">Khoản sắp trả</span>
+                <button class="link-btn" id="btn-manage-upcoming" type="button">Quản lý →</button>
+              </div>
+              <div class="upcoming-card" id="upcoming-list"></div>
+            </section>
+            <section class="section">
+              <div class="section-header">
                 <span class="section-title">Mục tiêu tiết kiệm</span>
                 <button class="link-btn" id="btn-create-goal">+ Tạo mới</button>
               </div>
@@ -649,6 +656,69 @@
         </div>
         <div class="sheet-footer">
           <button class="btn btn-primary btn-block" id="btn-save-goal">Lưu</button>
+        </div>
+      </div>
+
+      <!-- Upcoming payments (prototype demo, in-memory) -->
+      <div class="bottom-sheet" id="upcoming-all-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3">Khoản sắp trả</h3>
+          <button class="btn-icon" id="btn-close-upcoming-all" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body" id="upcoming-all-body"></div>
+      </div>
+
+      <div class="bottom-sheet" id="upcoming-detail-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3" id="upcoming-detail-title">Khoản sắp trả</h3>
+          <button class="btn-icon" id="btn-close-upcoming-detail" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body" id="upcoming-detail-body"></div>
+        <div class="sheet-footer">
+          <button class="btn btn-primary btn-block" id="btn-upcoming-mark-paid">Đánh dấu đã trả</button>
+        </div>
+      </div>
+
+      <div class="bottom-sheet nested-sheet" id="upcoming-manage-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3">Quản lý khoản sắp trả</h3>
+          <button class="btn-icon" id="btn-close-upcoming-manage" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body">
+          <div id="upcoming-manage-list"></div>
+          <button type="button" class="btn btn-outline btn-block mt-lg" id="btn-add-upcoming">＋ Thêm khoản mới</button>
+        </div>
+      </div>
+
+      <div class="bottom-sheet nested-sheet" id="upcoming-edit-sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <h3 class="h3" id="upcoming-edit-title">Tạo khoản sắp trả</h3>
+          <button class="btn-icon" id="btn-close-upcoming-edit" aria-label="Đóng"><span class="ms">close</span></button>
+        </div>
+        <div class="sheet-body">
+          <div class="form-group">
+            <label class="form-label" for="input-upcoming-name">Tên khoản</label>
+            <input class="form-input" type="text" id="input-upcoming-name" placeholder="VD: Thẻ tín dụng" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="input-upcoming-amount">Số tiền (₫)</label>
+            <div class="amount-input-wrap">
+              <span class="currency">₫</span>
+              <input class="form-input" type="text" id="input-upcoming-amount" inputmode="numeric" placeholder="0" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="input-upcoming-due">Hạn</label>
+            <input class="form-input" type="text" id="input-upcoming-due" placeholder="VD: 25/08" />
+          </div>
+        </div>
+        <div class="sheet-footer sheet-footer-row">
+          <button class="btn btn-outline flex-1 hidden" id="btn-delete-upcoming">Xóa</button>
+          <button class="btn btn-primary flex-1" id="btn-save-upcoming">Lưu</button>
         </div>
       </div>
 

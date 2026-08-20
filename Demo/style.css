@@ -1009,9 +1009,9 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 .chart-card .title {
   font-family: var(--font-display); font-weight: 700; font-size: 15px; margin-bottom: 18px;
 }
-.pie-wrap { display: flex; align-items: flex-start; gap: 18px; }
+.pie-wrap { display: flex; flex-direction: column; align-items: center; gap: 16px; }
 .pie-chart {
-  width: 148px; height: 148px; flex-shrink: 0; border-radius: 50%; position: relative;
+  width: min(176px, 70vw); height: min(176px, 70vw); flex-shrink: 0; border-radius: 50%; position: relative;
   box-shadow: 0 8px 24px rgba(0, 182, 122, 0.15);
 }
 .pie-center {
@@ -1021,12 +1021,23 @@ button.dot.active::before { width: 28px; background: var(--primary); }
 }
 .pie-center .amount { font-size: 15px; }
 .pie-center .tiny { font-size: 10px; }
-.pie-legend { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-.legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-.legend-dot { width: 10px; height: 10px; border-radius: 4px; flex-shrink: 0; }
-.legend-item .name { flex: 1; color: var(--text-secondary); font-weight: 700; }
-.legend-item .amt { font-size: 10px; color: var(--text-tertiary); display: block; font-weight: 600; }
-.legend-item .val { font-weight: 800; font-variant-numeric: tabular-nums; }
+.pie-legend {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 14px;
+}
+.legend-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; min-width: 0; }
+.legend-dot { width: 10px; height: 10px; border-radius: 4px; flex-shrink: 0; margin-top: 5px; }
+.legend-copy { flex: 1; min-width: 0; }
+.legend-head { display: flex; align-items: baseline; gap: 6px; }
+.legend-item .name {
+  flex: 1; min-width: 0; color: var(--text);
+  font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.legend-item .amt { font-size: 11px; color: var(--text-tertiary); display: block; font-weight: 600; }
+.pie-legend .caption { grid-column: 1 / -1; }
 
 .bar-chart {
   display: flex; align-items: flex-end; justify-content: space-between;
@@ -1586,6 +1597,70 @@ select.form-input {
 .finance-salary-card .label { font-size: 13px; color: var(--text-secondary); font-weight: 600; }
 .finance-salary-card .big { margin-top: 6px; font-size: 22px; font-weight: 800; color: var(--income); }
 .finance-note { margin-top: 12px; opacity: 0.85; line-height: 1.45; }
+
+.upcoming-card {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.upcoming-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  min-width: 0;
+}
+.upcoming-row + .upcoming-row,
+.upcoming-see-all {
+  border-top: 1px solid var(--divider);
+}
+.upcoming-icon {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  background: var(--surface-variant);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary);
+}
+.upcoming-icon .ms { font-size: 22px; }
+.upcoming-info { flex: 1; min-width: 0; }
+.upcoming-info .title {
+  font-weight: 700; font-size: 15px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.upcoming-info .meta {
+  font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-top: 2px;
+}
+.upcoming-info .meta.paid { color: var(--income); }
+.upcoming-amount {
+  font-family: var(--font-display); font-weight: 700; font-size: 15px;
+  white-space: nowrap; margin-left: 8px;
+}
+.upcoming-empty {
+  padding: 18px 16px;
+  font-size: 14px; font-weight: 600; color: var(--text-secondary);
+}
+.upcoming-see-all {
+  padding: 14px 16px;
+  text-align: right;
+  font-size: 13px; font-weight: 800; color: var(--primary);
+  cursor: pointer;
+  min-height: 44px;
+}
+.upcoming-summary { display: flex; align-items: baseline; gap: 12px; margin-top: 10px; }
+.upcoming-summary .label { flex: 1; font-weight: 600; font-size: 14px; color: var(--text-secondary); }
+.upcoming-summary .val { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+.upcoming-summary.emphasize .label { font-size: 15px; }
+.upcoming-summary.emphasize .val { font-size: 18px; }
+.upcoming-hint { margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--text-tertiary); }
+.upcoming-detail-amount {
+  font-family: var(--font-display); font-weight: 800; font-size: 24px; margin: 8px 0;
+}
+.sheet-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 .pin-input {
   text-align: center;
   letter-spacing: 0.35em;
@@ -1603,7 +1678,11 @@ select.form-input {
 #goal-sheet,
 #finance-pin-sheet,
 #finance-pin-change-sheet,
-#salary-sheet {
+#salary-sheet,
+#upcoming-all-sheet,
+#upcoming-detail-sheet,
+#upcoming-manage-sheet,
+#upcoming-edit-sheet {
   z-index: 70;
 }
 
@@ -1806,6 +1885,17 @@ select.form-input {
   gap: 10px;
 }
 .manage-row-left .ms { font-size: 22px; }
+.manage-row-actions,
+.manage-move {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.manage-move .btn-icon[aria-disabled="true"] {
+  opacity: 0.35;
+  pointer-events: none;
+}
 .pay-option .pay-meta {
   display: flex;
   flex-direction: column;

@@ -450,7 +450,7 @@ class _LegendRow extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  formatVnd(row.amount),
+                  formatVndShort(row.amount),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(

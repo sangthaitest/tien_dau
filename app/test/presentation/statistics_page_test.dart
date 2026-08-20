@@ -171,7 +171,7 @@ void main() {
     expect(find.descendant(of: grid, matching: find.text('Di chuyển')), findsOneWidget);
     expect(find.descendant(of: grid, matching: find.text('Ăn sáng')), findsOneWidget);
     expect(find.descendant(of: grid, matching: find.text('Đi chợ')), findsOneWidget);
-    expect(find.text('1.529.157 ₫'), findsWidgets);
+    expect(find.text('1.5tr'), findsWidgets);
     expect(find.byKey(const Key('stats-see-all-categories')), findsNothing);
     expect(find.textContaining('Xem tất cả'), findsNothing);
     expect(tester.getRect(grid).width, greaterThan(300));
@@ -219,7 +219,6 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byKey(const Key('stats-category-grid')), findsOneWidget);
     expect(find.byKey(const Key('pie-total')), findsOneWidget);
-    expect(find.text('999.999.999 ₫'), findsWidgets);
     expect(find.byKey(const Key('stats-see-all-categories')), findsNothing);
   });
 

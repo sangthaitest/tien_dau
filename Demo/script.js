@@ -150,6 +150,39 @@ function formatVND(n, short = false) {
   return abs.toLocaleString('vi-VN') + ' ₫';
 }
 
+function moveIndex(list, from, to) {
+  if (from === to || from < 0 || to < 0 || from >= list.length || to >= list.length) return list;
+  const next = list.slice();
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+
+function moveButtonsHtml(index, length) {
+  const upOff = index === 0 ? 'true' : 'false';
+  const downOff = index === length - 1 ? 'true' : 'false';
+  return `
+    <span class="manage-move">
+      <span class="btn-icon" role="button" tabindex="0" data-move="-1" data-index="${index}" aria-disabled="${upOff}" aria-label="Lên">
+        <span class="ms">expand_less</span>
+      </span>
+      <span class="btn-icon" role="button" tabindex="0" data-move="1" data-index="${index}" aria-disabled="${downOff}" aria-label="Xuống">
+        <span class="ms">expand_more</span>
+      </span>
+    </span>`;
+}
+
+function bindMoveButtons(root, onMove) {
+  $$('[data-move]', root).forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (btn.getAttribute('aria-disabled') === 'true') return;
+      const from = Number(btn.dataset.index);
+      onMove(from, from + Number(btn.dataset.move));
+    });
+  });
+}
+
 function parseAmountInput(str) {
   const raw = String(str || '').replace(/\D/g, '');
   return raw ? parseInt(raw, 10) : 0;
@@ -263,6 +296,17 @@ function seedBudget() {
 function seedGoals() {
   return [
     { id: 1, name: 'Quỹ khẩn cấp', targetAmount: 50000000, currentAmount: 31000000 },
+  ];
+}
+
+const DEMO_UPCOMING_CASH = 20000000;
+const DEMO_UPCOMING_SPENT = 4626157;
+
+function seedUpcomingPayments() {
+  return [
+    { id: 'card', title: 'Thẻ tín dụng', amount: 5000000, dueLabel: 'Hạn 25/08', icon: 'credit_card' },
+    { id: 'transfer', title: 'Chuyển cho Minh', amount: 2000000, dueLabel: 'Hạn 28/08', icon: 'person' },
+    { id: 'utility', title: 'Điện nước', amount: 500000, dueLabel: 'Hạn 30/08', icon: 'bolt' },
   ];
 }
 
@@ -495,6 +539,11 @@ const state = {
   financeUnlocked: false,
   financePendingAction: null,
   financePendingFrom: 'settings',
+  upcomingItems: seedUpcomingPayments(),
+  upcomingPaidIds: [],
+  upcomingNextId: 1,
+  upcomingDetailId: null,
+  upcomingEditId: null,
   mainScreens: ['home', 'transactions', 'budget', 'statistics', 'settings'],
 };
 
@@ -870,6 +919,7 @@ function renderBudget() {
     goalsList.innerHTML = store.goals.map(g => renderGoalCard(g)).join('');
     bindGoalActions();
   }
+  renderUpcoming();
 }
 
 function bindGoalActions() {
@@ -958,8 +1008,13 @@ function renderStatistics() {
     return `
       <div class="legend-item">
         <span class="legend-dot" style="background:${cat.color}"></span>
-        <span class="name">${cat.name}<span class="amt">${formatVND(c.amount, true)}</span></span>
-        <span class="val">${pct}%</span>
+        <div class="legend-copy">
+          <div class="legend-head">
+            <span class="name">${cat.name}</span>
+            <span class="val">${pct}%</span>
+          </div>
+          <span class="amt">${formatVND(c.amount, true)}</span>
+        </div>
       </div>`;
   }).join('');
 
@@ -993,7 +1048,7 @@ function renderSettings() {
    SHEETS — TRANSACTION
    ============================================================ */
 function closeNestedSheets() {
-  ['#pay-edit-sheet', '#chicho-sheet', '#chicho-edit-sheet', '#detail-manage-sheet', '#detail-edit-sheet', '#month-sheet'].forEach(sel => {
+  ['#pay-edit-sheet', '#chicho-sheet', '#chicho-edit-sheet', '#detail-manage-sheet', '#detail-edit-sheet', '#month-sheet', '#upcoming-manage-sheet', '#upcoming-edit-sheet'].forEach(sel => {
     $(sel)?.classList.remove('open');
   });
 }
@@ -1002,7 +1057,7 @@ function closeAllSheets() {
   closeNestedSheets();
   $('#sheet-overlay').classList.remove('open');
   $('#pay-menu')?.classList.add('hidden');
-  ['#add-sheet', '#detail-sheet', '#budget-sheet', '#goal-sheet', '#month-sheet', '#finance-pin-sheet', '#finance-pin-change-sheet', '#salary-sheet'].forEach(sel => {
+  ['#add-sheet', '#detail-sheet', '#budget-sheet', '#goal-sheet', '#month-sheet', '#finance-pin-sheet', '#finance-pin-change-sheet', '#salary-sheet', '#upcoming-all-sheet', '#upcoming-detail-sheet', '#upcoming-manage-sheet', '#upcoming-edit-sheet'].forEach(sel => {
     $(sel)?.classList.remove('open');
   });
 }
@@ -1062,13 +1117,14 @@ function renderPaySelect() {
 
 function renderPayMenu() {
   const menu = $('#pay-menu');
-  menu.innerHTML = store.payMethods.map(p => `
+  menu.innerHTML = store.payMethods.map((p, i) => `
     <button type="button" class="pay-option" data-pay="${p.id}">
       <span class="ms check">${p.id === state.selectedPayId ? 'check' : ''}</span>
       <span class="pay-meta">
         <span>${p.name}</span>
         <span class="pay-type">${p.type || ''}</span>
       </span>
+      ${moveButtonsHtml(i, store.payMethods.length)}
       <span class="pay-edit ms" data-pay-edit="${p.id}" role="button">edit</span>
     </button>
   `).join('') + `
@@ -1076,12 +1132,18 @@ function renderPayMenu() {
   `;
   $$('[data-pay]', menu).forEach(btn => {
     btn.addEventListener('click', e => {
-      if (e.target.closest('[data-pay-edit]')) return;
+      if (e.target.closest('[data-pay-edit]') || e.target.closest('[data-move]')) return;
       state.selectedPayId = btn.dataset.pay;
       renderPaySelect();
       menu.classList.add('hidden');
       $('#pay-select').setAttribute('aria-expanded', 'false');
     });
+  });
+  bindMoveButtons(menu, (from, to) => {
+    store.payMethods = moveIndex(store.payMethods, from, to);
+    persistAll();
+    renderPaySelect();
+    renderPayMenu();
   });
   $$('[data-pay-edit]', menu).forEach(btn => {
     btn.addEventListener('click', e => {
@@ -1150,19 +1212,28 @@ function deletePayMethod() {
 }
 
 function renderChiChoManage() {
-  $('#chicho-manage-list').innerHTML = store.chiCho.map(c => `
+  $('#chicho-manage-list').innerHTML = store.chiCho.map((c, i) => `
     <div class="manage-row">
       <span class="manage-row-left">
         <span class="ms" style="color:${c.color}">${c.icon}</span>
         <span>${c.name}</span>
       </span>
-      <button type="button" class="btn-icon" data-chicho-edit="${c.id}" aria-label="Sửa">
-        <span class="ms">edit</span>
-      </button>
+      <span class="manage-row-actions">
+        ${moveButtonsHtml(i, store.chiCho.length)}
+        <button type="button" class="btn-icon" data-chicho-edit="${c.id}" aria-label="Sửa">
+          <span class="ms">edit</span>
+        </button>
+      </span>
     </div>
   `).join('');
   $$('[data-chicho-edit]').forEach(btn => {
     btn.addEventListener('click', () => openChiChoEdit(btn.dataset.chichoEdit));
+  });
+  bindMoveButtons($('#chicho-manage-list'), (from, to) => {
+    store.chiCho = moveIndex(store.chiCho, from, to);
+    persistAll();
+    renderChiChoManage();
+    renderCategoryGrid();
   });
 }
 
@@ -1278,13 +1349,22 @@ function renderDetailManage() {
   $('#detail-manage-list').innerHTML = items.map((name, i) => `
     <div class="manage-row">
       <span>${name}</span>
-      <button type="button" class="btn-icon" data-detail-edit="${i}" aria-label="Sửa">
-        <span class="ms">edit</span>
-      </button>
+      <span class="manage-row-actions">
+        ${moveButtonsHtml(i, items.length)}
+        <button type="button" class="btn-icon" data-detail-edit="${i}" aria-label="Sửa">
+          <span class="ms">edit</span>
+        </button>
+      </span>
     </div>
   `).join('');
   $$('[data-detail-edit]').forEach(btn => {
     btn.addEventListener('click', () => openDetailEdit(Number(btn.dataset.detailEdit)));
+  });
+  bindMoveButtons($('#detail-manage-list'), (from, to) => {
+    store.chiChoDetails[state.selectedCategory] = moveIndex(items, from, to);
+    persistAll();
+    renderDetailManage();
+    renderDetailChips();
   });
 }
 
@@ -1498,6 +1578,217 @@ function confirmDeleteTx(id) {
       closeDialog();
     },
   });
+}
+
+/* ============================================================
+   UPCOMING PAYMENTS (prototype demo, in-memory only)
+   ============================================================ */
+function normalizeUpcomingDue(raw) {
+  const trimmed = String(raw || '').trim();
+  if (!trimmed) return '';
+  const lower = trimmed.toLowerCase();
+  if (lower.startsWith('hạn ') || lower === 'hạn') return trimmed;
+  return `Hạn ${trimmed}`;
+}
+
+function isUpcomingPaid(id) {
+  return state.upcomingPaidIds.includes(id);
+}
+
+function unpaidUpcoming() {
+  return state.upcomingItems.filter(item => !isUpcomingPaid(item.id));
+}
+
+function upcomingRowHtml(item) {
+  const paid = isUpcomingPaid(item.id);
+  return `
+    <div class="upcoming-row" data-upcoming-id="${item.id}" role="button" tabindex="0">
+      <div class="upcoming-icon"><span class="ms">${item.icon}</span></div>
+      <div class="upcoming-info">
+        <div class="title">${item.title}</div>
+        <div class="meta${paid ? ' paid' : ''}">${paid ? 'Đã thanh toán' : item.dueLabel}</div>
+      </div>
+      <div class="upcoming-amount">${maskMoney(formatVND(item.amount))}</div>
+    </div>`;
+}
+
+function bindUpcomingRows(root) {
+  $$('[data-upcoming-id]', root).forEach(row => {
+    row.addEventListener('click', () => openUpcomingDetail(row.dataset.upcomingId));
+  });
+}
+
+function renderUpcoming() {
+  const list = $('#upcoming-list');
+  if (!list) return;
+  const items = state.upcomingItems;
+  const rows = items.length
+    ? items.map(upcomingRowHtml).join('')
+    : '<div class="upcoming-empty">Chưa có khoản sắp trả. Quản lý để thêm.</div>';
+  list.innerHTML = `
+    ${rows}
+    <div class="upcoming-see-all" id="btn-upcoming-see-all" role="button" tabindex="0">Xem tất cả →</div>
+  `;
+  bindUpcomingRows(list);
+  $('#btn-upcoming-see-all')?.addEventListener('click', openUpcomingAll);
+}
+
+function openUpcomingAll() {
+  const unpaid = unpaidUpcoming();
+  const total = unpaid.reduce((sum, item) => sum + item.amount, 0);
+  const expected = DEMO_UPCOMING_CASH - DEMO_UPCOMING_SPENT - total;
+  const body = $('#upcoming-all-body');
+  const rows = state.upcomingItems.length
+    ? state.upcomingItems.map(upcomingRowHtml).join('')
+    : '<p class="caption">Chưa có khoản sắp trả.</p>';
+  body.innerHTML = `
+    ${rows}
+    <div class="upcoming-summary">
+      <span class="label">Tổng sắp trả</span>
+      <span class="val">${maskMoney(formatVND(total))}</span>
+    </div>
+    <div class="upcoming-summary emphasize">
+      <span class="label">Còn lại dự kiến</span>
+      <span class="val">${maskMoney(formatVND(expected))}</span>
+    </div>
+    <p class="upcoming-hint">Sau khi trừ các khoản đã chi và khoản sắp trả</p>
+  `;
+  bindUpcomingRows(body);
+  openOverlay();
+  $('#upcoming-all-sheet').classList.add('open');
+}
+
+function openUpcomingManage() {
+  renderUpcomingManage();
+  openOverlay();
+  $('#upcoming-manage-sheet').classList.add('open');
+}
+
+function renderUpcomingManage() {
+  const list = $('#upcoming-manage-list');
+  if (!list) return;
+  list.innerHTML = state.upcomingItems.map((item, i) => `
+    <div class="manage-row">
+      <span class="manage-row-left">
+        <span class="ms">${item.icon}</span>
+        <span>${item.title}</span>
+      </span>
+      <span class="manage-row-actions">
+        ${moveButtonsHtml(i, state.upcomingItems.length)}
+        <button type="button" class="btn-icon" data-upcoming-edit="${item.id}" aria-label="Sửa">
+          <span class="ms">edit</span>
+        </button>
+      </span>
+    </div>
+  `).join('');
+  $$('[data-upcoming-edit]').forEach(btn => {
+    btn.addEventListener('click', () => openUpcomingEdit(btn.dataset.upcomingEdit, true));
+  });
+  bindMoveButtons(list, (from, to) => {
+    state.upcomingItems = moveIndex(state.upcomingItems, from, to);
+    renderUpcoming();
+    renderUpcomingManage();
+  });
+}
+
+function openUpcomingDetail(id) {
+  const item = state.upcomingItems.find(x => x.id === id);
+  if (!item) return;
+  state.upcomingDetailId = id;
+  const paid = isUpcomingPaid(id);
+  $('#upcoming-detail-title').textContent = item.title;
+  $('#upcoming-detail-body').innerHTML = `
+    <div class="upcoming-detail-amount">${maskMoney(formatVND(item.amount))}</div>
+    <p class="caption">${item.dueLabel}</p>
+    <p class="caption" style="margin-top:8px;font-weight:600;color:${paid ? 'var(--income)' : 'var(--text)'}">
+      Trạng thái: ${paid ? 'Đã thanh toán' : 'Chưa thanh toán'}
+    </p>
+  `;
+  $('#btn-upcoming-mark-paid').classList.toggle('hidden', paid);
+  closeAllSheets();
+  openOverlay();
+  $('#upcoming-detail-sheet').classList.add('open');
+}
+
+function openUpcomingEdit(id = null, nested = false) {
+  state.upcomingEditId = id;
+  const item = id ? state.upcomingItems.find(x => x.id === id) : null;
+  $('#upcoming-edit-title').textContent = item ? 'Sửa khoản sắp trả' : 'Thêm khoản sắp trả';
+  $('#input-upcoming-name').value = item ? item.title : '';
+  $('#input-upcoming-amount').value = item ? item.amount.toLocaleString('vi-VN') : '';
+  const due = item?.dueLabel || '';
+  $('#input-upcoming-due').value = due.toLowerCase().startsWith('hạn ') ? due.slice(4) : due;
+  $('#btn-delete-upcoming')?.classList.toggle('hidden', !item);
+  if (!nested) {
+    closeAllSheets();
+    openOverlay();
+  }
+  $('#upcoming-edit-sheet').classList.add('open');
+}
+
+function saveUpcoming() {
+  const title = $('#input-upcoming-name').value.trim();
+  const amount = parseAmountInput($('#input-upcoming-amount').value);
+  const dueLabel = normalizeUpcomingDue($('#input-upcoming-due').value);
+  if (!title || amount <= 0 || !dueLabel) {
+    showToast('Nhập tên, số tiền và hạn.');
+    return;
+  }
+  if (state.upcomingEditId) {
+    state.upcomingItems = state.upcomingItems.map(item => (
+      item.id === state.upcomingEditId
+        ? { ...item, title, amount, dueLabel }
+        : item
+    ));
+  } else {
+    state.upcomingItems = [
+      ...state.upcomingItems,
+      {
+        id: `custom-${state.upcomingNextId}`,
+        title,
+        amount,
+        dueLabel,
+        icon: 'payments',
+      },
+    ];
+    state.upcomingNextId += 1;
+  }
+  $('#upcoming-edit-sheet').classList.remove('open');
+  if (!$('#upcoming-manage-sheet')?.classList.contains('open')) closeAllSheets();
+  renderUpcoming();
+  renderUpcomingManage();
+  showToast('Đã lưu khoản sắp trả');
+}
+
+function confirmDeleteUpcoming() {
+  const id = state.upcomingEditId || state.upcomingDetailId;
+  const item = state.upcomingItems.find(x => x.id === id);
+  if (!item) return;
+  showDialog({
+    title: 'Xóa khoản sắp trả?',
+    msg: `Bạn có chắc muốn xóa “${item.title}”?`,
+    icon: 'delete',
+    confirm: true,
+    onConfirm: () => {
+      state.upcomingItems = state.upcomingItems.filter(x => x.id !== item.id);
+      state.upcomingPaidIds = state.upcomingPaidIds.filter(paidId => paidId !== item.id);
+      $('#upcoming-edit-sheet').classList.remove('open');
+      if (!$('#upcoming-manage-sheet')?.classList.contains('open')) closeAllSheets();
+      renderUpcoming();
+      renderUpcomingManage();
+      showToast('Đã xóa khoản sắp trả');
+      closeDialog();
+    },
+  });
+}
+
+function markUpcomingPaid() {
+  const id = state.upcomingDetailId;
+  if (!id || isUpcomingPaid(id)) return;
+  state.upcomingPaidIds = [...state.upcomingPaidIds, id];
+  closeAllSheets();
+  renderUpcoming();
+  showToast('Đã đánh dấu đã trả');
 }
 
 /* ============================================================
@@ -1732,6 +2023,15 @@ function bindEvents() {
   $$('[data-action="add"]').forEach(el => el.addEventListener('click', openAddSheet));
 
   $('#sheet-overlay').addEventListener('click', () => {
+    if ($('#upcoming-edit-sheet')?.classList.contains('open')) {
+      $('#upcoming-edit-sheet').classList.remove('open');
+      return;
+    }
+    if ($('#upcoming-manage-sheet')?.classList.contains('open')) {
+      $('#upcoming-manage-sheet').classList.remove('open');
+      $('#sheet-overlay').classList.remove('open');
+      return;
+    }
     if ($('#detail-edit-sheet')?.classList.contains('open')) {
       $('#detail-edit-sheet').classList.remove('open');
       return;
@@ -1766,6 +2066,19 @@ function bindEvents() {
   $('#btn-close-finance-pin')?.addEventListener('click', closeAllSheets);
   $('#btn-close-finance-pin-change')?.addEventListener('click', closeAllSheets);
   $('#btn-close-salary-sheet')?.addEventListener('click', closeAllSheets);
+  $('#btn-close-upcoming-all')?.addEventListener('click', closeAllSheets);
+  $('#btn-close-upcoming-detail')?.addEventListener('click', closeAllSheets);
+  $('#btn-close-upcoming-edit')?.addEventListener('click', () => {
+    $('#upcoming-edit-sheet').classList.remove('open');
+    if (!$('#upcoming-manage-sheet')?.classList.contains('open')) closeAllSheets();
+  });
+  $('#btn-close-upcoming-manage')?.addEventListener('click', closeAllSheets);
+  $('#btn-manage-upcoming')?.addEventListener('click', openUpcomingManage);
+  $('#btn-add-upcoming')?.addEventListener('click', () => openUpcomingEdit(null, true));
+  $('#btn-save-upcoming')?.addEventListener('click', saveUpcoming);
+  $('#input-upcoming-amount')?.addEventListener('input', e => formatAmountInput(e.target));
+  $('#btn-delete-upcoming')?.addEventListener('click', confirmDeleteUpcoming);
+  $('#btn-upcoming-mark-paid')?.addEventListener('click', markUpcomingPaid);
   $('#btn-submit-finance-pin')?.addEventListener('click', verifyFinancePin);
   $('#input-finance-pin')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') verifyFinancePin();

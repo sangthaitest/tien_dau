@@ -1,4 +1,5 @@
 import '../domain/catalog/chi_cho_catalog.dart';
+import '../domain/catalog/list_order.dart';
 import '../domain/catalog/payment_option_catalog.dart';
 import '../domain/catalog/transaction_catalog.dart';
 import '../domain/entities/payment_method_kind.dart';
@@ -245,6 +246,51 @@ class TransactionCatalogService {
       current,
       id,
       (payment) => payment.copyWith(archived: true),
+    );
+  }
+
+  Future<Result<TransactionCatalog>> reorderCategories(
+    TransactionCatalog current, {
+    required int from,
+    required int to,
+  }) {
+    return _save(
+      current.copyWith(
+        categories: moveVisible(
+          current.categories,
+          (item) => !item.archived,
+          from,
+          to,
+        ),
+      ),
+    );
+  }
+
+  Future<Result<TransactionCatalog>> reorderDetails(
+    TransactionCatalog current, {
+    required String categoryId,
+    required int from,
+    required int to,
+  }) {
+    return _replaceCategory(current, categoryId, (category) {
+      return category.copyWith(details: moveAt(category.details, from, to));
+    });
+  }
+
+  Future<Result<TransactionCatalog>> reorderPayments(
+    TransactionCatalog current, {
+    required int from,
+    required int to,
+  }) {
+    return _save(
+      current.copyWith(
+        payments: moveVisible(
+          current.payments,
+          (item) => !item.archived,
+          from,
+          to,
+        ),
+      ),
     );
   }
 

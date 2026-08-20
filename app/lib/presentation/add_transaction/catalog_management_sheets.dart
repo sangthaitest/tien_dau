@@ -92,32 +92,44 @@ class _CategoryManager extends StatelessWidget {
       onAdd: () => _edit(context),
       child: ListenableBuilder(
         listenable: controller,
-        builder: (context, _) => ListView.separated(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-          itemCount: controller.categories.length,
-          separatorBuilder: (_, index) => Divider(color: AppColors.divider),
-          itemBuilder: (context, index) {
-            final category = controller.categories[index];
-            final look = categoryLook(
-              category.id,
-              name: category.name,
-              visualKey: category.visualKey,
-            );
-            return ListTile(
-              key: Key('managed-category-${category.id}'),
-              contentPadding: EdgeInsets.zero,
-              leading: _LookIcon(look: look),
-              title: Text(category.name),
-              subtitle: Text('${category.details.length} chi tiết'),
-              trailing: _RowActions(
-                editKey: Key('edit-category-${category.id}'),
-                deleteKey: Key('delete-category-${category.id}'),
-                onEdit: () => _edit(context, category),
-                onDelete: () => _delete(context, category),
-              ),
-            );
-          },
-        ),
+        builder: (context, _) {
+          final categories = controller.categories;
+          return ReorderableListView.builder(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+            buildDefaultDragHandles: false,
+            itemCount: categories.length,
+            onReorder: controller.reorderCategories,
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              final look = categoryLook(
+                category.id,
+                name: category.name,
+                visualKey: category.visualKey,
+              );
+              return ListTile(
+                key: Key('managed-category-${category.id}'),
+                contentPadding: EdgeInsets.zero,
+                minLeadingWidth: 84,
+                leading: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _DragHandle(index: index),
+                    const SizedBox(width: 4),
+                    _LookIcon(look: look),
+                  ],
+                ),
+                title: Text(category.name),
+                subtitle: Text('${category.details.length} chi tiết'),
+                trailing: _RowActions(
+                  editKey: Key('edit-category-${category.id}'),
+                  deleteKey: Key('delete-category-${category.id}'),
+                  onEdit: () => _edit(context, category),
+                  onDelete: () => _delete(context, category),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -166,15 +178,23 @@ class _DetailManager extends StatelessWidget {
           title: 'Chi tiết · ${category?.name ?? ''}',
           addKey: const Key('add-detail'),
           onAdd: () => _edit(context),
-          child: ListView.separated(
+          child: ReorderableListView.builder(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+            buildDefaultDragHandles: false,
             itemCount: category?.details.length ?? 0,
-            separatorBuilder: (_, index) => Divider(color: AppColors.divider),
+            onReorder: (oldIndex, newIndex) {
+              controller.reorderDetails(
+                categoryId: categoryId,
+                oldIndex: oldIndex,
+                newIndex: newIndex,
+              );
+            },
             itemBuilder: (context, index) {
               final detail = category!.details[index];
               return ListTile(
                 key: Key('managed-detail-$detail'),
                 contentPadding: EdgeInsets.zero,
+                leading: _DragHandle(index: index),
                 title: Text(detail),
                 trailing: _RowActions(
                   editKey: Key('edit-detail-$detail'),
@@ -231,31 +251,43 @@ class _PaymentManager extends StatelessWidget {
       onAdd: () => _edit(context),
       child: ListenableBuilder(
         listenable: controller,
-        builder: (context, _) => ListView.separated(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-          itemCount: controller.payments.length,
-          separatorBuilder: (_, index) => Divider(color: AppColors.divider),
-          itemBuilder: (context, index) {
-            final payment = controller.payments[index];
-            return ListTile(
-              key: Key('managed-payment-${payment.source.id}'),
-              contentPadding: EdgeInsets.zero,
-              leading: CircleAvatar(
-                backgroundColor: AppColors.primaryContainer,
-                foregroundColor: AppColors.primary,
-                child: Icon(_paymentIcon(payment.source.method), size: 20),
-              ),
-              title: Text(payment.source.name),
-              subtitle: Text(payment.typeLabel),
-              trailing: _RowActions(
-                editKey: Key('edit-payment-${payment.source.id}'),
-                deleteKey: Key('delete-payment-${payment.source.id}'),
-                onEdit: () => _edit(context, payment),
-                onDelete: () => _delete(context, payment),
-              ),
-            );
-          },
-        ),
+        builder: (context, _) {
+          final payments = controller.payments;
+          return ReorderableListView.builder(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+            buildDefaultDragHandles: false,
+            itemCount: payments.length,
+            onReorder: controller.reorderPayments,
+            itemBuilder: (context, index) {
+              final payment = payments[index];
+              return ListTile(
+                key: Key('managed-payment-${payment.source.id}'),
+                contentPadding: EdgeInsets.zero,
+                minLeadingWidth: 84,
+                leading: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _DragHandle(index: index),
+                    const SizedBox(width: 4),
+                    CircleAvatar(
+                      backgroundColor: AppColors.primaryContainer,
+                      foregroundColor: AppColors.primary,
+                      child: Icon(_paymentIcon(payment.source.method), size: 20),
+                    ),
+                  ],
+                ),
+                title: Text(payment.source.name),
+                subtitle: Text(payment.typeLabel),
+                trailing: _RowActions(
+                  editKey: Key('edit-payment-${payment.source.id}'),
+                  deleteKey: Key('delete-payment-${payment.source.id}'),
+                  onEdit: () => _edit(context, payment),
+                  onDelete: () => _delete(context, payment),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -323,6 +355,23 @@ class _ManagerShell extends StatelessWidget {
             Expanded(child: child),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DragHandle extends StatelessWidget {
+  const _DragHandle({required this.index});
+
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return ReorderableDragStartListener(
+      index: index,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 4),
+        child: Icon(Icons.drag_handle, color: AppColors.textTertiary),
       ),
     );
   }

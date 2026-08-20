@@ -6,6 +6,7 @@ import 'package:tien_day/domain/entities/finance.dart';
 import 'package:tien_day/domain/entities/new_transaction.dart';
 import 'package:tien_day/domain/entities/payment_method_kind.dart';
 import 'package:tien_day/domain/entities/transaction_type.dart';
+import 'package:tien_day/presentation/finance/finance_page.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
 
 import '../support/memory_transaction_repository.dart';
@@ -50,6 +51,7 @@ void main() {
     expect(find.text('Lương'), findsNothing);
     expect(find.text('Ngân sách tháng'), findsNothing);
     expect(find.text('Mục tiêu tiết kiệm'), findsNothing);
+    expect(find.text('Khoản sắp trả'), findsNothing);
   });
 
   testWidgets('Settings → PIN setup → Tài chính', (tester) async {
@@ -74,6 +76,10 @@ void main() {
     expect(find.text('Tài chính'), findsOneWidget);
     expect(find.text('Lương'), findsOneWidget);
     expect(find.text('Ngân sách tháng'), findsOneWidget);
+    expect(find.text('Khoản sắp trả'), findsOneWidget);
+    expect(find.text('Thẻ tín dụng'), findsOneWidget);
+    expect(find.text('Chuyển cho Minh'), findsOneWidget);
+    expect(find.text('Điện nước'), findsOneWidget);
     expect(find.text('Mục tiêu tiết kiệm'), findsOneWidget);
   });
 
@@ -99,7 +105,7 @@ void main() {
 
   testWidgets('goal form scrolls above the keyboard on small Android screens', (tester) async {
     _phone(tester);
-    tester.view.physicalSize = const Size(360, 640);
+    tester.view.physicalSize = const Size(390, 640);
     final service = TransactionService(MemoryTransactionRepository());
     final home = HomeController(HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)));
     final harness = buildShell(transactions: service, home: home, clock: () => DateTime(2026, 8, 18, 9));
@@ -112,6 +118,16 @@ void main() {
     await tester.tap(find.byKey(const Key('settings-finance')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('btn-create-goal')),
+      80,
+      scrollable: find.descendant(
+        of: find.byType(FinancePage),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.ensureVisible(find.byKey(const Key('btn-create-goal')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('btn-create-goal')));
     await tester.pumpAndSettle();
 
@@ -177,10 +193,131 @@ void main() {
     await tester.tap(find.byKey(const Key('settings-finance')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('btn-create-goal')),
+      80,
+      scrollable: find.descendant(
+        of: find.byType(FinancePage),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.ensureVisible(find.byKey(const Key('btn-create-goal')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('btn-create-goal')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('goal-target-input')), '1500000');
     await tester.pump();
     expect(find.text('1.500.000'), findsOneWidget);
+  });
+
+  testWidgets('upcoming payments demo sheet and detail stay in memory', (
+    tester,
+  ) async {
+    _phone(tester);
+    final service = TransactionService(MemoryTransactionRepository());
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
+    final harness = buildShell(
+      transactions: service,
+      home: home,
+      clock: () => DateTime(2026, 8, 18, 9),
+    );
+    await harness.access.setupPin('5820');
+    await harness.access.unlock('5820');
+    await tester.pumpWidget(MaterialApp(home: harness.shell));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const Key('nav-settings')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('settings-finance')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.byKey(const Key('finance-upcoming-section')), findsOneWidget);
+    expect(find.text('5.000.000 ₫'), findsWidgets);
+    expect(find.text('Hạn 25/08'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('finance-upcoming-see-all')));
+    await tester.tap(find.byKey(const Key('finance-upcoming-see-all')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('finance-upcoming-sheet')), findsOneWidget);
+    expect(find.byKey(const Key('finance-upcoming-total')), findsOneWidget);
+    expect(find.text('7.500.000 ₫'), findsWidgets);
+    expect(find.byKey(const Key('finance-upcoming-expected')), findsOneWidget);
+    expect(find.text('7.873.843 ₫'), findsOneWidget);
+    expect(find.text('Sau khi trừ các khoản đã chi và khoản sắp trả'), findsOneWidget);
+    expect(find.text('Ngân sách tháng'), findsOneWidget);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const Key('finance-upcoming-sheet')),
+        matching: find.byKey(const Key('finance-upcoming-row-card')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Trạng thái: Chưa thanh toán'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('finance-upcoming-mark-paid')));
+    await tester.pumpAndSettle();
+    expect(find.text('Đã thanh toán'), findsOneWidget);
+    expect(find.text('Ngân sách tháng'), findsOneWidget);
+    expect(find.text('Mục tiêu tiết kiệm'), findsOneWidget);
+  });
+
+  testWidgets('upcoming payments can be created edited and deleted in memory', (
+    tester,
+  ) async {
+    _phone(tester);
+    final service = TransactionService(MemoryTransactionRepository());
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
+    final harness = buildShell(
+      transactions: service,
+      home: home,
+      clock: () => DateTime(2026, 8, 18, 9),
+    );
+    await harness.access.setupPin('5820');
+    await harness.access.unlock('5820');
+    await tester.pumpWidget(MaterialApp(home: harness.shell));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const Key('nav-settings')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('settings-finance')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.ensureVisible(find.byKey(const Key('finance-upcoming-manage')));
+    await tester.tap(find.byKey(const Key('finance-upcoming-manage')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('finance-upcoming-add')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('upcoming-name-input')), 'Wifi');
+    await tester.enterText(find.byKey(const Key('upcoming-amount-input')), '1000000');
+    await tester.enterText(find.byKey(const Key('upcoming-due-input')), '31/08');
+    await tester.tap(find.byKey(const Key('upcoming-save')));
+    await tester.pumpAndSettle();
+    expect(find.text('Wifi'), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('finance-upcoming-edit-card')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('upcoming-name-input')),
+      'Thẻ Visa',
+    );
+    await tester.tap(find.byKey(const Key('upcoming-save')));
+    await tester.pumpAndSettle();
+    expect(find.text('Thẻ Visa'), findsWidgets);
+    expect(find.text('Thẻ tín dụng'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('finance-upcoming-delete-utility')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('finance-upcoming-confirm-delete')));
+    await tester.pumpAndSettle();
+    expect(find.text('Điện nước'), findsNothing);
+    expect(find.text('Thẻ Visa'), findsWidgets);
+    expect(find.text('Wifi'), findsWidgets);
+    expect(find.text('Ngân sách tháng'), findsOneWidget);
   });
 }

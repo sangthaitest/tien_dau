@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tien_day/application/transaction_catalog_service.dart';
+import 'package:tien_day/domain/catalog/chi_cho_catalog.dart';
 import 'package:tien_day/domain/entities/payment_method_kind.dart';
 import 'package:tien_day/domain/failures/result.dart';
 
@@ -95,6 +96,50 @@ void main() {
         typeLabel: 'Ví điện tử',
       ),
       isA<Err>(),
+    );
+  });
+
+  test('catalog lists can be reordered and kept after reload', () async {
+    final service = TransactionCatalogService(
+      MemoryTransactionCatalogRepository(),
+      idFactory: () => 'new',
+    );
+    var catalog = (await service.load()).unwrapOrThrow();
+    final first = catalog.categories.firstWhere((item) => !item.archived);
+    final second = catalog.categories.where((item) => !item.archived).elementAt(1);
+
+    catalog = (await service.reorderCategories(
+      catalog,
+      from: 0,
+      to: 1,
+    )).unwrapOrThrow();
+    final visible = catalog.categories.where((item) => !item.archived).toList();
+    expect(visible[0].id, second.id);
+    expect(visible[1].id, first.id);
+
+    catalog = (await service.reorderDetails(
+      catalog,
+      categoryId: first.id,
+      from: 0,
+      to: 1,
+    )).unwrapOrThrow();
+    final details = catalog.categories
+        .singleWhere((item) => item.id == first.id)
+        .details;
+    expect(details[1], ChiChoCatalog.byId(first.id).details.first);
+
+    catalog = (await service.reorderPayments(
+      catalog,
+      from: 0,
+      to: 1,
+    )).unwrapOrThrow();
+    final payments = catalog.payments.where((item) => !item.archived).toList();
+    expect(payments.first.source.id, 'vcb');
+
+    final reloaded = (await service.load()).unwrapOrThrow();
+    expect(
+      reloaded.categories.where((item) => !item.archived).first.id,
+      second.id,
     );
   });
 }

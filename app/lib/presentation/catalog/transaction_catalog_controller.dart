@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../application/transaction_catalog_service.dart';
 import '../../domain/catalog/chi_cho_catalog.dart';
+import '../../domain/catalog/list_order.dart';
 import '../../domain/catalog/payment_option_catalog.dart';
 import '../../domain/catalog/transaction_catalog.dart';
 import '../../domain/entities/payment_method_kind.dart';
@@ -146,6 +147,37 @@ class TransactionCatalogController extends ChangeNotifier {
 
   Future<Result<void>> archivePayment(String id) {
     return _run(_service.archivePayment(_catalog, id));
+  }
+
+  Future<Result<void>> reorderCategories(int oldIndex, int newIndex) {
+    final from = oldIndex;
+    final to = adjustedReorderIndex(oldIndex, newIndex);
+    return _run(_service.reorderCategories(_catalog, from: from, to: to));
+  }
+
+  Future<Result<void>> reorderDetails({
+    required String categoryId,
+    required int oldIndex,
+    required int newIndex,
+  }) {
+    return _run(
+      _service.reorderDetails(
+        _catalog,
+        categoryId: categoryId,
+        from: oldIndex,
+        to: adjustedReorderIndex(oldIndex, newIndex),
+      ),
+    );
+  }
+
+  Future<Result<void>> reorderPayments(int oldIndex, int newIndex) {
+    return _run(
+      _service.reorderPayments(
+        _catalog,
+        from: oldIndex,
+        to: adjustedReorderIndex(oldIndex, newIndex),
+      ),
+    );
   }
 
   Future<Result<void>> _run(
