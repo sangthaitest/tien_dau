@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -18,13 +20,29 @@ class HomeBottomNav extends StatelessWidget {
   final AppTab tab;
   final ValueChanged<AppTab>? onTabSelected;
 
+  static const _barHeight = 78.0;
   static const _fabSize = 72.0;
   static const _fabLift = 18.0;
   static const _notchMargin = 7.0;
 
+  /// Demo `--safe-bottom`. Android often reports 0 while drawing
+  /// edge-to-edge, which clips the nav labels against the screen edge.
+  static const _androidMinSafeBottom = 22.0;
+
+  static double _bottomInset(BuildContext context) {
+    final inset = math.max(
+      MediaQuery.paddingOf(context).bottom,
+      MediaQuery.viewPaddingOf(context).bottom,
+    );
+    if (Theme.of(context).platform == TargetPlatform.android) {
+      return math.max(inset, _androidMinSafeBottom);
+    }
+    return inset;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.paddingOf(context).bottom;
+    final bottom = _bottomInset(context);
     return _OverflowHitTestStack(
       clipBehavior: Clip.none,
       alignment: Alignment.bottomCenter,
@@ -32,7 +50,7 @@ class HomeBottomNav extends StatelessWidget {
         // Must be full-width: a height-only SizedBox shrinks to 0 under Column,
         // so the plus paints overflowing but cannot receive taps.
         IgnorePointer(
-          child: SizedBox(width: double.infinity, height: 78 + bottom),
+          child: SizedBox(width: double.infinity, height: _barHeight + bottom),
         ),
         Positioned.fill(
           child: CustomPaint(
@@ -48,44 +66,42 @@ class HomeBottomNav extends StatelessWidget {
         Positioned(
           left: 0,
           right: 0,
-          bottom: 0,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: bottom),
-            child: Material(
-              type: MaterialType.transparency,
-              child: Row(
-                children: [
-                  _NavItem(
-                    key: const Key('nav-home'),
-                    icon: Icons.home_outlined,
-                    label: 'Trang chủ',
-                    active: tab == AppTab.home,
-                    onTap: () => onTabSelected?.call(AppTab.home),
-                  ),
-                  _NavItem(
-                    key: const Key('nav-transactions'),
-                    icon: Icons.receipt_long_outlined,
-                    label: 'Giao dịch',
-                    active: tab == AppTab.transactions,
-                    onTap: () => onTabSelected?.call(AppTab.transactions),
-                  ),
-                  const Expanded(child: SizedBox.shrink()),
-                  _NavItem(
-                    key: const Key('nav-statistics'),
-                    icon: Icons.bar_chart_outlined,
-                    label: 'Thống kê',
-                    active: tab == AppTab.statistics,
-                    onTap: () => onTabSelected?.call(AppTab.statistics),
-                  ),
-                  _NavItem(
-                    key: const Key('nav-settings'),
-                    icon: Icons.settings_outlined,
-                    label: 'Cài đặt',
-                    active: tab == AppTab.settings,
-                    onTap: () => onTabSelected?.call(AppTab.settings),
-                  ),
-                ],
-              ),
+          bottom: bottom,
+          height: _barHeight,
+          child: Material(
+            type: MaterialType.transparency,
+            child: Row(
+              children: [
+                _NavItem(
+                  key: const Key('nav-home'),
+                  icon: Icons.home_outlined,
+                  label: 'Trang chủ',
+                  active: tab == AppTab.home,
+                  onTap: () => onTabSelected?.call(AppTab.home),
+                ),
+                _NavItem(
+                  key: const Key('nav-transactions'),
+                  icon: Icons.receipt_long_outlined,
+                  label: 'Giao dịch',
+                  active: tab == AppTab.transactions,
+                  onTap: () => onTabSelected?.call(AppTab.transactions),
+                ),
+                const Expanded(child: SizedBox.shrink()),
+                _NavItem(
+                  key: const Key('nav-statistics'),
+                  icon: Icons.bar_chart_outlined,
+                  label: 'Thống kê',
+                  active: tab == AppTab.statistics,
+                  onTap: () => onTabSelected?.call(AppTab.statistics),
+                ),
+                _NavItem(
+                  key: const Key('nav-settings'),
+                  icon: Icons.settings_outlined,
+                  label: 'Cài đặt',
+                  active: tab == AppTab.settings,
+                  onTap: () => onTabSelected?.call(AppTab.settings),
+                ),
+              ],
             ),
           ),
         ),
