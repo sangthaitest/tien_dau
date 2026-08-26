@@ -49,6 +49,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('Lương'), findsNothing);
+    expect(find.text('Thu nhập'), findsNothing);
     expect(find.text('Ngân sách tháng'), findsNothing);
     expect(find.text('Mục tiêu tiết kiệm'), findsNothing);
     expect(find.text('Khoản sắp trả'), findsNothing);
@@ -75,6 +76,7 @@ void main() {
     expect(find.text('Tạo mật khẩu'), findsWidgets);
     await _submitPin(tester, '5820');
     expect(find.text('Tài chính'), findsOneWidget);
+    expect(find.text('Thu nhập'), findsOneWidget);
     expect(find.text('Lương · Tháng 8/2026'), findsOneWidget);
     expect(find.text('Ngân sách tháng'), findsOneWidget);
     expect(find.text('Khoản định kỳ'), findsOneWidget);

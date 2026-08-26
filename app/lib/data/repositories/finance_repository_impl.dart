@@ -3,26 +3,30 @@ import '../../domain/failures/app_failure.dart';
 import '../../domain/failures/result.dart';
 import '../../domain/repositories/finance_repository.dart';
 import '../datasources/finance_local_datasource.dart';
+import '../datasources/recurring_transaction_local_datasource.dart';
+import '../db/migrations/recurring_transactions.dart';
 
 class FinanceRepositoryImpl implements FinanceRepository {
   FinanceRepositoryImpl({
     required PrefsLocalDataSource prefs,
     required GoalsLocalDataSource goals,
+    required RecurringTransactionsLocalDataSource recurring,
   })  : _prefs = prefs,
-        _goals = goals;
+        _goals = goals,
+        _recurring = recurring;
 
-  static const salaryKey = 'salary_amount';
   static const budgetMonthKey = 'budget_month';
   static const budgetLimitKey = 'budget_limit';
 
   final PrefsLocalDataSource _prefs;
   final GoalsLocalDataSource _goals;
+  final RecurringTransactionsLocalDataSource _recurring;
 
   @override
   Future<Result<MonthlySalary>> getSalary() async {
     try {
-      final raw = await _prefs.get(salaryKey);
-      final amount = int.tryParse(raw ?? '') ?? 0;
+      final rule = await _recurring.findById(recurringSalaryId);
+      final amount = (rule == null || !rule.isActive) ? 0 : rule.amount;
       return Ok(MonthlySalary(amount: amount));
     } on PersistenceFailure catch (e) {
       return Err(e);
@@ -32,7 +36,7 @@ class FinanceRepositoryImpl implements FinanceRepository {
   @override
   Future<Result<MonthlySalary>> saveSalary(MonthlySalary salary) async {
     try {
-      await _prefs.set(salaryKey, '${salary.amount}');
+      await _recurring.upsertSalary(salary.amount);
       return Ok(salary);
     } on PersistenceFailure catch (e) {
       return Err(e);

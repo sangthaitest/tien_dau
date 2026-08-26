@@ -63,6 +63,11 @@ class FinancePage extends StatelessWidget {
                         children: [
                           if (controller.error != null)
                             Text(controller.error!, style: TextStyle(color: AppColors.expense)),
+                          const Text(
+                            'Thu nhập',
+                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                          ),
+                          const SizedBox(height: 10),
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),

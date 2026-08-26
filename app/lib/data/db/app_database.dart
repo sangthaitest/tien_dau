@@ -3,6 +3,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart' hide Transaction;
 
 import 'migrations/normalize_categories.dart';
+import 'migrations/recurring_transactions.dart';
 
 class AppDatabase {
   AppDatabase._(this._db);
@@ -12,7 +13,7 @@ class AppDatabase {
   Database get raw => _db;
 
   static const _fileName = 'tien_day.db';
-  static const _version = 4;
+  static const _version = 5;
 
   static Future<AppDatabase> openFile() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -28,6 +29,7 @@ class AppDatabase {
         await _createTransactions(db);
         await _createTransactionIndexes(db);
         await _createFinance(db);
+        await createRecurringTransactionsTable(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -38,6 +40,9 @@ class AppDatabase {
         }
         if (oldVersion < 4) {
           await normalizeCategories(db);
+        }
+        if (oldVersion < 5) {
+          await migrateV4toV5(db);
         }
       },
     );

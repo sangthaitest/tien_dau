@@ -8,6 +8,7 @@ import 'application/transaction_catalog_service.dart';
 import 'application/transaction_service.dart';
 import 'application/view_month_service.dart';
 import 'data/datasources/finance_local_datasource.dart';
+import 'data/datasources/recurring_transaction_local_datasource.dart';
 import 'data/datasources/transaction_local_datasource.dart';
 import 'data/db/app_database.dart';
 import 'data/repositories/app_settings_repository_impl.dart';
@@ -34,7 +35,11 @@ Future<void> main() async {
     ),
   );
   final financeService = FinanceService(
-    FinanceRepositoryImpl(prefs: prefs, goals: GoalsLocalDataSource(database)),
+    FinanceRepositoryImpl(
+      prefs: prefs,
+      goals: GoalsLocalDataSource(database),
+      recurring: RecurringTransactionsLocalDataSource(database),
+    ),
     transactionService,
     idFactory: uuid.v4,
     clock: DateTime.now,
