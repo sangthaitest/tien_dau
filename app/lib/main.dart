@@ -13,6 +13,7 @@ import 'data/datasources/transaction_local_datasource.dart';
 import 'data/db/app_database.dart';
 import 'data/repositories/app_settings_repository_impl.dart';
 import 'data/repositories/finance_repository_impl.dart';
+import 'data/repositories/recurring_transaction_repository_impl.dart';
 import 'data/repositories/transaction_catalog_repository_impl.dart';
 import 'data/repositories/transaction_repository_impl.dart';
 import 'data/repositories/view_month_repository_impl.dart';
@@ -34,13 +35,15 @@ Future<void> main() async {
       clock: DateTime.now,
     ),
   );
+  final recurringLocal = RecurringTransactionsLocalDataSource(database);
   final financeService = FinanceService(
     FinanceRepositoryImpl(
       prefs: prefs,
       goals: GoalsLocalDataSource(database),
-      recurring: RecurringTransactionsLocalDataSource(database),
+      recurring: recurringLocal,
     ),
     transactionService,
+    RecurringTransactionRepositoryImpl(recurringLocal),
     idFactory: uuid.v4,
     clock: DateTime.now,
   );

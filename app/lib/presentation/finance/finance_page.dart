@@ -4,12 +4,13 @@ import 'package:flutter/services.dart';
 import '../../application/finance_service.dart';
 import '../../domain/amount/amount_input.dart';
 import '../../domain/entities/finance.dart';
+import '../../domain/entities/recurring_transaction.dart';
 import '../../domain/failures/result.dart';
 import '../format/money_format.dart';
 import '../settings/settings_scope.dart';
 import '../theme/app_colors.dart';
 import 'finance_controller.dart';
-import 'upcoming_payments_demo.dart';
+import 'recurring_section.dart';
 
 class FinancePage extends StatelessWidget {
   const FinancePage({
@@ -32,7 +33,12 @@ class FinancePage extends StatelessWidget {
           return Column(
             children: [
               Padding(
-                padding: EdgeInsets.fromLTRB(8, MediaQuery.paddingOf(context).top + 4, 8, 8),
+                padding: EdgeInsets.fromLTRB(
+                  8,
+                  MediaQuery.paddingOf(context).top + 4,
+                  8,
+                  8,
+                ),
                 child: Row(
                   children: [
                     IconButton(
@@ -44,7 +50,10 @@ class FinancePage extends StatelessWidget {
                       child: Text(
                         'Tài chính',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     IconButton(
@@ -57,15 +66,46 @@ class FinancePage extends StatelessWidget {
               ),
               Expanded(
                 child: controller.loading
-                    ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      )
                     : ListView(
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 88),
                         children: [
                           if (controller.error != null)
-                            Text(controller.error!, style: TextStyle(color: AppColors.expense)),
-                          const Text(
-                            'Thu nhập',
-                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                            Text(
+                              controller.error!,
+                              style: TextStyle(color: AppColors.expense),
+                            ),
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'Thu nhập',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                key: const Key('finance-income-manage'),
+                                onPressed: () => showRecurringManager(
+                                  context: context,
+                                  controller: controller,
+                                  kind: RecurringKind.income,
+                                ),
+                                child: Text(
+                                  'Quản lý →',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 10),
                           Container(
@@ -102,7 +142,12 @@ class FinancePage extends StatelessWidget {
                                       onTap: () => _editSalary(context),
                                       borderRadius: BorderRadius.circular(8),
                                       child: Padding(
-                                        padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+                                        padding: const EdgeInsets.fromLTRB(
+                                          12,
+                                          10,
+                                          4,
+                                          10,
+                                        ),
                                         child: Text(
                                           'Sửa',
                                           style: TextStyle(
@@ -115,7 +160,10 @@ class FinancePage extends StatelessWidget {
                                   ],
                                 ),
                                 Text(
-                                  displayVnd(snap.salary, hidden: SettingsScope.hideMoney(context)),
+                                  displayVnd(
+                                    snap.salary,
+                                    hidden: SettingsScope.hideMoney(context),
+                                  ),
                                   key: const Key('salary-amount'),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -131,17 +179,30 @@ class FinancePage extends StatelessWidget {
                           const SizedBox(height: 16),
                           _BudgetCard(snapshot: snap),
                           const SizedBox(height: 20),
-                          const UpcomingPaymentsDemoSection(),
+                          RecurringSection(controller: controller),
                           const SizedBox(height: 20),
                           Row(
                             children: [
                               const Expanded(
-                                child: Text('Mục tiêu tiết kiệm', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                                child: Text(
+                                  'Mục tiêu tiết kiệm',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                  ),
+                                ),
                               ),
                               TextButton(
                                 key: const Key('btn-create-goal'),
-                                onPressed: () => _goalSheet(context, mode: _GoalMode.create),
-                                child: Text('Quản lý →', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary)),
+                                onPressed: () =>
+                                    _goalSheet(context, mode: _GoalMode.create),
+                                child: Text(
+                                  'Quản lý →',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -158,8 +219,16 @@ class FinancePage extends StatelessWidget {
                             for (final goal in snap.goals)
                               _GoalCard(
                                 goal: goal,
-                                onAdd: () => _goalSheet(context, mode: _GoalMode.addMoney, goal: goal),
-                                onEdit: () => _goalSheet(context, mode: _GoalMode.edit, goal: goal),
+                                onAdd: () => _goalSheet(
+                                  context,
+                                  mode: _GoalMode.addMoney,
+                                  goal: goal,
+                                ),
+                                onEdit: () => _goalSheet(
+                                  context,
+                                  mode: _GoalMode.edit,
+                                  goal: goal,
+                                ),
                                 onDelete: () => _deleteGoal(context, goal),
                               ),
                         ],
@@ -207,8 +276,14 @@ class FinancePage extends StatelessWidget {
         title: const Text('Xóa mục tiêu?'),
         content: const Text('Bạn có chắc muốn xóa mục tiêu này?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xác nhận')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Xác nhận'),
+          ),
         ],
       ),
     );
@@ -232,17 +307,17 @@ class FinancePage extends StatelessWidget {
     if (result == null) return;
     final save = switch (mode) {
       _GoalMode.create => controller.createGoal(
+        name: result.name,
+        targetAmount: result.target,
+        currentAmount: result.current,
+      ),
+      _GoalMode.edit => controller.updateGoal(
+        goal!.copyWith(
           name: result.name,
           targetAmount: result.target,
           currentAmount: result.current,
         ),
-      _GoalMode.edit => controller.updateGoal(
-          goal!.copyWith(
-            name: result.name,
-            targetAmount: result.target,
-            currentAmount: result.current,
-          ),
-        ),
+      ),
       _GoalMode.addMoney => controller.addToGoal(goal!, result.current),
     };
     final saved = await save;
@@ -292,35 +367,54 @@ Future<int?> _amountDialog(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-            Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 16),
-            Text(label.toUpperCase(), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-            const SizedBox(height: 8),
-            TextField(
-              key: const Key('finance-amount-input'),
-              controller: field,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              onChanged: (raw) => _groupAmountField(field, raw),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: AppColors.surfaceVariant,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 52,
-              child: FilledButton(
-                key: const Key('finance-amount-save'),
-                onPressed: () => Navigator.pop(context, AmountInput.parse(field.text)),
-                style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-                child: const Text('Lưu', style: TextStyle(fontWeight: FontWeight.w600)),
-              ),
-            ),
+                const SizedBox(height: 16),
+                Text(
+                  label.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  key: const Key('finance-amount-input'),
+                  controller: field,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onChanged: (raw) => _groupAmountField(field, raw),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: AppColors.surfaceVariant,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 52,
+                  child: FilledButton(
+                    key: const Key('finance-amount-save'),
+                    onPressed: () =>
+                        Navigator.pop(context, AmountInput.parse(field.text)),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                    ),
+                    child: const Text(
+                      'Lưu',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -345,7 +439,10 @@ class _BudgetCard extends StatelessWidget {
     }
     final remainingPct = snapshot.budgetLimit <= 0
         ? 0
-        : ((snapshot.remaining / snapshot.budgetLimit) * 100).round().clamp(0, 100);
+        : ((snapshot.remaining / snapshot.budgetLimit) * 100).round().clamp(
+            0,
+            100,
+          );
     return Container(
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
@@ -359,10 +456,19 @@ class _BudgetCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Ngân sách tháng', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
+          const Text(
+            'Ngân sách tháng',
+            style: TextStyle(
+              color: Colors.white70,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 6),
           Text(
-            displayVnd(snapshot.budgetLimit, hidden: SettingsScope.hideMoney(context)),
+            displayVnd(
+              snapshot.budgetLimit,
+              hidden: SettingsScope.hideMoney(context),
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: moneyStyle(size: 24),
@@ -386,10 +492,17 @@ class _BudgetCard extends StatelessWidget {
                   children: [
                     Text(
                       snapshot.budgetLimit > 0 ? 'Đã dùng · $pct%' : 'Đã dùng',
-                      style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
-                      displayVnd(snapshot.used, hidden: SettingsScope.hideMoney(context)),
+                      displayVnd(
+                        snapshot.used,
+                        hidden: SettingsScope.hideMoney(context),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: moneyStyle(size: 16),
@@ -402,11 +515,20 @@ class _BudgetCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      snapshot.budgetLimit > 0 ? 'Còn lại · $remainingPct%' : 'Còn lại',
-                      style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600),
+                      snapshot.budgetLimit > 0
+                          ? 'Còn lại · $remainingPct%'
+                          : 'Còn lại',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
-                      displayVnd(snapshot.remaining, hidden: SettingsScope.hideMoney(context)),
+                      displayVnd(
+                        snapshot.remaining,
+                        hidden: SettingsScope.hideMoney(context),
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.right,
@@ -426,7 +548,11 @@ class _BudgetCard extends StatelessWidget {
 enum _GoalMode { create, edit, addMoney }
 
 class _GoalDraft {
-  const _GoalDraft({required this.name, required this.target, required this.current});
+  const _GoalDraft({
+    required this.name,
+    required this.target,
+    required this.current,
+  });
   final String name;
   final int target;
   final int current;
@@ -451,9 +577,13 @@ class _GoalSheetState extends State<_GoalSheet> {
     super.initState();
     final g = widget.goal;
     name = TextEditingController(text: g?.name ?? '');
-    target = TextEditingController(text: AmountInput.formatGrouped(g?.targetAmount ?? 0));
+    target = TextEditingController(
+      text: AmountInput.formatGrouped(g?.targetAmount ?? 0),
+    );
     current = TextEditingController(
-      text: widget.mode == _GoalMode.addMoney ? '' : AmountInput.formatGrouped(g?.currentAmount ?? 0),
+      text: widget.mode == _GoalMode.addMoney
+          ? ''
+          : AmountInput.formatGrouped(g?.currentAmount ?? 0),
     );
   }
 
@@ -484,64 +614,93 @@ class _GoalSheetState extends State<_GoalSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-          Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-          if (widget.mode != _GoalMode.addMoney) ...[
-            const SizedBox(height: 12),
-            const Text('Tên mục tiêu', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-            TextField(
-              key: const Key('goal-name-input'),
-              controller: name,
-              decoration: const InputDecoration(hintText: 'VD: Quỹ khẩn cấp'),
-            ),
-            const SizedBox(height: 12),
-            const Text('Mục tiêu (₫)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-            TextField(
-              key: const Key('goal-target-input'),
-              controller: target,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              onChanged: (raw) => _groupAmountField(target, raw),
-            ),
-          ],
-          const SizedBox(height: 12),
-          Text(
-            widget.mode == _GoalMode.addMoney ? 'Số tiền thêm (₫)' : 'Số hiện có (₫)',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppColors.textSecondary),
-          ),
-          TextField(
-            key: const Key('goal-current-input'),
-            controller: current,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            onChanged: (raw) => _groupAmountField(current, raw),
-          ),
-          if (widget.mode != _GoalMode.addMoney)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                'Không trừ vào số dư — chỉ theo dõi tiến độ.',
-                style: TextStyle(fontSize: 11, color: AppColors.textTertiary, fontWeight: FontWeight.w600),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 52,
-            child: FilledButton(
-              key: const Key('goal-save'),
-              onPressed: () {
-                Navigator.pop(
-                  context,
-                  _GoalDraft(
-                    name: name.text,
-                    target: AmountInput.parse(target.text),
-                    current: AmountInput.parse(current.text),
+              if (widget.mode != _GoalMode.addMoney) ...[
+                const SizedBox(height: 12),
+                const Text(
+                  'Tên mục tiêu',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                ),
+                TextField(
+                  key: const Key('goal-name-input'),
+                  controller: name,
+                  decoration: const InputDecoration(
+                    hintText: 'VD: Quỹ khẩn cấp',
                   ),
-                );
-              },
-              style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-              child: const Text('Lưu', style: TextStyle(fontWeight: FontWeight.w600)),
-            ),
-          ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Mục tiêu (₫)',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                ),
+                TextField(
+                  key: const Key('goal-target-input'),
+                  controller: target,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onChanged: (raw) => _groupAmountField(target, raw),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Text(
+                widget.mode == _GoalMode.addMoney
+                    ? 'Số tiền thêm (₫)'
+                    : 'Số hiện có (₫)',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              TextField(
+                key: const Key('goal-current-input'),
+                controller: current,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onChanged: (raw) => _groupAmountField(current, raw),
+              ),
+              if (widget.mode != _GoalMode.addMoney)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    'Không trừ vào số dư — chỉ theo dõi tiến độ.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textTertiary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 52,
+                child: FilledButton(
+                  key: const Key('goal-save'),
+                  onPressed: () {
+                    Navigator.pop(
+                      context,
+                      _GoalDraft(
+                        name: name.text,
+                        target: AmountInput.parse(target.text),
+                        current: AmountInput.parse(current.text),
+                      ),
+                    );
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                  child: const Text(
+                    'Lưu',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -576,11 +735,18 @@ class _GoalCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(goal.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+          Text(
+            goal.name,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+          ),
           const SizedBox(height: 4),
           Text(
             'Mục tiêu ${displayVnd(goal.targetAmount, hidden: hidden)} · ${goal.progressPercent}%',
-            style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600, fontSize: 12),
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 8),
           LinearProgressIndicator(
@@ -592,17 +758,29 @@ class _GoalCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Text(displayVnd(goal.currentAmount, hidden: hidden), style: moneyStyle(size: 12, color: AppColors.income)),
+              Text(
+                displayVnd(goal.currentAmount, hidden: hidden),
+                style: moneyStyle(size: 12, color: AppColors.income),
+              ),
               const Spacer(),
-              Text('còn ${displayVnd(goal.remaining, hidden: hidden)}', style: TextStyle(fontSize: 12, color: AppColors.textTertiary)),
+              Text(
+                'còn ${displayVnd(goal.remaining, hidden: hidden)}',
+                style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
+              ),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             children: [
               TextButton(onPressed: onAdd, child: const Text('Thêm tiền')),
-              IconButton(onPressed: onEdit, icon: const Icon(Icons.edit_outlined, size: 20)),
-              IconButton(onPressed: onDelete, icon: const Icon(Icons.delete_outline, size: 20)),
+              IconButton(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_outlined, size: 20),
+              ),
+              IconButton(
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete_outline, size: 20),
+              ),
             ],
           ),
         ],

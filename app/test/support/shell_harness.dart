@@ -14,6 +14,7 @@ import 'package:tien_day/presentation/view_month/view_month_controller.dart';
 
 import 'memory_app_settings_repository.dart';
 import 'memory_finance_repository.dart';
+import 'memory_recurring_transaction_repository.dart';
 import 'memory_transaction_catalog_repository.dart';
 import 'memory_view_month_repository.dart';
 
@@ -21,6 +22,7 @@ import 'memory_view_month_repository.dart';
   Widget shell,
   SessionSensitiveAccess access,
   MemoryFinanceRepository finance,
+  MemoryRecurringTransactionRepository recurring,
   AppSettingsController settings,
   TransactionCatalogController catalog,
   ViewMonthController viewMonth,
@@ -31,11 +33,13 @@ buildShell({
   DateTime Function()? clock,
   MemoryPinRepository? pinRepo,
   MemoryFinanceRepository? financeRepo,
+  MemoryRecurringTransactionRepository? recurringRepo,
   MemoryAppSettingsRepository? settingsRepo,
   ViewMonthController? viewMonth,
 }) {
   final pins = pinRepo ?? MemoryPinRepository();
   final money = financeRepo ?? MemoryFinanceRepository();
+  final recurring = recurringRepo ?? MemoryRecurringTransactionRepository();
   final now = clock ?? DateTime.now;
   final access = SessionSensitiveAccess(
     repository: pins,
@@ -45,6 +49,7 @@ buildShell({
     AppSettingsService(settingsRepo ?? MemoryAppSettingsRepository()),
   );
   var nextCatalogId = 0;
+  var nextFinanceId = 0;
   final catalog = TransactionCatalogController(
     TransactionCatalogService(
       MemoryTransactionCatalogRepository(),
@@ -58,7 +63,8 @@ buildShell({
     financeService: FinanceService(
       money,
       transactions,
-      idFactory: () => 'goal-1',
+      recurring,
+      idFactory: () => 'finance-${nextFinanceId++}',
       clock: now,
     ),
     sensitiveAccess: access,
@@ -73,6 +79,7 @@ buildShell({
     ),
     access: access,
     finance: money,
+    recurring: recurring,
     settings: settings,
     catalog: catalog,
     viewMonth: month,

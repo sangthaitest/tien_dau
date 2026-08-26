@@ -5,6 +5,7 @@ import '../../domain/failures/app_failure.dart';
 import '../../domain/time/clock_format.dart';
 import '../db/app_database.dart';
 import '../db/migrations/recurring_transactions.dart';
+import '../mappers/recurring_transaction_mapper.dart';
 
 class RecurringTransactionsLocalDataSource {
   RecurringTransactionsLocalDataSource(this._database);
@@ -21,13 +22,85 @@ class RecurringTransactionsLocalDataSource {
         limit: 1,
       );
       if (rows.isEmpty) return null;
-      return _fromMap(rows.first);
+      return RecurringTransactionMapper.fromMap(rows.first);
     } catch (e, st) {
       Error.throwWithStackTrace(
         PersistenceFailure('Failed to read recurring transaction', cause: e),
         st,
       );
     }
+  }
+
+  Future<List<RecurringTransaction>> findAll() async {
+    try {
+      final rows = await _db.query(
+        recurringTransactionsTable,
+        orderBy: 'start_date ASC, created_at ASC',
+      );
+      return [for (final row in rows) RecurringTransactionMapper.fromMap(row)];
+    } catch (e, st) {
+      Error.throwWithStackTrace(
+        PersistenceFailure('Failed to list recurring transactions', cause: e),
+        st,
+      );
+    }
+  }
+
+  Future<void> insert(RecurringTransaction rule) async {
+    try {
+      await _db.insert(
+        recurringTransactionsTable,
+        RecurringTransactionMapper.toMap(rule),
+      );
+    } catch (e, st) {
+      Error.throwWithStackTrace(
+        PersistenceFailure('Failed to save recurring transaction', cause: e),
+        st,
+      );
+    }
+  }
+
+  Future<int> update(RecurringTransaction rule) async {
+    try {
+      return await _db.update(
+        recurringTransactionsTable,
+        RecurringTransactionMapper.toMap(rule),
+        where: 'id = ?',
+        whereArgs: [rule.id],
+      );
+    } catch (e, st) {
+      Error.throwWithStackTrace(
+        PersistenceFailure('Failed to update recurring transaction', cause: e),
+        st,
+      );
+    }
+  }
+
+  Future<int> delete(String id) async {
+    try {
+      return await _db.delete(
+        recurringTransactionsTable,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (e, st) {
+      Error.throwWithStackTrace(
+        PersistenceFailure('Failed to delete recurring transaction', cause: e),
+        st,
+      );
+    }
+  }
+
+  Future<void> replaceSalary(RecurringTransaction row) async {
+    if (row.id != recurringSalaryId) {
+      throw const PersistenceFailure('Invalid salary id.');
+    }
+    final existing = await findById(recurringSalaryId);
+    if (existing == null) {
+      await insert(row);
+      return;
+    }
+    await update(row);
   }
 
   Future<void> upsertSalary(int amount) async {
@@ -59,6 +132,11 @@ class RecurringTransactionsLocalDataSource {
         recurringTransactionsTable,
         {
           'amount': amount,
+          'name': recurringSalaryName,
+          'kind': RecurringKind.income.storageValue,
+          'frequency': RecurringFrequency.monthly.storageValue,
+          'interval_count': 1,
+          'direction': RecurringDirection.add.storageValue,
           'is_active': 1,
           'updated_at': now.toIso8601String(),
         },
@@ -71,28 +149,5 @@ class RecurringTransactionsLocalDataSource {
         st,
       );
     }
-  }
-
-  RecurringTransaction _fromMap(Map<String, Object?> row) {
-    return RecurringTransaction(
-      id: row['id']! as String,
-      name: row['name']! as String,
-      kind: RecurringKind.fromStorage(row['kind']! as String),
-      amount: row['amount']! as int,
-      frequency: RecurringFrequency.fromStorage(row['frequency']! as String),
-      intervalCount: row['interval_count']! as int,
-      direction: RecurringDirection.fromStorage(row['direction']! as String),
-      categoryId: row['category_id'] as String?,
-      detail: row['detail'] as String?,
-      paymentSourceId: row['payment_source_id'] as String?,
-      note: row['note'] as String?,
-      startDate: DateTime.parse(row['start_date']! as String),
-      endDate: row['end_date'] == null
-          ? null
-          : DateTime.parse(row['end_date']! as String),
-      isActive: (row['is_active']! as int) == 1,
-      createdAt: DateTime.parse(row['created_at']! as String),
-      updatedAt: DateTime.parse(row['updated_at']! as String),
-    );
   }
 }

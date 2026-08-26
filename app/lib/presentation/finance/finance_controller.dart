@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../application/finance_service.dart';
 import '../../domain/entities/finance.dart';
+import '../../domain/entities/recurring_transaction.dart';
 import '../../domain/failures/result.dart';
 
 class FinanceController extends ChangeNotifier {
@@ -79,6 +80,40 @@ class FinanceController extends ChangeNotifier {
 
   Future<Result<void>> deleteGoal(String id) async {
     final result = await _service.deleteGoal(id);
+    if (result.isOk) await load();
+    return result.isOk ? const Ok(null) : Err((result as Err).failure);
+  }
+
+  Future<Result<void>> createRecurring(RecurringDraft draft) async {
+    final result = await _service.createRecurring(draft, month: _month?.call());
+    if (result.isOk) await load();
+    return result.isOk ? const Ok(null) : Err((result as Err).failure);
+  }
+
+  Future<Result<void>> updateRecurring(
+    RecurringTransaction existing,
+    RecurringDraft draft,
+  ) async {
+    final result = await _service.updateRecurring(
+      existing,
+      draft,
+      month: _month?.call(),
+    );
+    if (result.isOk) await load();
+    return result.isOk ? const Ok(null) : Err((result as Err).failure);
+  }
+
+  Future<Result<void>> setRecurringActive(
+    RecurringTransaction existing,
+    bool isActive,
+  ) async {
+    final result = await _service.setRecurringActive(existing, isActive);
+    if (result.isOk) await load();
+    return result.isOk ? const Ok(null) : Err((result as Err).failure);
+  }
+
+  Future<Result<void>> deleteRecurring(String id) async {
+    final result = await _service.deleteRecurring(id);
     if (result.isOk) await load();
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }
