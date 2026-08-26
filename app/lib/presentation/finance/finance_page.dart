@@ -108,72 +108,65 @@ class FinancePage extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 10),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-                            decoration: BoxDecoration(
-                              color: AppColors.card,
+                          Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              key: const Key('finance-income-card'),
+                              onTap: () => showRecurringManager(
+                                context: context,
+                                controller: controller,
+                                kind: RecurringKind.income,
+                              ),
                               borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.cardShadow,
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.fromLTRB(
+                                  18,
+                                  16,
+                                  18,
+                                  16,
                                 ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+                                decoration: BoxDecoration(
+                                  color: AppColors.card,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.cardShadow,
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      child: Text(
-                                        'Lương · Tháng ${snap.month.month}/${snap.month.year}',
-                                        style: TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 13,
-                                        ),
+                                    Text(
+                                      'Tháng ${snap.month.month}/${snap.month.year}',
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
                                       ),
                                     ),
-                                    InkWell(
-                                      key: const Key('btn-edit-salary'),
-                                      onTap: () => _editSalary(context),
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                          12,
-                                          10,
-                                          4,
-                                          10,
+                                    Text(
+                                      displayVnd(
+                                        snap.recurringIncomeTotal,
+                                        hidden: SettingsScope.hideMoney(
+                                          context,
                                         ),
-                                        child: Text(
-                                          'Sửa',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.primary,
-                                          ),
-                                        ),
+                                      ),
+                                      key: const Key('salary-amount'),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: moneyStyle(
+                                        size: 22,
+                                        color: AppColors.income,
+                                        weight: FontWeight.w800,
                                       ),
                                     ),
                                   ],
                                 ),
-                                Text(
-                                  displayVnd(
-                                    snap.salary,
-                                    hidden: SettingsScope.hideMoney(context),
-                                  ),
-                                  key: const Key('salary-amount'),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: moneyStyle(
-                                    size: 22,
-                                    color: AppColors.income,
-                                    weight: FontWeight.w800,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -239,20 +232,6 @@ class FinancePage extends StatelessWidget {
         },
       ),
     );
-  }
-
-  Future<void> _editSalary(BuildContext context) async {
-    final amount = await _amountDialog(
-      context,
-      title: 'Lương tháng',
-      label: 'Số tiền lương (₫)',
-      initial: controller.snapshot.salary,
-    );
-    if (amount == null) return;
-    final result = await controller.saveSalary(amount);
-    if (context.mounted && result is Err) {
-      _toast(context, result.failure.message);
-    }
   }
 
   Future<void> _editBudget(BuildContext context) async {

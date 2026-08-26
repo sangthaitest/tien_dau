@@ -11,9 +11,9 @@ class FinanceRepositoryImpl implements FinanceRepository {
     required PrefsLocalDataSource prefs,
     required GoalsLocalDataSource goals,
     required RecurringTransactionsLocalDataSource recurring,
-  })  : _prefs = prefs,
-        _goals = goals,
-        _recurring = recurring;
+  }) : _prefs = prefs,
+       _goals = goals,
+       _recurring = recurring;
 
   static const budgetMonthKey = 'budget_month';
   static const budgetLimitKey = 'budget_limit';
@@ -36,6 +36,10 @@ class FinanceRepositoryImpl implements FinanceRepository {
   @override
   Future<Result<MonthlySalary>> saveSalary(MonthlySalary salary) async {
     try {
+      if (salary.amount <= 0) {
+        await _recurring.delete(recurringSalaryId);
+        return Ok(salary);
+      }
       await _recurring.upsertSalary(salary.amount);
       return Ok(salary);
     } on PersistenceFailure catch (e) {
@@ -44,12 +48,17 @@ class FinanceRepositoryImpl implements FinanceRepository {
   }
 
   @override
-  Future<Result<MonthlyBudget>> getBudget({required String currentMonthKey}) async {
+  Future<Result<MonthlyBudget>> getBudget({
+    required String currentMonthKey,
+  }) async {
     try {
       final storedMonth = await _prefs.get(budgetMonthKey);
       final limit = int.tryParse(await _prefs.get(budgetLimitKey) ?? '') ?? 0;
       if (storedMonth != currentMonthKey) {
-        final rolled = MonthlyBudget(monthKey: currentMonthKey, totalLimit: limit);
+        final rolled = MonthlyBudget(
+          monthKey: currentMonthKey,
+          totalLimit: limit,
+        );
         await _prefs.set(budgetMonthKey, currentMonthKey);
         await _prefs.set(budgetLimitKey, '$limit');
         return Ok(rolled);

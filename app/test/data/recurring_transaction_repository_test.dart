@@ -80,17 +80,33 @@ void main() {
     expect(listed, isEmpty);
   });
 
-  test('refuses to create update or delete recurring_salary', () async {
+  test(
+    'refuses to create or update recurring_salary via generic writes',
+    () async {
+      final repo = await openRepo();
+      final salary = _rule(
+        id: recurringSalaryId,
+        name: 'Lương',
+        kind: RecurringKind.income,
+        amount: 20000000,
+      );
+      expect((await repo.create(salary)).isErr, isTrue);
+      expect((await repo.update(salary)).isErr, isTrue);
+    },
+  );
+
+  test('delete removes recurring_salary', () async {
     final repo = await openRepo();
     final salary = _rule(
       id: recurringSalaryId,
       name: 'Lương',
       kind: RecurringKind.income,
       amount: 20000000,
+      day: 1,
     );
-    expect((await repo.create(salary)).isErr, isTrue);
-    expect((await repo.update(salary)).isErr, isTrue);
-    expect((await repo.delete(recurringSalaryId)).isErr, isTrue);
+    expect((await repo.replaceSalary(salary)).isOk, isTrue);
+    expect((await repo.delete(recurringSalaryId)).isOk, isTrue);
+    expect(((await repo.listAll()) as Ok).value, isEmpty);
   });
 
   test('create survives reopening the database file', () async {

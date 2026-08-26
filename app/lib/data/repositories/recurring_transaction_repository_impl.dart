@@ -76,11 +76,6 @@ class RecurringTransactionRepositoryImpl
   @override
   Future<Result<void>> delete(String id) async {
     try {
-      if (id == recurringSalaryId) {
-        return const Err(
-          ValidationFailure('Không xóa Lương khỏi khoản định kỳ'),
-        );
-      }
       final changed = await _local.delete(id);
       if (changed == 0) {
         return const Err(NotFoundFailure('Không tìm thấy khoản định kỳ'));

@@ -5,8 +5,6 @@ import '../../application/finance_service.dart';
 import '../../domain/amount/amount_input.dart';
 import '../../domain/entities/recurring_transaction.dart';
 import '../../domain/failures/result.dart';
-import '../catalog/transaction_catalog_controller.dart';
-import '../catalog/transaction_catalog_scope.dart';
 import '../format/money_format.dart';
 import '../settings/settings_scope.dart';
 import '../theme/app_colors.dart';
@@ -53,11 +51,6 @@ class RecurringWorkspace {
   String get managerTitle =>
       isIncome ? 'Quản lý thu nhập' : 'Quản lý khoản định kỳ';
 
-  String get emptyTitle =>
-      isIncome ? 'Chưa có khoản thu nhập định kỳ' : 'Chưa có khoản định kỳ';
-
-  String get addLabel => isIncome ? '+ Thêm thu nhập' : '+ Thêm khoản định kỳ';
-
   String get editorCreateTitle =>
       isIncome ? 'Thêm thu nhập' : 'Thêm khoản định kỳ';
 
@@ -99,7 +92,6 @@ class RecurringWorkspace {
     BuildContext context, {
     RecurringTransaction? rule,
   }) async {
-    final catalog = TransactionCatalogScope.of(context);
     final draft = await showModalBottomSheet<RecurringDraft>(
       context: context,
       isScrollControlled: true,
@@ -111,7 +103,6 @@ class RecurringWorkspace {
       builder: (context) => _RecurringEditorSheet(
         rule: rule,
         month: controller.snapshot.month,
-        catalog: catalog,
         lockedKind: kind,
         createTitle: editorCreateTitle,
         editTitle: editorEditTitle,
@@ -130,7 +121,6 @@ class RecurringWorkspace {
   }
 
   Future<void> delete(BuildContext context, RecurringTransaction rule) async {
-    if (rule.isSalary) return;
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -613,39 +603,6 @@ class _RecurringManager extends StatelessWidget {
                 builder: (context, _) {
                   final list = workspace.managed;
                   if (list.isEmpty) {
-                    if (workspace.isIncome) {
-                      return Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-                        child: Column(
-                          children: [
-                            Text(
-                              workspace.emptyTitle,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            SizedBox(
-                              height: 44,
-                              child: FilledButton(
-                                onPressed: onAdd,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                ),
-                                child: Text(
-                                  workspace.addLabel,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
                     return const Padding(
                       padding: EdgeInsets.fromLTRB(20, 24, 20, 24),
                       child: Text(
@@ -671,16 +628,6 @@ class _RecurringManager extends StatelessWidget {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (workspace.isIncome)
-                              Switch.adaptive(
-                                key: Key('recurring-active-${item.id}'),
-                                value: item.isActive,
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                onChanged: (value) {
-                                  controller.setRecurringActive(item, value);
-                                },
-                              ),
                             IconButton(
                               key: Key('finance-upcoming-edit-${item.id}'),
                               tooltip: 'Sửa',
@@ -688,18 +635,17 @@ class _RecurringManager extends StatelessWidget {
                               onPressed: () => onEdit(item),
                               icon: const Icon(Icons.edit_outlined, size: 20),
                             ),
-                            if (!item.isSalary)
-                              IconButton(
-                                key: Key('finance-upcoming-delete-${item.id}'),
-                                tooltip: 'Xóa',
-                                visualDensity: VisualDensity.compact,
-                                onPressed: () => onDelete(item),
-                                icon: Icon(
-                                  Icons.delete_outline,
-                                  size: 20,
-                                  color: AppColors.expense,
-                                ),
+                            IconButton(
+                              key: Key('finance-upcoming-delete-${item.id}'),
+                              tooltip: 'Xóa',
+                              visualDensity: VisualDensity.compact,
+                              onPressed: () => onDelete(item),
+                              icon: Icon(
+                                Icons.delete_outline,
+                                size: 20,
+                                color: AppColors.expense,
                               ),
+                            ),
                           ],
                         ),
                       );
@@ -718,7 +664,6 @@ class _RecurringManager extends StatelessWidget {
 class _RecurringEditorSheet extends StatefulWidget {
   const _RecurringEditorSheet({
     required this.month,
-    required this.catalog,
     required this.lockedKind,
     required this.createTitle,
     required this.editTitle,
@@ -728,7 +673,6 @@ class _RecurringEditorSheet extends StatefulWidget {
 
   final RecurringTransaction? rule;
   final DateTime month;
-  final TransactionCatalogController catalog;
   final RecurringKind lockedKind;
   final String createTitle;
   final String editTitle;
@@ -743,8 +687,6 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
   late final TextEditingController _amount;
   late final TextEditingController _note;
   late final TextEditingController _due;
-  late RecurringKind _kind;
-  late int _day;
   String? _categoryId;
   String? _paymentSourceId;
   late bool _isActive;
@@ -761,8 +703,6 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
       text: rule == null ? '' : AmountInput.formatGrouped(rule.amount),
     );
     _note = TextEditingController(text: rule?.note ?? '');
-    _kind = rule?.kind ?? widget.lockedKind;
-    _day = rule?.dayOfMonth ?? widget.month.day.clamp(1, 28);
     _due = TextEditingController(
       text: rule == null ? '' : _dueFieldText(rule.dayOfMonth, widget.month),
     );
@@ -793,13 +733,9 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
   void _save() {
     final title = _name.text.trim();
     final amount = AmountInput.parse(_amount.text);
-    final day = _isExpense ? _parseDueDay(_due.text) : _day;
-    if (title.isEmpty || amount <= 0 || (_isExpense && day == null)) {
-      setState(
-        () => _error = _isExpense
-            ? 'Nhập tên, số tiền và ngày.'
-            : 'Nhập tên và số tiền.',
-      );
+    final day = _parseDueDay(_due.text);
+    if (title.isEmpty || amount <= 0 || day == null) {
+      setState(() => _error = 'Nhập tên, số tiền và ngày.');
       return;
     }
     Navigator.pop(
@@ -808,7 +744,7 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
         name: title,
         kind: widget.lockedKind,
         amount: amount,
-        dayOfMonth: day!,
+        dayOfMonth: day,
         categoryId: _isExpense ? _categoryId : null,
         paymentSourceId: _paymentSourceId,
         note: _note.text,
@@ -819,7 +755,6 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final catalog = widget.catalog;
     final inset = MediaQuery.viewInsetsOf(context).bottom;
     return Padding(
       padding: EdgeInsets.only(bottom: inset),
@@ -850,31 +785,6 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
                 decoration: InputDecoration(hintText: widget.nameHint),
               ),
               const SizedBox(height: 12),
-              if (!_isExpense) ...[
-                const Text(
-                  'Loại',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    _KindChip(
-                      key: const Key('recurring-kind-expense'),
-                      label: 'Chi phí',
-                      selected: _kind == RecurringKind.expense,
-                      onTap: () {},
-                    ),
-                    const SizedBox(width: 8),
-                    _KindChip(
-                      key: const Key('recurring-kind-income'),
-                      label: 'Thu nhập',
-                      selected: _kind == RecurringKind.income,
-                      onTap: () {},
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-              ],
               const Text(
                 'Số tiền (₫)',
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
@@ -887,88 +797,15 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
                 onChanged: _groupAmount,
               ),
               const SizedBox(height: 12),
-              if (_isExpense) ...[
-                const Text(
-                  'Ngày',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-                ),
-                TextField(
-                  key: const Key('upcoming-due-input'),
-                  controller: _due,
-                  decoration: const InputDecoration(hintText: 'VD: 25/08'),
-                ),
-              ] else ...[
-                const Text(
-                  'Tần suất',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Hàng tháng',
-                  key: const Key('recurring-frequency'),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.text,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Ngày',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-                ),
-                DropdownButtonFormField<int>(
-                  key: const Key('upcoming-day-dropdown'),
-                  initialValue: _day,
-                  items: [
-                    for (var day = 1; day <= 31; day++)
-                      DropdownMenuItem(
-                        value: day,
-                        child: Text('Ngày $day hàng tháng'),
-                      ),
-                  ],
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() => _day = value);
-                  },
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Nguồn tiền',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-                ),
-                DropdownButtonFormField<String>(
-                  key: const Key('recurring-payment-dropdown'),
-                  initialValue: _paymentSourceId ?? '',
-                  items: [
-                    const DropdownMenuItem(
-                      value: '',
-                      child: Text('Không chọn'),
-                    ),
-                    for (final payment in catalog.payments)
-                      DropdownMenuItem(
-                        value: payment.source.id,
-                        child: Text(payment.source.name),
-                      ),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _paymentSourceId = (value == null || value.isEmpty)
-                          ? null
-                          : value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Ghi chú',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-                ),
-                TextField(
-                  key: const Key('recurring-note-input'),
-                  controller: _note,
-                  decoration: const InputDecoration(hintText: 'Không bắt buộc'),
-                ),
-              ],
+              const Text(
+                'Ngày',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+              ),
+              TextField(
+                key: const Key('upcoming-due-input'),
+                controller: _due,
+                decoration: const InputDecoration(hintText: 'VD: 25/08'),
+              ),
               if (_error != null) ...[
                 const SizedBox(height: 8),
                 Text(
@@ -996,46 +833,6 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _KindChip extends StatelessWidget {
-  const _KindChip({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          height: 40,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected
-                ? AppColors.primaryContainer
-                : AppColors.surfaceVariant,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: selected ? AppColors.primary : AppColors.textSecondary,
-            ),
           ),
         ),
       ),

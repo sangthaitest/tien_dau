@@ -23,48 +23,50 @@ class StatisticsPage extends StatelessWidget {
         child: ListenableBuilder(
           listenable: controller,
           builder: (context, _) {
-          final snap = controller.snapshot;
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            children: [
-              _Header(
-                snapshot: snap,
-                showTrend: controller.error == null && !controller.loading,
-              ),
-              const SizedBox(height: 8),
-              if (controller.error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    controller.error!,
-                    key: const Key('stats-error'),
-                    style: TextStyle(
-                      color: AppColors.expense,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                )
-              else if (controller.loading)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 48),
-                  child: Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  ),
-                )
-              else ...[
-                _InsightCard(snapshot: snap),
-                const SizedBox(height: 16),
-                _CategoryChart(snapshot: snap),
-                const SizedBox(height: 20),
-                const Text(
-                  'Danh mục chi nhiều nhất',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+            final snap = controller.snapshot;
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              children: [
+                _Header(
+                  snapshot: snap,
+                  showTrend: controller.error == null && !controller.loading,
                 ),
                 const SizedBox(height: 8),
-                _TopSpending(snapshot: snap),
+                if (controller.error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      controller.error!,
+                      key: const Key('stats-error'),
+                      style: TextStyle(
+                        color: AppColors.expense,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  )
+                else if (controller.loading)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 48),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  )
+                else ...[
+                  _InsightCard(snapshot: snap),
+                  const SizedBox(height: 16),
+                  _CategoryChart(snapshot: snap),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Danh mục chi nhiều nhất',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
+                  const SizedBox(height: 8),
+                  _TopSpending(snapshot: snap),
+                ],
               ],
-            ],
-          );
+            );
           },
         ),
       ),
@@ -249,7 +251,9 @@ class _CategoryChart extends StatelessWidget {
             LayoutBuilder(
               builder: (context, constraints) {
                 final side = math.min(176.0, constraints.maxWidth);
-                return Center(child: _Pie(snapshot: snapshot, size: side));
+                return Center(
+                  child: _Pie(snapshot: snapshot, size: side),
+                );
               },
             ),
             const SizedBox(height: 16),
@@ -407,62 +411,64 @@ class _LegendRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final look = _catalogLook(context, row.categoryId);
     return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 5),
-            child: Container(
-              width: 10,
-              height: 10,
-              decoration: BoxDecoration(
-                color: look.color,
-                borderRadius: BorderRadius.circular(4),
-              ),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 5),
+          child: Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: look.color,
+              borderRadius: BorderRadius.circular(4),
             ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        look.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.text,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${row.percent}%',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      look.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
                         fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text,
                       ),
                     ),
-                  ],
-                ),
-                Text(
-                  formatVndShort(row.amount),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textTertiary,
                   ),
+                  const SizedBox(width: 6),
+                  Text(
+                    formatVndShort(row.amount),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.text,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '${row.percent}%',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                  color: AppColors.textTertiary,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
+      ],
     );
   }
 }
@@ -579,10 +585,12 @@ class _RankRow extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 12),
           Text(
             formatVnd(row.amount),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 14,

@@ -696,4 +696,66 @@ void main() {
     expect(((await finance.load()) as Ok).value.managedIncome, isEmpty);
     expect(txs.items, hasLength(1));
   });
+
+  test(
+    'deleting salary zeros the salary card and leaves transactions',
+    () async {
+      final financeRepo = MemoryFinanceRepository();
+      final recurring = MemoryRecurringTransactionRepository();
+      final txs = MemoryTransactionRepository();
+      final at = DateTime.utc(2026, 8, 1);
+      expect(
+        (await recurring.replaceSalary(
+          RecurringTransaction(
+            id: RecurringTransaction.salaryId,
+            name: 'Lương',
+            kind: RecurringKind.income,
+            amount: 20000000,
+            frequency: RecurringFrequency.monthly,
+            intervalCount: 1,
+            direction: RecurringDirection.add,
+            startDate: DateTime(2026, 8, 1),
+            isActive: true,
+            createdAt: at,
+            updatedAt: at,
+          ),
+        )).isOk,
+        isTrue,
+      );
+      expect(
+        (await financeRepo.saveSalary(
+          const MonthlySalary(amount: 20000000),
+        )).isOk,
+        isTrue,
+      );
+      final finance = FinanceService(
+        financeRepo,
+        TransactionService(txs),
+        recurring,
+        idFactory: () => 'must-not-mint',
+        clock: () => now,
+      );
+      await TransactionService(txs).add(
+        NewTransaction(
+          amount: 45000,
+          type: TransactionType.expense,
+          categoryId: 'cafe',
+          occurredOn: DateTime(2026, 8, 7),
+          paymentSourceId: 'momo',
+          paymentSourceName: 'MoMo',
+          paymentMethod: PaymentMethodKind.eWallet,
+        ),
+      );
+
+      expect(
+        (await finance.deleteRecurring(RecurringTransaction.salaryId)).isOk,
+        isTrue,
+      );
+      expect(((await recurring.listAll()) as Ok).value, isEmpty);
+      expect(financeRepo.salary.amount, 0);
+      expect(((await finance.load()) as Ok).value.salary, 0);
+      expect(((await finance.load()) as Ok).value.managedIncome, isEmpty);
+      expect(txs.items, hasLength(1));
+    },
+  );
 }

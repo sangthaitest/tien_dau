@@ -127,7 +127,7 @@ void main() {
       expect(find.text('Tạo mật khẩu'), findsWidgets);
       await _submitPin(tester, '5820');
       expect(find.text('Tài chính'), findsOneWidget);
-      expect(find.textContaining('Lương'), findsOneWidget);
+      expect(find.text('Tháng 8/2026'), findsOneWidget);
     },
   );
 

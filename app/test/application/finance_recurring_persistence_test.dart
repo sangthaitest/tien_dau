@@ -278,4 +278,32 @@ void main() {
     expect(transactions, hasLength(1));
     expect(transactions.single['amount'], 45000);
   });
+
+  test('deleting salary removes recurring_salary and zeros salary', () async {
+    final dir = await Directory.systemTemp.createTemp('tien_day_salary_delete');
+    addTearDown(() => dir.delete(recursive: true));
+    final path = p.join(dir.path, 'tien_day.db');
+    final stack = await openStack(path);
+    addTearDown(stack.database.close);
+
+    expect((await stack.finance.saveSalary(20000000)).isOk, isTrue);
+    expect(
+      (await stack.finance.deleteRecurring(RecurringTransaction.salaryId)).isOk,
+      isTrue,
+    );
+
+    final salaryRows = await stack.database.raw.query(
+      recurringTransactionsTable,
+      where: 'id = ?',
+      whereArgs: [recurringSalaryId],
+    );
+    final prefs = await stack.database.raw.query(
+      'app_prefs',
+      where: 'key = ?',
+      whereArgs: [salaryAmountPrefKey],
+    );
+    expect(salaryRows, isEmpty);
+    expect(prefs, isEmpty);
+    expect(((await stack.finance.load()) as Ok).value.salary, 0);
+  });
 }

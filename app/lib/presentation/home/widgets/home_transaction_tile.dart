@@ -90,7 +90,6 @@ class HomeTransactionTile extends StatelessWidget {
               ),
               SizedBox(width: unsignedNeutralAmount ? 12 : 14),
               Expanded(
-                flex: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -121,17 +120,12 @@ class HomeTransactionTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Flexible(
-                flex: 2,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    amountText,
-                    maxLines: 1,
-                    style: moneyStyle(size: 15, color: amountColor),
-                  ),
-                ),
+              Text(
+                amountText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+                style: moneyStyle(size: 15, color: amountColor),
               ),
             ],
           ),

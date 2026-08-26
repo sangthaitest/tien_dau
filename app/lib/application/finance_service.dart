@@ -320,13 +320,24 @@ class FinanceService {
     return _recurring.update(updated);
   }
 
-  Future<Result<void>> deleteRecurring(String id) {
-    if (id == RecurringTransaction.salaryId) {
-      return Future.value(
-        const Err(ValidationFailure('Không xóa Lương khỏi khoản định kỳ')),
-      );
+  Future<Result<void>> deleteRecurring(String id) async {
+    final deleted = await _recurring.delete(id);
+    switch (deleted) {
+      case Err(:final failure):
+        return Err(failure);
+      case Ok():
+        if (id == RecurringTransaction.salaryId) {
+          final cleared = await _finance.saveSalary(
+            const MonthlySalary(amount: 0),
+          );
+          switch (cleared) {
+            case Err(:final failure):
+              return Err(failure);
+            case Ok():
+          }
+        }
+        return deleted;
     }
-    return _recurring.delete(id);
   }
 
   Future<Result<RecurringTransaction>> _upsertSalaryFromDraft(

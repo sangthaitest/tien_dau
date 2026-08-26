@@ -91,7 +91,10 @@ void main() {
     await _submitPin(tester, '5820');
     expect(find.text('Tài chính'), findsOneWidget);
     expect(find.text('Thu nhập'), findsOneWidget);
-    expect(find.text('Lương · Tháng 8/2026'), findsOneWidget);
+    expect(find.text('Tháng 8/2026'), findsOneWidget);
+    expect(find.text('Lương · Tháng 8/2026'), findsNothing);
+    expect(find.byKey(const Key('btn-edit-salary')), findsNothing);
+    expect(find.text('Sửa'), findsNothing);
     expect(find.text('Ngân sách tháng'), findsOneWidget);
     expect(find.text('Khoản định kỳ'), findsOneWidget);
     expect(find.textContaining('Chưa có khoản định kỳ'), findsOneWidget);
@@ -507,15 +510,19 @@ void main() {
       await tester.tap(find.byKey(const Key('finance-income-add')));
       await tester.pumpAndSettle();
       expect(find.text('Thêm thu nhập'), findsOneWidget);
+      expect(find.text('Loại'), findsNothing);
+      expect(find.byKey(const Key('upcoming-due-input')), findsOneWidget);
       await tester.enterText(
         find.byKey(const Key('upcoming-name-input')),
         'Lương',
       );
-      await tester.tap(find.byKey(const Key('recurring-kind-expense')));
-      await tester.pump();
       await tester.enterText(
         find.byKey(const Key('upcoming-amount-input')),
         '22000000',
+      );
+      await tester.enterText(
+        find.byKey(const Key('upcoming-due-input')),
+        '01/08',
       );
       await tester.tap(find.byKey(const Key('upcoming-save')));
       await tester.pumpAndSettle();
@@ -543,6 +550,12 @@ void main() {
       clock: () => DateTime(2026, 8, 18, 9),
     );
     final now = DateTime.utc(2026, 8, 18);
+    expect(
+      (await harness.finance.saveSalary(
+        const MonthlySalary(amount: 20000000),
+      )).isOk,
+      isTrue,
+    );
     expect(
       (await harness.recurring.replaceSalary(
         RecurringTransaction(
@@ -610,8 +623,11 @@ void main() {
 
     expect(find.text('Tiền nhà'), findsOneWidget);
     expect(find.text('Thưởng'), findsNothing);
+    expect(find.text('Tháng 8/2026'), findsOneWidget);
+    expect(find.text('21.000.000 ₫'), findsOneWidget);
+    expect(find.text('Sửa'), findsNothing);
 
-    await tester.tap(find.byKey(const Key('finance-income-manage')));
+    await tester.tap(find.byKey(const Key('finance-income-card')));
     await tester.pumpAndSettle();
     expect(find.text('Quản lý thu nhập'), findsOneWidget);
     expect(
@@ -688,10 +704,11 @@ void main() {
 
     await tester.tap(find.byKey(const Key('finance-income-manage')));
     await tester.pumpAndSettle();
-    expect(find.text('Chưa có khoản thu nhập định kỳ'), findsOneWidget);
-    await tester.tap(find.text('+ Thêm thu nhập'));
+    expect(find.text('Chưa có khoản. Nhấn + để thêm.'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('finance-income-add')));
     await tester.pumpAndSettle();
     expect(find.text('Thêm thu nhập'), findsOneWidget);
+    expect(find.byKey(const Key('upcoming-due-input')), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('upcoming-name-input')),
       'Freelance',
@@ -699,6 +716,10 @@ void main() {
     await tester.enterText(
       find.byKey(const Key('upcoming-amount-input')),
       '3000000',
+    );
+    await tester.enterText(
+      find.byKey(const Key('upcoming-due-input')),
+      '05/08',
     );
     await tester.tap(find.byKey(const Key('upcoming-save')));
     await tester.pumpAndSettle();
@@ -712,5 +733,76 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Chưa có khoản định kỳ'), findsOneWidget);
     expect(find.text('Freelance'), findsNothing);
+  });
+
+  testWidgets('salary can be deleted from income management', (tester) async {
+    _phone(tester);
+    final service = TransactionService(MemoryTransactionRepository());
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
+    final harness = buildShell(
+      transactions: service,
+      home: home,
+      clock: () => DateTime(2026, 8, 18, 9),
+    );
+    final at = DateTime.utc(2026, 8, 1);
+    expect(
+      (await harness.finance.saveSalary(
+        const MonthlySalary(amount: 20000000),
+      )).isOk,
+      isTrue,
+    );
+    expect(
+      (await harness.recurring.replaceSalary(
+        RecurringTransaction(
+          id: RecurringTransaction.salaryId,
+          name: 'Lương',
+          kind: RecurringKind.income,
+          amount: 20000000,
+          frequency: RecurringFrequency.monthly,
+          intervalCount: 1,
+          direction: RecurringDirection.add,
+          startDate: DateTime(2026, 8, 1),
+          isActive: true,
+          createdAt: at,
+          updatedAt: at,
+        ),
+      )).isOk,
+      isTrue,
+    );
+    await harness.access.setupPin('5820');
+    await harness.access.unlock('5820');
+    await tester.pumpWidget(MaterialApp(home: harness.shell));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const Key('nav-settings')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('settings-finance')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.ensureVisible(find.byKey(const Key('finance-income-manage')));
+    await tester.tap(find.byKey(const Key('finance-income-manage')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('finance-upcoming-delete-recurring_salary')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('finance-upcoming-confirm-delete')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('finance-income-managed-recurring_salary')),
+      findsNothing,
+    );
+    expect((await harness.recurring.listAll()).unwrapOrThrow(), isEmpty);
+    expect(harness.finance.salary.amount, 0);
+    await tester.tap(find.byTooltip('Đóng'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<Text>(find.byKey(const Key('salary-amount'))).data,
+      '0 ₫',
+    );
   });
 }

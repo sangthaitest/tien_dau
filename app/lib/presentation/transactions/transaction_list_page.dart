@@ -428,7 +428,7 @@ class _DayGroup extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.only(bottom: 10, left: 4, right: 4),
+            padding: const EdgeInsets.only(bottom: 10, left: 16, right: 16),
             child: Row(
               children: [
                 Expanded(
@@ -444,6 +444,9 @@ class _DayGroup extends StatelessWidget {
                 ),
                 Text(
                   '−${formatVndShort(group.dayExpense)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -471,7 +474,10 @@ class _DayGroup extends StatelessWidget {
                           color: AppColors.expense,
                           borderRadius: BorderRadius.circular(18),
                         ),
-                        child: const Icon(Icons.delete_outline, color: Colors.white),
+                        child: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.white,
+                        ),
                       ),
                       confirmDismiss: (_) => onDelete!(tx),
                       child: HomeTransactionTile(

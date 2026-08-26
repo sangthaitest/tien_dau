@@ -47,25 +47,34 @@ Future<void> _submitPin(WidgetTester tester, String pin) async {
   await tester.enterText(find.byKey(const Key('input-finance-pin')), pin);
   tester.view.viewInsets = FakeViewPadding.zero;
   await tester.pump();
-  final button = tester.widget<FilledButton>(find.byKey(const Key('btn-submit-pin')));
+  final button = tester.widget<FilledButton>(
+    find.byKey(const Key('btn-submit-pin')),
+  );
   button.onPressed!.call();
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));
 }
 
 void main() {
-  setUpAll(() {
-  });
+  setUpAll(() {});
 
   tearDown(() {
     AppColors.dark = false;
   });
 
-  testWidgets('Settings shows V3 groups and currency stays VND', (tester) async {
+  testWidgets('Settings shows V3 groups and currency stays VND', (
+    tester,
+  ) async {
     _phone(tester);
     final service = TransactionService(MemoryTransactionRepository());
-    final home = HomeController(HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)));
-    final harness = buildShell(transactions: service, home: home, clock: () => DateTime(2026, 8, 18, 9));
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
+    final harness = buildShell(
+      transactions: service,
+      home: home,
+      clock: () => DateTime(2026, 8, 18, 9),
+    );
     addTearDown(harness.settings.dispose);
     await tester.pumpWidget(MaterialApp(home: harness.shell));
     await tester.pump();
@@ -97,7 +106,9 @@ void main() {
     _phone(tester);
     final repo = MemoryAppSettingsRepository();
     final service = TransactionService(MemoryTransactionRepository());
-    final home = HomeController(HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)));
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
     final harness = buildShell(
       transactions: service,
       home: home,
@@ -117,11 +128,21 @@ void main() {
     expect(repo.stored.notificationsEnabled, isFalse);
   });
 
-  testWidgets('privacy hides Home amounts and keeps category names', (tester) async {
+  testWidgets('privacy hides Home amounts and keeps category names', (
+    tester,
+  ) async {
     _phone(tester);
-    final service = TransactionService(MemoryTransactionRepository(seed: [_tx()]));
-    final home = HomeController(HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)));
-    final harness = buildShell(transactions: service, home: home, clock: () => DateTime(2026, 8, 18, 9));
+    final service = TransactionService(
+      MemoryTransactionRepository(seed: [_tx()]),
+    );
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
+    final harness = buildShell(
+      transactions: service,
+      home: home,
+      clock: () => DateTime(2026, 8, 18, 9),
+    );
     addTearDown(harness.settings.dispose);
     await tester.pumpWidget(MaterialApp(home: harness.shell));
     await tester.pump();
@@ -146,10 +167,14 @@ void main() {
     expect(find.textContaining('Cafe'), findsOneWidget);
   });
 
-  testWidgets('privacy masks Tài chính amounts and keeps labels', (tester) async {
+  testWidgets('privacy masks Tài chính amounts and keeps labels', (
+    tester,
+  ) async {
     _phone(tester);
     final service = TransactionService(MemoryTransactionRepository());
-    final home = HomeController(HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)));
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
     final finance = MemoryFinanceRepository()
       ..salary = const MonthlySalary(amount: 18500000);
     final harness = buildShell(
@@ -170,7 +195,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     await _submitPin(tester, '5820');
-    expect(find.textContaining('Lương'), findsOneWidget);
+    expect(find.text('Tháng 8/2026'), findsOneWidget);
     expect(find.text(kHiddenMoney), findsWidgets);
     expect(find.text('18.500.000 ₫'), findsNothing);
   });
@@ -179,7 +204,9 @@ void main() {
     _phone(tester);
     final repo = MemoryAppSettingsRepository();
     final service = TransactionService(MemoryTransactionRepository());
-    final home = HomeController(HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)));
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
     final harness = buildShell(
       transactions: service,
       home: home,
@@ -204,8 +231,12 @@ void main() {
 
   testWidgets('logout locks PIN session and keeps local data', (tester) async {
     _phone(tester);
-    final service = TransactionService(MemoryTransactionRepository(seed: [_tx()]));
-    final home = HomeController(HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)));
+    final service = TransactionService(
+      MemoryTransactionRepository(seed: [_tx()]),
+    );
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
     final pins = MemoryPinRepository();
     final harness = buildShell(
       transactions: service,
@@ -225,7 +256,10 @@ void main() {
     final logout = tester.getRect(find.byKey(const Key('settings-logout')));
     await tester.tapAt(Offset(logout.left + 24, logout.center.dy));
     await tester.pump();
-    expect(find.text('Dữ liệu cục bộ vẫn được giữ trên thiết bị.'), findsOneWidget);
+    expect(
+      find.text('Dữ liệu cục bộ vẫn được giữ trên thiết bị.'),
+      findsOneWidget,
+    );
     await tester.tap(find.byKey(const Key('dialog-logout-confirm')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
