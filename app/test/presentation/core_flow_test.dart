@@ -59,7 +59,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
-      expect(find.text('Chi tiêu tháng này'), findsOneWidget);
+      expect(find.text('Tháng này tiền đi đâu rồi?'), findsOneWidget);
       expect(find.text('0 ₫'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('fab-add')));

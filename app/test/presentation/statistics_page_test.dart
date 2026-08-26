@@ -71,7 +71,7 @@ void main() {
     expect(find.text('Thống kê'), findsWidgets);
     expect(find.byKey(const Key('nav-statistics')), findsOneWidget);
     expect(find.text('so với tháng trước'), findsOneWidget);
-    expect(find.text('Gần đây'), findsNothing);
+    expect(find.text('Đây nè'), findsNothing);
     expect(find.text('Lương'), findsNothing);
     expect(find.text('Ngân sách tháng'), findsNothing);
     expect(find.text('Mục tiêu tiết kiệm'), findsNothing);

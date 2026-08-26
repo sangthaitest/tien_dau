@@ -133,8 +133,11 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final overlay = Theme.of(context).brightness == Brightness.dark
+        ? SystemUiOverlayStyle.light
+        : SystemUiOverlayStyle.dark;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.light,
+      value: overlay,
       child: Scaffold(
         backgroundColor: AppColors.bg,
         body: ListenableBuilder(
@@ -200,177 +203,131 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
     final snapshot = controller.snapshot;
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(20, top + 16, 20, 28),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF00B67A), Color(0xFF009963), Color(0xFF00855A)],
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(36)),
-      ),
-      child: Stack(
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, top + 12, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Positioned(
-            top: -50,
-            right: -30,
-            child: _Blob(size: 180, opacity: 0.10),
-          ),
-          Positioned(
-            bottom: -20,
-            left: -20,
-            child: _Blob(size: 120, opacity: 0.07),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          greetingFor(page.clock()),
-                          style: const TextStyle(
-                            color: Color(0xD9FFFFFF),
-                            fontWeight: AppTypography.bodyWeight,
-                            fontSize: 13,
-                            height: 1.35,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          page.userName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: AppTypography.strongWeight,
-                            height: 1.2,
-                            letterSpacing: -0.25,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      key: const Key('btn-avatar'),
-                      onTap: page.onAvatarTap,
-                      customBorder: const CircleBorder(),
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: const Color(0x38FFFFFF),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0x73FFFFFF),
-                            width: 2,
-                          ),
-                        ),
-                        child: Text(
-                          page.userInitials,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: AppTypography.titleWeight,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  key: const Key('home-month-chip'),
-                  onTap: page.viewMonthController == null
-                      ? null
-                      : () => showMonthPickerSheet(
-                          context,
-                          page.viewMonthController!,
-                        ),
-                  borderRadius: BorderRadius.circular(999),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0x33FFFFFF),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.calendar_month,
-                          size: 15,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          monthLabel(
-                            snapshot.month.year == 1970
-                                ? DateTime.now()
-                                : snapshot.month,
-                          ),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: AppTypography.metadataWeight,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-                decoration: BoxDecoration(
-                  color: const Color(0x29FFFFFF),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0x1FFFFFFF)),
-                ),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Chi tiêu tháng này',
+                    Text(
+                      greetingFor(page.clock()),
                       style: TextStyle(
-                        color: Color(0xC7FFFFFF),
-                        fontSize: 12,
+                        color: AppColors.textSecondary,
                         fontWeight: AppTypography.metadataWeight,
+                        fontSize: 13,
+                        height: 1.35,
                       ),
                     ),
-                    const SizedBox(height: 5),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        controller.loading
-                            ? '…'
-                            : controller.error != null
-                            ? '—'
-                            : displayVnd(snapshot.monthExpense, hidden: hidden),
-                        key: const Key('home-month-spend'),
-                        style: moneyStyle(size: 28),
+                    const SizedBox(height: 4),
+                    Text(
+                      page.userName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.text,
+                        fontSize: 22,
+                        fontWeight: AppTypography.strongWeight,
+                        height: 1.2,
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 12),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  key: const Key('btn-avatar'),
+                  onTap: page.onAvatarTap,
+                  customBorder: const CircleBorder(),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      page.userInitials,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: AppTypography.titleWeight,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
+          ),
+          const SizedBox(height: 16),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: const Key('home-month-chip'),
+              onTap: page.viewMonthController == null
+                  ? null
+                  : () => showMonthPickerSheet(
+                      context,
+                      page.viewMonthController!,
+                    ),
+              borderRadius: BorderRadius.circular(999),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.cardShadow,
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.calendar_month,
+                      key: const Key('home-month-calendar-icon'),
+                      size: 16,
+                      color: AppColors.yellow,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      monthLabel(
+                        snapshot.month.year == 1970
+                            ? DateTime.now()
+                            : snapshot.month,
+                      ),
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontSize: 13,
+                        fontWeight: AppTypography.titleWeight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _SpendCard(
+            loading: controller.loading,
+            error: controller.error,
+            amount: snapshot.monthExpense,
+            hidden: hidden,
           ),
         ],
       ),
@@ -378,22 +335,124 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _Blob extends StatelessWidget {
-  const _Blob({required this.size, required this.opacity});
-  final double size;
-  final double opacity;
+class _SpendCard extends StatelessWidget {
+  const _SpendCard({
+    required this.loading,
+    required this.error,
+    required this.amount,
+    required this.hidden,
+  });
+
+  final bool loading;
+  final String? error;
+  final int amount;
+  final bool hidden;
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white.withValues(alpha: opacity),
-        ),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final mascotWidth = (constraints.maxWidth * 0.34).clamp(88.0, 132.0);
+        return Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(minHeight: 132),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF00B67A), Color(0xFF009963), Color(0xFF00855A)],
+            ),
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryDark.withValues(alpha: 0.22),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -mascotWidth * 0.08,
+                  top: -mascotWidth * 0.06,
+                  bottom: -mascotWidth * 0.14,
+                  width: mascotWidth,
+                  child: IgnorePointer(
+                    child: ExcludeSemantics(
+                      child: ShaderMask(
+                        blendMode: BlendMode.dstIn,
+                        shaderCallback: (rect) {
+                          return const LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Color(0x00FFFFFF),
+                              Color(0xB3FFFFFF),
+                              Color(0xFFFFFFFF),
+                            ],
+                            stops: [0.0, 0.22, 0.48],
+                          ).createShader(rect);
+                        },
+                        child: Image.asset(
+                          'assets/brand/app_icon.png',
+                          fit: BoxFit.contain,
+                          alignment: Alignment.centerRight,
+                          filterQuality: FilterQuality.medium,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 16, 20),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Tháng này tiền đi đâu rồi?',
+                              style: TextStyle(
+                                color: Color(0xE6FFFFFF),
+                                fontSize: 14,
+                                fontWeight: AppTypography.titleWeight,
+                                height: 1.3,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                loading
+                                    ? '…'
+                                    : error != null
+                                    ? '—'
+                                    : displayVnd(amount, hidden: hidden),
+                                key: const Key('home-month-spend'),
+                                maxLines: 1,
+                                style: moneyStyle(
+                                  size: 32,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: mascotWidth * 0.62),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -413,7 +472,7 @@ class _Recent extends StatelessWidget {
   Widget build(BuildContext context) {
     final recent = controller.snapshot.recent;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -421,11 +480,11 @@ class _Recent extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Gần đây',
+                  'Đây nè',
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: AppTypography.titleWeight,
-                    letterSpacing: -0.2,
+                    fontSize: 18,
+                    fontWeight: AppTypography.strongWeight,
+                    letterSpacing: -0.3,
                     color: AppColors.text,
                   ),
                 ),
@@ -433,17 +492,34 @@ class _Recent extends StatelessWidget {
               TextButton(
                 key: const Key('see-all'),
                 onPressed: onSeeAll,
-                child: Text(
-                  'Xem tất cả',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: AppTypography.titleWeight,
-                    color: AppColors.primary,
-                  ),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  padding: const EdgeInsets.only(left: 8),
+                  minimumSize: const Size(0, 40),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Xem tất cả',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: AppTypography.titleWeight,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: AppColors.primary,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 8),
           if (controller.error != null)
             Text(
               controller.error!,
@@ -470,9 +546,10 @@ class _Recent extends StatelessWidget {
           else
             ...recent.map(
               (tx) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.only(bottom: 10),
                 child: HomeTransactionTile(
                   transaction: tx,
+                  unsignedNeutralAmount: true,
                   onTap: () => onTransactionTap(tx),
                 ),
               ),

@@ -8,6 +8,7 @@ import 'package:tien_day/domain/entities/transaction_type.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
 import 'package:tien_day/presentation/home/home_page.dart';
 import 'package:tien_day/presentation/home/widgets/home_transaction_tile.dart';
+import 'package:tien_day/presentation/theme/app_colors.dart';
 
 import '../support/memory_transaction_catalog_repository.dart';
 import '../support/memory_transaction_repository.dart';
@@ -66,15 +67,29 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Chi tiêu tháng này'), findsOneWidget);
+    expect(find.text('Tháng này tiền đi đâu rồi?'), findsOneWidget);
     expect(find.text('0 ₫'), findsOneWidget);
-    expect(find.text('Gần đây'), findsOneWidget);
+    expect(find.text('Đây nè'), findsOneWidget);
+    expect(find.text('Xem tất cả'), findsOneWidget);
     expect(find.text('Chưa có giao dịch. Nhấn + để thêm.'), findsOneWidget);
     expect(find.text('Trang chủ'), findsOneWidget);
     expect(find.byKey(const Key('fab-add')), findsOneWidget);
     expect(find.text('Lương'), findsNothing);
     expect(find.text('Ngân sách'), findsNothing);
     expect(find.text('Mục tiêu tiết kiệm'), findsNothing);
+
+    final calendar = tester.widget<Icon>(
+      find.byKey(const Key('home-month-calendar-icon')),
+    );
+    expect(calendar.color, AppColors.yellow);
+    final month = tester.widget<Text>(find.text('Tháng 8 · 2026'));
+    expect(month.style?.color, AppColors.primary);
+    final spend = tester.widget<Text>(
+      find.byKey(const Key('home-month-spend')),
+    );
+    expect(spend.data, '0 ₫');
+    expect(spend.style?.color, Colors.white);
+    expect(spend.data, isNot(contains('−')));
   });
 
   testWidgets('Home lists a recent expense from the repository', (
@@ -110,8 +125,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('45.000 ₫'), findsWidgets);
+    expect(find.text('−45.000 ₫'), findsNothing);
     expect(find.text('Highlands'), findsOneWidget);
     expect(find.textContaining('Cafe'), findsOneWidget);
+
+    final amount = tester
+        .widgetList<Text>(find.text('45.000 ₫'))
+        .firstWhere((text) => text.key != const Key('home-month-spend'));
+    expect(amount.style?.color, AppColors.text);
   });
 
   testWidgets('Home load error does not fake a zero monthly total', (
@@ -159,7 +180,7 @@ void main() {
     await tester.tap(find.byKey(const Key('btn-avatar')));
     await tester.pump();
     expect(find.text('Cài đặt'), findsWidgets);
-    expect(find.text('Gần đây'), findsNothing);
+    expect(find.text('Đây nè'), findsNothing);
   });
 
   testWidgets('month chip switches Home spend to the selected month', (
@@ -264,16 +285,17 @@ void main() {
     expect(find.text('Xem tất cả'), findsOneWidget);
   });
 
-  testWidgets('short Home keeps 5 recent rows and scrolls instead of clipping', (
-    tester,
-  ) async {
-    await pumpHome(tester, count: 10, size: const Size(390, 640));
-    expect(tester.takeException(), isNull);
-    expect(find.byType(HomeTransactionTile), findsNWidgets(5));
-    expect(find.byKey(const Key('fab-add')), findsOneWidget);
-    expect(
-      tester.getTopLeft(find.byKey(const Key('nav-home'))).dy,
-      lessThan(640),
-    );
-  });
+  testWidgets(
+    'short Home keeps 5 recent rows and scrolls instead of clipping',
+    (tester) async {
+      await pumpHome(tester, count: 10, size: const Size(390, 640));
+      expect(tester.takeException(), isNull);
+      expect(find.byType(HomeTransactionTile), findsNWidgets(5));
+      expect(find.byKey(const Key('fab-add')), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byKey(const Key('nav-home'))).dy,
+        lessThan(640),
+      );
+    },
+  );
 }
