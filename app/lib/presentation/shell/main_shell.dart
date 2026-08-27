@@ -11,6 +11,7 @@ import '../../domain/failures/result.dart';
 import '../../domain/security/sensitive_access_port.dart';
 import '../add_transaction/add_transaction_controller.dart';
 import '../add_transaction/add_transaction_page.dart';
+import '../backup/backup_restore_page.dart';
 import '../catalog/transaction_catalog_controller.dart';
 import '../debug/interaction_trace.dart';
 import '../finance/finance_controller.dart';
@@ -67,6 +68,7 @@ class _MainShellState extends State<MainShell> {
   AppTab _tab = AppTab.home;
   bool _showFinance = false;
   bool _showProfile = false;
+  bool _showBackupRestore = false;
   bool _showAdd = false;
   bool _openingAdd = false;
   bool _openingSensitive = false;
@@ -199,12 +201,15 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _selectTab(AppTab tab) {
-    if (_tab == tab && !_showFinance && !_showProfile) return;
+    if (_tab == tab && !_showFinance && !_showProfile && !_showBackupRestore) {
+      return;
+    }
     setState(() {
       _tab = tab;
       if (tab != AppTab.settings) {
         _showFinance = false;
         _showProfile = false;
+        _showBackupRestore = false;
       }
     });
   }
@@ -227,6 +232,7 @@ class _MainShellState extends State<MainShell> {
       setState(() {
         _tab = AppTab.settings;
         _showProfile = false;
+        _showBackupRestore = false;
         _showFinance = true;
       });
     } finally {
@@ -238,7 +244,35 @@ class _MainShellState extends State<MainShell> {
     setState(() {
       _tab = AppTab.settings;
       _showFinance = false;
+      _showBackupRestore = false;
       _showProfile = true;
+    });
+  }
+
+  void _openBackupRestore() {
+    setState(() {
+      _tab = AppTab.settings;
+      _showFinance = false;
+      _showProfile = false;
+      _showBackupRestore = true;
+    });
+  }
+
+  Future<void> _onBackupRestored() async {
+    await widget.sensitiveAccess.lock();
+    await widget.catalogController.load();
+    await widget.viewMonthController.load();
+    if (!mounted) return;
+    final settings = SettingsScope.maybeOf(context);
+    final profile = UserProfileScope.maybeOf(context);
+    await settings?.load();
+    await profile?.load();
+    await _financeController.load();
+    await _refresh();
+    if (!mounted) return;
+    setState(() {
+      _showFinance = false;
+      _showProfile = false;
     });
   }
 
@@ -258,131 +292,6 @@ class _MainShellState extends State<MainShell> {
     } finally {
       _openingSensitive = false;
     }
-  }
-
-  bool _backupBusy = false;
-
-  Future<void> _backup() async {
-    final service = widget.backupService;
-    final share = widget.backupShare;
-    if (service == null || share == null || _backupBusy) return;
-    _backupBusy = true;
-    try {
-      _showBusyDialog('Đang sao lưu…');
-      final result = await service.export();
-      if (mounted) Navigator.of(context, rootNavigator: true).pop();
-      switch (result) {
-        case Err(:final failure):
-          if (mounted) _toast(failure.message);
-        case Ok(:final value):
-          await share.share(value);
-          if (mounted) _toast('Đã tạo bản sao lưu.');
-      }
-    } catch (error) {
-      if (mounted) {
-        Navigator.of(context, rootNavigator: true).maybePop();
-        _toast('Không thể tạo bản sao lưu.');
-      }
-    } finally {
-      _backupBusy = false;
-    }
-  }
-
-  Future<void> _restore() async {
-    final service = widget.restoreService;
-    final picker = widget.backupPicker;
-    if (service == null || picker == null || _backupBusy) return;
-    _backupBusy = true;
-    try {
-      final path = await picker.pickBackup();
-      if (path == null || !mounted) return;
-      _showBusyDialog('Đang kiểm tra bản sao lưu…');
-      final inspected = await service.inspect(path);
-      if (mounted) Navigator.of(context, rootNavigator: true).pop();
-      switch (inspected) {
-        case Err(:final failure):
-          if (mounted) _toast(failure.message);
-          return;
-        case Ok():
-          break;
-      }
-      if (!mounted) return;
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Khôi phục dữ liệu?'),
-          content: const Text(
-            'Khôi phục dữ liệu sẽ thay thế dữ liệu hiện tại trên thiết bị này.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Hủy'),
-            ),
-            TextButton(
-              key: const Key('dialog-restore-confirm'),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Khôi phục'),
-            ),
-          ],
-        ),
-      );
-      if (confirmed != true || !mounted) return;
-      final settings = SettingsScope.maybeOf(context);
-      final profile = UserProfileScope.maybeOf(context);
-      _showBusyDialog('Đang khôi phục…');
-      final restored = await service.restore(path);
-      if (mounted) Navigator.of(context, rootNavigator: true).pop();
-      switch (restored) {
-        case Err(:final failure):
-          if (mounted) _toast(failure.message);
-        case Ok():
-          await widget.sensitiveAccess.lock();
-          await widget.catalogController.load();
-          await widget.viewMonthController.load();
-          await settings?.load();
-          await profile?.load();
-          await _refresh();
-          if (mounted) {
-            setState(() {
-              _showFinance = false;
-              _showProfile = false;
-            });
-            _toast('Đã khôi phục dữ liệu.');
-          }
-      }
-    } catch (error) {
-      if (mounted) {
-        Navigator.of(context, rootNavigator: true).maybePop();
-        _toast('Không thể khôi phục dữ liệu.');
-      }
-    } finally {
-      _backupBusy = false;
-    }
-  }
-
-  void _showBusyDialog(String message) {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        content: Row(
-          children: [
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            const SizedBox(width: 16),
-            Expanded(child: Text(message)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _toast(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -413,10 +322,23 @@ class _MainShellState extends State<MainShell> {
                       ? ProfilePage(
                           onBack: () => setState(() => _showProfile = false),
                         )
+                      : _showBackupRestore
+                      ? BackupRestorePage(
+                          onBack: () =>
+                              setState(() => _showBackupRestore = false),
+                          onRestored: _onBackupRestored,
+                          backupService: widget.backupService,
+                          restoreService: widget.restoreService,
+                          backupShare: widget.backupShare,
+                          backupPicker: widget.backupPicker,
+                        )
                       : _tabHost(),
                 ),
                 HomeBottomNav(
-                  tab: _tab == AppTab.settings || _showFinance || _showProfile
+                  tab: _tab == AppTab.settings ||
+                          _showFinance ||
+                          _showProfile ||
+                          _showBackupRestore
                       ? AppTab.settings
                       : _tab,
                   onAddPressed: _openAdd,
@@ -480,8 +402,7 @@ class _MainShellState extends State<MainShell> {
         onOpenFinance: _openFinance,
         onOpenProfile: _openProfile,
         onChangePin: _changePin,
-        onBackup: _backup,
-        onRestore: _restore,
+        onOpenBackupRestore: _openBackupRestore,
       ),
     };
   }

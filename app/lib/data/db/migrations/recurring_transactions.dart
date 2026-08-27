@@ -23,6 +23,7 @@ const protectedPrefKeys = <String>[
   'profile_display_name',
   'profile_email',
   'profile_avatar_path',
+  'last_backup_at',
 ];
 
 const createRecurringTransactionsSql = '''

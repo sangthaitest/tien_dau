@@ -51,16 +51,16 @@
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.data</string>
-				<string>public.archive</string>
+				<string>public.json</string>
 			</array>
 			<key>UTTypeTagSpecification</key>
 			<dict>
 				<key>public.filename-extension</key>
 				<array>
-					<string>tien-daune</string>
+					<string>tdn</string>
 				</array>
 				<key>public.mime-type</key>
-				<string>application/x-tien-daune</string>
+				<string>application/x-tien-daune-backup</string>
 			</dict>
 		</dict>
 	</array>

@@ -13,15 +13,13 @@ class SettingsPage extends StatelessWidget {
     this.onOpenFinance,
     this.onOpenProfile,
     this.onChangePin,
-    this.onBackup,
-    this.onRestore,
+    this.onOpenBackupRestore,
   });
 
   final VoidCallback? onOpenFinance;
   final VoidCallback? onOpenProfile;
   final VoidCallback? onChangePin;
-  final VoidCallback? onBackup;
-  final VoidCallback? onRestore;
+  final VoidCallback? onOpenBackupRestore;
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +103,7 @@ class SettingsPage extends StatelessWidget {
                     ? const Color(0xFF2A1F3A)
                     : const Color(0xFFEDE7F6),
                 label: 'Sao lưu & khôi phục',
-                onTap: () => _backupRestoreSheet(context),
+                onTap: onOpenBackupRestore,
               ),
             ],
           ),
@@ -202,52 +200,6 @@ class SettingsPage extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Future<void> _backupRestoreSheet(BuildContext context) {
-    return showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  key: const Key('settings-backup'),
-                  leading: Icon(
-                    Icons.file_upload_outlined,
-                    color: AppColors.primary,
-                  ),
-                  title: const Text('Sao lưu dữ liệu'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    onBackup?.call();
-                  },
-                ),
-                ListTile(
-                  key: const Key('settings-restore'),
-                  leading: Icon(
-                    Icons.file_download_outlined,
-                    color: AppColors.income,
-                  ),
-                  title: const Text('Khôi phục dữ liệu'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    onRestore?.call();
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }

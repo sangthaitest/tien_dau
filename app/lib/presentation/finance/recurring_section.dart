@@ -5,25 +5,12 @@ import '../../application/finance_service.dart';
 import '../../domain/amount/amount_input.dart';
 import '../../domain/entities/recurring_transaction.dart';
 import '../../domain/failures/result.dart';
+import '../../domain/time/clock_format.dart';
 import '../format/money_format.dart';
 import '../settings/settings_scope.dart';
 import '../theme/app_colors.dart';
 import '../theme/category_look.dart';
 import 'finance_controller.dart';
-
-String _dueFieldText(int day, DateTime month) {
-  final dd = day.toString().padLeft(2, '0');
-  final mm = month.month.toString().padLeft(2, '0');
-  return '$dd/$mm';
-}
-
-int? _parseDueDay(String raw) {
-  final match = RegExp(r'(\d{1,2})').firstMatch(raw.trim());
-  if (match == null) return null;
-  final day = int.parse(match.group(1)!);
-  if (day < 1 || day > 31) return null;
-  return day;
-}
 
 Future<void> showRecurringManager({
   required BuildContext context,
@@ -651,7 +638,7 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
   late final TextEditingController _name;
   late final TextEditingController _amount;
   late final TextEditingController _note;
-  late final TextEditingController _due;
+  late DateTime _dueDate;
   String? _categoryId;
   String? _paymentSourceId;
   late bool _isActive;
@@ -663,14 +650,15 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
   void initState() {
     super.initState();
     final rule = widget.rule;
+    final month = widget.month;
     _name = TextEditingController(text: rule?.name ?? '');
     _amount = TextEditingController(
       text: rule == null ? '' : AmountInput.formatGrouped(rule.amount),
     );
     _note = TextEditingController(text: rule?.note ?? '');
-    _due = TextEditingController(
-      text: rule == null ? '' : _dueFieldText(rule.dayOfMonth, widget.month),
-    );
+    final day = rule?.dayOfMonth ?? month.day;
+    final maxDay = DateTime(month.year, month.month + 1, 0).day;
+    _dueDate = DateTime(month.year, month.month, day.clamp(1, maxDay));
     _categoryId = rule?.categoryId;
     _paymentSourceId = rule?.paymentSourceId;
     _isActive = rule?.isActive ?? true;
@@ -681,7 +669,6 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
     _name.dispose();
     _amount.dispose();
     _note.dispose();
-    _due.dispose();
     super.dispose();
   }
 
@@ -695,11 +682,24 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
     }
   }
 
+  Future<void> _pickDueDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _dueDate,
+      firstDate: DateTime(_dueDate.year - 5),
+      lastDate: DateTime(_dueDate.year + 1),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _dueDate = dateOnly(picked);
+      _error = null;
+    });
+  }
+
   void _save() {
     final title = _name.text.trim();
     final amount = AmountInput.parse(_amount.text);
-    final day = _parseDueDay(_due.text);
-    if (title.isEmpty || amount <= 0 || day == null) {
+    if (title.isEmpty || amount <= 0) {
       setState(() => _error = 'Nhập tên, số tiền và ngày.');
       return;
     }
@@ -709,7 +709,7 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
         name: title,
         kind: widget.lockedKind,
         amount: amount,
-        dayOfMonth: day,
+        dayOfMonth: _dueDate.day,
         categoryId: _isExpense ? _categoryId : null,
         paymentSourceId: _paymentSourceId,
         note: _note.text,
@@ -766,10 +766,12 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
                 'Ngày',
                 style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
               ),
-              TextField(
+              const SizedBox(height: 6),
+              _DueDateButton(
                 key: const Key('upcoming-due-input'),
-                controller: _due,
-                decoration: const InputDecoration(hintText: 'VD: 25/08'),
+                label: formatIsoDate(_dueDate),
+                onTap: _pickDueDate,
+                trailing: Icons.calendar_today_outlined,
               ),
               if (_error != null) ...[
                 const SizedBox(height: 8),
@@ -798,6 +800,53 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DueDateButton extends StatelessWidget {
+  const _DueDateButton({
+    super.key,
+    required this.label,
+    required this.onTap,
+    this.trailing,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final IconData? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceVariant,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: SizedBox(
+          height: 54,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.text,
+                    ),
+                  ),
+                ),
+                if (trailing != null)
+                  Icon(trailing, color: AppColors.textTertiary),
+              ],
+            ),
           ),
         ),
       ),

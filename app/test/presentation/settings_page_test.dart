@@ -259,7 +259,7 @@ void main() {
     expect(scaffold.backgroundColor, const Color(0xFF0E1116));
   });
 
-  testWidgets('backup & restore entry opens existing actions', (tester) async {
+  testWidgets('backup & restore opens dedicated page', (tester) async {
     _phone(tester);
     final service = TransactionService(MemoryTransactionRepository());
     final home = HomeController(
@@ -278,9 +278,10 @@ void main() {
     await tester.pump();
     await tester.tap(find.byKey(const Key('settings-backup-restore')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('settings-backup')), findsOneWidget);
-    expect(find.byKey(const Key('settings-restore')), findsOneWidget);
-    expect(find.text('Sao lưu dữ liệu'), findsOneWidget);
-    expect(find.text('Khôi phục dữ liệu'), findsOneWidget);
+    expect(find.text('Sao lưu & khôi phục'), findsWidgets);
+    expect(find.text('Lần sao lưu gần nhất'), findsOneWidget);
+    expect(find.text('Chưa có bản sao lưu'), findsOneWidget);
+    expect(find.byKey(const Key('backup-export')), findsOneWidget);
+    expect(find.byKey(const Key('backup-import')), findsOneWidget);
   });
 }

@@ -36,6 +36,20 @@ Future<void> _submitPin(WidgetTester tester, String pin) async {
   await tester.pump(const Duration(milliseconds: 50));
 }
 
+Future<void> _pickDueDay(WidgetTester tester, int day) async {
+  await tester.tap(find.byKey(const Key('upcoming-due-input')));
+  await tester.pumpAndSettle();
+  await tester.tap(
+    find.descendant(
+      of: find.byType(DatePickerDialog),
+      matching: find.text('$day'),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('OK'));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUpAll(() {});
 
@@ -445,10 +459,7 @@ void main() {
       find.byKey(const Key('upcoming-amount-input')),
       '1000000',
     );
-    await tester.enterText(
-      find.byKey(const Key('upcoming-due-input')),
-      '01/08',
-    );
+    await _pickDueDay(tester, 1);
     await tester.tap(find.byKey(const Key('upcoming-save')));
     await tester.pumpAndSettle();
     expect(find.text('Wifi'), findsWidgets);
@@ -557,10 +568,7 @@ void main() {
         find.byKey(const Key('upcoming-amount-input')),
         '22000000',
       );
-      await tester.enterText(
-        find.byKey(const Key('upcoming-due-input')),
-        '01/08',
-      );
+      await _pickDueDay(tester, 1);
       await tester.tap(find.byKey(const Key('upcoming-save')));
       await tester.pumpAndSettle();
 
@@ -754,10 +762,7 @@ void main() {
       find.byKey(const Key('upcoming-amount-input')),
       '3000000',
     );
-    await tester.enterText(
-      find.byKey(const Key('upcoming-due-input')),
-      '05/08',
-    );
+    await _pickDueDay(tester, 5);
     await tester.tap(find.byKey(const Key('upcoming-save')));
     await tester.pumpAndSettle();
 
