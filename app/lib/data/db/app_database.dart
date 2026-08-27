@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart' hide Transaction;
@@ -6,25 +8,34 @@ import 'migrations/normalize_categories.dart';
 import 'migrations/recurring_transactions.dart';
 
 class AppDatabase {
-  AppDatabase._(this._db);
+  AppDatabase._(this._db, this.path);
 
-  final Database _db;
+  Database _db;
+  final String path;
 
   Database get raw => _db;
 
-  static const _fileName = 'tien_day.db';
-  static const _version = 5;
+  static const fileName = 'tien_day.db';
+  static const schemaVersion = 5;
+
+  static Future<String> documentsPath() async {
+    final dir = await getApplicationDocumentsDirectory();
+    return p.join(dir.path, fileName);
+  }
 
   static Future<AppDatabase> openFile() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final path = p.join(dir.path, _fileName);
-    return openPath(path);
+    return openPath(await documentsPath());
   }
 
   static Future<AppDatabase> openPath(String path) async {
-    final db = await openDatabase(
+    final db = await _openRaw(path);
+    return AppDatabase._(db, path);
+  }
+
+  static Future<Database> _openRaw(String path) {
+    return openDatabase(
       path,
-      version: _version,
+      version: schemaVersion,
       onCreate: (db, version) async {
         await _createTransactions(db);
         await _createTransactionIndexes(db);
@@ -46,7 +57,6 @@ class AppDatabase {
         }
       },
     );
-    return AppDatabase._(db);
   }
 
   static Future<void> _createTransactions(Database db) async {
@@ -97,6 +107,54 @@ CREATE TABLE savings_goals (
   updated_at TEXT NOT NULL
 )
 ''');
+  }
+
+  Future<int> userVersion() async {
+    final rows = await _db.rawQuery('PRAGMA user_version');
+    return (rows.first['user_version'] as num).toInt();
+  }
+
+  Future<String> integrityCheck() async {
+    final rows = await _db.rawQuery('PRAGMA integrity_check');
+    if (rows.isEmpty) return 'empty';
+    return rows.first.values.first.toString();
+  }
+
+  /// Consistent standalone copy. Does not replace the live file.
+  Future<void> snapshotTo(String destPath) async {
+    final dest = File(destPath);
+    if (await dest.exists()) await dest.delete();
+    await dest.parent.create(recursive: true);
+    // Prefer checkpoint + copy: reliable on Android/iOS/desktop and avoids
+    // platform hangs seen with VACUUM INTO under sqflite_common_ffi.
+    try {
+      await _db.rawQuery('PRAGMA wal_checkpoint(TRUNCATE)');
+    } catch (_) {}
+    await File(path).copy(destPath);
+  }
+
+  Future<void> replaceLiveDatabase(String sourceSqlitePath) async {
+    try {
+      await _db.close();
+    } catch (_) {}
+    try {
+      await deleteSqliteSidecars(path);
+      await File(sourceSqlitePath).copy(path);
+      await deleteSqliteSidecars(path);
+      _db = await _openRaw(path);
+    } catch (error, stack) {
+      try {
+        _db = await _openRaw(path);
+      } catch (_) {}
+      Error.throwWithStackTrace(error, stack);
+    }
+  }
+
+  static Future<void> deleteSqliteSidecars(String dbPath) async {
+    for (final suffix in ['-wal', '-shm', '-journal']) {
+      final file = File('$dbPath$suffix');
+      if (await file.exists()) await file.delete();
+    }
   }
 
   Future<void> close() => _db.close();

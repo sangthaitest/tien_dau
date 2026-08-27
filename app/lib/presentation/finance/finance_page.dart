@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../application/finance_service.dart';
 import '../../domain/amount/amount_input.dart';
 import '../../domain/entities/finance.dart';
 import '../../domain/entities/recurring_transaction.dart';
@@ -17,10 +16,12 @@ class FinancePage extends StatelessWidget {
     super.key,
     required this.controller,
     required this.onBack,
+    this.onOpenTransactions,
   });
 
   final FinanceController controller;
   final VoidCallback onBack;
+  final VoidCallback? onOpenTransactions;
 
   @override
   Widget build(BuildContext context) {
@@ -56,11 +57,7 @@ class FinancePage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    IconButton(
-                      key: const Key('btn-edit-budget'),
-                      onPressed: () => _editBudget(context),
-                      icon: const Icon(Icons.edit_outlined),
-                    ),
+                    const SizedBox(width: 48),
                   ],
                 ),
               ),
@@ -75,105 +72,40 @@ class FinancePage extends StatelessWidget {
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 88),
                         children: [
                           if (controller.error != null)
-                            Text(
-                              controller.error!,
-                              style: TextStyle(color: AppColors.expense),
-                            ),
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Text(
-                                  'Thu nhập',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                              TextButton(
-                                key: const Key('finance-income-manage'),
-                                onPressed: () => showRecurringManager(
-                                  context: context,
-                                  controller: controller,
-                                  kind: RecurringKind.income,
-                                ),
-                                child: Text(
-                                  'Quản lý →',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              key: const Key('finance-income-card'),
-                              onTap: () => showRecurringManager(
-                                context: context,
-                                controller: controller,
-                                kind: RecurringKind.income,
-                              ),
-                              borderRadius: BorderRadius.circular(24),
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.fromLTRB(
-                                  18,
-                                  16,
-                                  18,
-                                  16,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.card,
-                                  borderRadius: BorderRadius.circular(24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.cardShadow,
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Tháng ${snap.month.month}/${snap.month.year}',
-                                      style: TextStyle(
-                                        color: AppColors.textSecondary,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    Text(
-                                      displayVnd(
-                                        snap.recurringIncomeTotal,
-                                        hidden: SettingsScope.hideMoney(
-                                          context,
-                                        ),
-                                      ),
-                                      key: const Key('salary-amount'),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: moneyStyle(
-                                        size: 22,
-                                        color: AppColors.income,
-                                        weight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Text(
+                                controller.error!,
+                                style: TextStyle(color: AppColors.expense),
                               ),
                             ),
+                          _IncomeCard(
+                            month: snap.month,
+                            amount: snap.recurringIncomeTotal,
+                            onManage: () => showRecurringManager(
+                              context: context,
+                              controller: controller,
+                              kind: RecurringKind.income,
+                            ),
                           ),
-                          const SizedBox(height: 16),
-                          _BudgetCard(snapshot: snap),
-                          const SizedBox(height: 20),
+                          const _FlowConnector(
+                            symbol: '−',
+                            label: 'Trừ khoản định kỳ',
+                          ),
                           RecurringSection(controller: controller),
-                          const SizedBox(height: 20),
+                          const _FlowConnector(symbol: '='),
+                          _SpendableCard(amount: snap.spendableAmount),
+                          const _FlowConnector(
+                            symbol: '−',
+                            label: 'Trừ chi tiêu',
+                          ),
+                          _SpentCard(
+                            amount: snap.used,
+                            onTap: onOpenTransactions,
+                          ),
+                          const _FlowConnector(symbol: '='),
+                          _RemainingCard(amount: snap.projectedRemaining),
+                          const SizedBox(height: 28),
                           Row(
                             children: [
                               const Expanded(
@@ -232,20 +164,6 @@ class FinancePage extends StatelessWidget {
         },
       ),
     );
-  }
-
-  Future<void> _editBudget(BuildContext context) async {
-    final amount = await _amountDialog(
-      context,
-      title: 'Đặt ngân sách tháng',
-      label: 'Hạn mức tháng (₫)',
-      initial: controller.snapshot.budgetLimit,
-    );
-    if (amount == null) return;
-    final result = await controller.saveBudget(amount);
-    if (context.mounted && result is Err) {
-      _toast(context, result.failure.message);
-    }
   }
 
   Future<void> _deleteGoal(BuildContext context, SavingsGoal goal) async {
@@ -320,203 +238,456 @@ void _groupAmountField(TextEditingController field, String raw) {
   }
 }
 
-Future<int?> _amountDialog(
-  BuildContext context, {
-  required String title,
-  required String label,
-  required int initial,
-}) {
-  final field = TextEditingController(text: AmountInput.formatGrouped(initial));
-  return showModalBottomSheet<int>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: AppColors.card,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-    ),
-    builder: (context) {
-      final inset = MediaQuery.viewInsetsOf(context).bottom;
-      return Padding(
-        padding: EdgeInsets.only(bottom: inset),
-        child: SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  label.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  key: const Key('finance-amount-input'),
-                  controller: field,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onChanged: (raw) => _groupAmountField(field, raw),
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: AppColors.surfaceVariant,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 52,
-                  child: FilledButton(
-                    key: const Key('finance-amount-save'),
-                    onPressed: () =>
-                        Navigator.pop(context, AmountInput.parse(field.text)),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                    ),
-                    child: const Text(
-                      'Lưu',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    },
-  );
-}
+class _FlowConnector extends StatelessWidget {
+  const _FlowConnector({required this.symbol, this.label});
 
-class _BudgetCard extends StatelessWidget {
-  const _BudgetCard({required this.snapshot});
-  final FinanceSnapshot snapshot;
+  final String symbol;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
-    final pct = snapshot.percentUsed;
-    Color fill = Colors.white;
-    if (pct >= 90) {
-      fill = AppColors.expense;
-    } else if (pct >= 75) {
-      fill = AppColors.warning;
-    }
-    final remainingPct = snapshot.budgetLimit <= 0
-        ? 0
-        : ((snapshot.remaining / snapshot.budgetLimit) * 100).round().clamp(
-            0,
-            100,
-          );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          const SizedBox(width: 22),
+          Column(
+            children: [
+              Container(width: 2, height: 10, color: AppColors.divider),
+              Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.divider),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.cardShadow,
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  symbol,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                    height: 1,
+                  ),
+                ),
+              ),
+              Container(width: 2, height: 10, color: AppColors.divider),
+            ],
+          ),
+          if (label != null) ...[
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label!,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _FinanceBadge extends StatelessWidget {
+  const _FinanceBadge({
+    required this.icon,
+    required this.foreground,
+    required this.background,
+    this.outlined = false,
+  });
+
+  final IconData icon;
+  final Color foreground;
+  final Color background;
+  final bool outlined;
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(22),
+      width: 44,
+      height: 44,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF00B67A), Color(0xFF009963)],
+        color: background,
+        shape: BoxShape.circle,
+        border: outlined ? Border.all(color: foreground.withValues(alpha: 0.35)) : null,
+      ),
+      child: Icon(icon, size: 22, color: foreground),
+    );
+  }
+}
+
+class _ManageLink extends StatelessWidget {
+  const _ManageLink({required this.onPressed, this.keyId});
+
+  final VoidCallback onPressed;
+  final Key? keyId;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      key: keyId,
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.primary,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        minimumSize: const Size(0, 32),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(
+        'Quản lý →',
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: AppColors.primary,
+          fontSize: 13,
         ),
+      ),
+    );
+  }
+}
+
+class _IncomeCard extends StatelessWidget {
+  const _IncomeCard({
+    required this.month,
+    required this.amount,
+    required this.onManage,
+  });
+
+  final DateTime month;
+  final int amount;
+  final VoidCallback onManage;
+
+  @override
+  Widget build(BuildContext context) {
+    final hidden = SettingsScope.hideMoney(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: const Key('finance-income-card'),
+        onTap: onManage,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 14, 12, 16),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.cardShadow,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _FinanceBadge(
+                    icon: Icons.account_balance_wallet_outlined,
+                    foreground: AppColors.income,
+                    background: AppColors.incomeContainer,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Thu nhập',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Tháng ${month.month}/${month.year}',
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _ManageLink(
+                    keyId: const Key('finance-income-manage'),
+                    onPressed: onManage,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.only(left: 56),
+                child: Text(
+                  displayVnd(amount, hidden: hidden),
+                  key: const Key('salary-amount'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: moneyStyle(
+                    size: 24,
+                    color: AppColors.income,
+                    weight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SpendableCard extends StatelessWidget {
+  const _SpendableCard({required this.amount});
+
+  final int amount;
+
+  @override
+  Widget build(BuildContext context) {
+    final hidden = SettingsScope.hideMoney(context);
+    return Container(
+      key: const Key('finance-spendable-card'),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryContainer,
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Ngân sách tháng',
-            style: TextStyle(
-              color: Colors.white70,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            displayVnd(
-              snapshot.budgetLimit,
-              hidden: SettingsScope.hideMoney(context),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: moneyStyle(size: 24),
-          ),
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(5),
-            child: LinearProgressIndicator(
-              value: snapshot.budgetLimit <= 0 ? 0 : (pct / 100).clamp(0, 1),
-              minHeight: 10,
-              backgroundColor: Colors.white24,
-              color: fill,
-            ),
-          ),
-          const SizedBox(height: 12),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _FinanceBadge(
+                icon: Icons.credit_card,
+                foreground: AppColors.primary,
+                background: AppColors.card,
+                outlined: true,
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      snapshot.budgetLimit > 0 ? 'Đã dùng · $pct%' : 'Đã dùng',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
+                      'Tiền có thể chi',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '(Thu nhập - Khoản định kỳ)',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
                         fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      displayVnd(
-                        snapshot.used,
-                        hidden: SettingsScope.hideMoney(context),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: moneyStyle(size: 16),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      snapshot.budgetLimit > 0
-                          ? 'Còn lại · $remainingPct%'
-                          : 'Còn lại',
-                      style: const TextStyle(
-                        color: Colors.white70,
                         fontSize: 12,
-                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                    Text(
-                      displayVnd(
-                        snapshot.remaining,
-                        hidden: SettingsScope.hideMoney(context),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.right,
-                      style: moneyStyle(size: 16),
                     ),
                   ],
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(left: 56),
+            child: Text(
+              displayVnd(amount, hidden: hidden),
+              key: const Key('finance-spendable-amount'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: moneyStyle(
+                size: 24,
+                color: AppColors.primary,
+                weight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SpentCard extends StatelessWidget {
+  const _SpentCard({required this.amount, this.onTap});
+
+  final int amount;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final hidden = SettingsScope.hideMoney(context);
+    const basket = Color(0xFF3B6FE8);
+    const basketBg = Color(0xFFE8EEFF);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: const Key('finance-spent-card'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.cardShadow,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              const _FinanceBadge(
+                icon: Icons.shopping_basket_outlined,
+                foreground: basket,
+                background: basketBg,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Đã chi tiêu',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Trong tháng',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                displayVnd(amount, hidden: hidden),
+                key: const Key('finance-spent-amount'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: moneyStyle(
+                  size: 18,
+                  color: AppColors.text,
+                  weight: FontWeight.w800,
+                ),
+              ),
+              Icon(Icons.chevron_right, color: AppColors.textSecondary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RemainingCard extends StatelessWidget {
+  const _RemainingCard({required this.amount});
+
+  final int amount;
+
+  @override
+  Widget build(BuildContext context) {
+    final hidden = SettingsScope.hideMoney(context);
+    final positive = amount >= 0;
+    final accent = positive ? AppColors.warning : AppColors.expense;
+    final bg = positive ? AppColors.warningContainer : AppColors.expenseContainer;
+    return Container(
+      key: const Key('finance-remaining-card'),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _FinanceBadge(
+                icon: Icons.savings_outlined,
+                foreground: accent,
+                background: AppColors.card,
+                outlined: true,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Còn lại',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: accent,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '(Tiền có thể chi - Đã chi tiêu)',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(left: 56),
+            child: Text(
+              displayVnd(amount, hidden: hidden),
+              key: const Key('finance-remaining-amount'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: moneyStyle(
+                size: 24,
+                color: accent,
+                weight: FontWeight.w800,
+              ),
+            ),
           ),
         ],
       ),

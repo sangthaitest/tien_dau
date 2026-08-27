@@ -62,9 +62,7 @@ void main() {
     AppColors.dark = false;
   });
 
-  testWidgets('Settings shows V3 groups and currency stays VND', (
-    tester,
-  ) async {
+  testWidgets('Settings IA groups and currency stay VND', (tester) async {
     _phone(tester);
     final service = TransactionService(MemoryTransactionRepository());
     final home = HomeController(
@@ -83,19 +81,38 @@ void main() {
     await tester.pump();
 
     expect(find.text('Cài đặt'), findsWidgets);
-    expect(find.text('QUẢN LÝ TÀI CHÍNH'), findsOneWidget);
-    expect(find.text('TÙY CHỌN'), findsOneWidget);
+    expect(find.text('Hồ sơ'), findsOneWidget);
+    expect(find.text('TIỀN CỦA TÔI'), findsOneWidget);
+    expect(find.text('BẢO MẬT & DỮ LIỆU'), findsOneWidget);
+    expect(find.text('ỨNG DỤNG'), findsOneWidget);
     expect(find.text('Tài chính'), findsOneWidget);
-    expect(find.text('Mật khẩu quản lý'), findsOneWidget);
     expect(find.text('Tiền tệ'), findsOneWidget);
     expect(find.text('VND (₫)'), findsOneWidget);
+    expect(find.text('Mật khẩu quản lý'), findsOneWidget);
+    expect(find.text('Sao lưu & khôi phục'), findsOneWidget);
     expect(find.text('Thông báo'), findsOneWidget);
-    expect(find.text('Riêng tư'), findsOneWidget);
-    expect(find.text('Hiện số'), findsOneWidget);
+    expect(find.text('Hiển thị số tiền'), findsOneWidget);
     expect(find.text('Giao diện tối'), findsOneWidget);
-    expect(find.text('Đăng xuất (prototype)'), findsOneWidget);
-    expect(find.text('Sao lưu'), findsNothing);
+    expect(find.text('Đăng xuất'), findsNothing);
+    expect(find.text('Đăng xuất (prototype)'), findsNothing);
+    expect(find.text('Riêng tư'), findsNothing);
     expect(find.text('Google Drive'), findsNothing);
+    expect(find.byKey(const Key('settings-logout')), findsNothing);
+
+    final scrollable = find
+        .descendant(
+          of: find.byType(ListView),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('settings-version')),
+      80,
+      scrollable: scrollable,
+    );
+    expect(find.text('VỀ ỨNG DỤNG'), findsOneWidget);
+    expect(find.text('Phiên bản'), findsOneWidget);
+    expect(find.text('v1.0.0'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('settings-currency')));
     await tester.pump();
@@ -128,7 +145,7 @@ void main() {
     expect(repo.stored.notificationsEnabled, isFalse);
   });
 
-  testWidgets('privacy hides Home amounts and keeps category names', (
+  testWidgets('amount visibility hides Home amounts and keeps category names', (
     tester,
   ) async {
     _phone(tester);
@@ -152,10 +169,9 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-settings')));
     await tester.pump();
-    await tester.tap(find.byKey(const Key('settings-privacy')));
+    await tester.tap(find.byKey(const Key('toggle-privacy')));
     await tester.pump();
-    expect(find.text('Ẩn số'), findsOneWidget);
-    expect(find.text('Hiện số'), findsNothing);
+    expect(harness.settings.settings.balanceHidden, isTrue);
 
     await tester.tap(find.byKey(const Key('nav-home')));
     await tester.pump();
@@ -167,7 +183,7 @@ void main() {
     expect(find.textContaining('Cafe'), findsOneWidget);
   });
 
-  testWidgets('privacy masks Tài chính amounts and keeps labels', (
+  testWidgets('amount visibility masks Tài chính amounts and keeps labels', (
     tester,
   ) async {
     _phone(tester);
@@ -189,7 +205,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     await tester.tap(find.byKey(const Key('nav-settings')));
     await tester.pump();
-    await tester.tap(find.byKey(const Key('settings-privacy')));
+    await tester.tap(find.byKey(const Key('toggle-privacy')));
     await tester.pump();
     await tester.tap(find.byKey(const Key('settings-finance')));
     await tester.pump();
@@ -220,6 +236,20 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-settings')));
     await tester.pump();
     expect(AppColors.dark, isFalse);
+    final scrollable = find
+        .descendant(
+          of: find.byType(ListView),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('toggle-dark')),
+      80,
+      scrollable: scrollable,
+    );
+    // Keep the toggle above the bottom nav hit-test region.
+    await tester.drag(scrollable, const Offset(0, -120));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('toggle-dark')));
     await tester.pump();
     expect(AppColors.dark, isTrue);
@@ -229,54 +259,28 @@ void main() {
     expect(scaffold.backgroundColor, const Color(0xFF0E1116));
   });
 
-  testWidgets('logout locks PIN session and keeps local data', (tester) async {
+  testWidgets('backup & restore entry opens existing actions', (tester) async {
     _phone(tester);
-    final service = TransactionService(
-      MemoryTransactionRepository(seed: [_tx()]),
-    );
+    final service = TransactionService(MemoryTransactionRepository());
     final home = HomeController(
       HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
     );
-    final pins = MemoryPinRepository();
     final harness = buildShell(
       transactions: service,
       home: home,
       clock: () => DateTime(2026, 8, 18, 9),
-      pinRepo: pins,
     );
     addTearDown(harness.settings.dispose);
-    await harness.access.setupPin('5820');
-    expect(await harness.access.isUnlocked(), isTrue);
-
     await tester.pumpWidget(MaterialApp(home: harness.shell));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     await tester.tap(find.byKey(const Key('nav-settings')));
     await tester.pump();
-    final logout = tester.getRect(find.byKey(const Key('settings-logout')));
-    await tester.tapAt(Offset(logout.left + 24, logout.center.dy));
-    await tester.pump();
-    expect(
-      find.text('Dữ liệu cục bộ vẫn được giữ trên thiết bị.'),
-      findsOneWidget,
-    );
-    await tester.tap(find.byKey(const Key('dialog-logout-confirm')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-    expect(await harness.access.isUnlocked(), isFalse);
-    expect(find.text('Đã khóa khu vực tài chính'), findsOneWidget);
-    expect(find.text('Cài đặt'), findsWidgets);
-
-    await tester.tap(find.byKey(const Key('nav-home')));
-    await tester.pump();
-    expect(find.text('Highlands'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('nav-settings')));
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('settings-finance')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-    expect(find.textContaining('Nhập mật khẩu'), findsWidgets);
-    await _submitPin(tester, '5820');
-    expect(find.text('Tài chính'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('settings-backup-restore')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('settings-backup')), findsOneWidget);
+    expect(find.byKey(const Key('settings-restore')), findsOneWidget);
+    expect(find.text('Sao lưu dữ liệu'), findsOneWidget);
+    expect(find.text('Khôi phục dữ liệu'), findsOneWidget);
   });
 }

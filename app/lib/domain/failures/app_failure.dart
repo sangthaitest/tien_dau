@@ -22,3 +22,8 @@ final class PersistenceFailure extends AppFailure {
 final class AuthFailure extends AppFailure {
   const AuthFailure(super.message);
 }
+
+final class BackupFailure extends AppFailure {
+  const BackupFailure(super.message, {this.cause});
+  final Object? cause;
+}

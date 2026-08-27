@@ -283,6 +283,7 @@ void main() {
       expect(snap.salary, 20000000);
       expect(snap.recurringExpenseTotal, 7500000);
       expect(snap.recurringIncomeTotal, 21000000);
+      expect(snap.spendableAmount, 21000000 - 7500000);
       expect(snap.projectedRemaining, 20000000 + 1000000 - 6569557 - 7500000);
       expect(
         snap.recurringItems.map((item) => item.id),
@@ -325,6 +326,7 @@ void main() {
     );
     final snap = ((await finance.load()) as Ok).value;
     expect(snap.recurringExpenseTotal, 0);
+    expect(snap.spendableAmount, 10000000);
     expect(snap.projectedRemaining, 10000000);
     expect(snap.recurringItems, isEmpty);
   });

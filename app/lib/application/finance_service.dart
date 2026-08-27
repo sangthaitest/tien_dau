@@ -43,6 +43,7 @@ class FinanceSnapshot {
     this.managedIncome = const [],
     this.recurringExpenseTotal = 0,
     this.recurringIncomeTotal = 0,
+    this.spendableAmount = 0,
     this.projectedRemaining = 0,
   });
 
@@ -64,6 +65,11 @@ class FinanceSnapshot {
   final List<RecurringTransaction> managedIncome;
   final int recurringExpenseTotal;
   final int recurringIncomeTotal;
+
+  /// Thu nhập − tổng khoản định kỳ (money available to spend this month).
+  final int spendableAmount;
+
+  /// Tiền có thể chi − đã chi tiêu.
   final int projectedRemaining;
 }
 
@@ -136,6 +142,7 @@ class FinanceService {
         }
         final salaryAmount = (salary as Ok<MonthlySalary>).value.amount;
         final incomeTotal = salaryAmount + extraIncome;
+        final spendable = incomeTotal - expenseTotal;
         return Ok(
           FinanceSnapshot(
             month: selected,
@@ -150,7 +157,8 @@ class FinanceService {
             managedIncome: managedIncome,
             recurringExpenseTotal: expenseTotal,
             recurringIncomeTotal: incomeTotal,
-            projectedRemaining: incomeTotal - used - expenseTotal,
+            spendableAmount: spendable,
+            projectedRemaining: spendable - used,
           ),
         );
     }

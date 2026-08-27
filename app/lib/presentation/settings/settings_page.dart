@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../app_info.dart';
 import '../../domain/entities/app_settings.dart';
+import '../profile/user_profile_scope.dart';
+import '../profile/widgets/profile_avatar.dart';
 import '../theme/app_colors.dart';
 import 'settings_scope.dart';
 
@@ -8,22 +11,33 @@ class SettingsPage extends StatelessWidget {
   const SettingsPage({
     super.key,
     this.onOpenFinance,
+    this.onOpenProfile,
     this.onChangePin,
-    this.onLogout,
+    this.onBackup,
+    this.onRestore,
   });
 
   final VoidCallback? onOpenFinance;
+  final VoidCallback? onOpenProfile;
   final VoidCallback? onChangePin;
-  final VoidCallback? onLogout;
+  final VoidCallback? onBackup;
+  final VoidCallback? onRestore;
 
   @override
   Widget build(BuildContext context) {
     final controller = SettingsScope.maybeOf(context);
     final settings = controller?.settings ?? AppSettings.defaults;
+    final profile = UserProfileScope.of(context);
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     return ColoredBox(
       color: AppColors.bg,
       child: ListView(
-        padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 12, 20, 24),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          MediaQuery.paddingOf(context).top + 12,
+          20,
+          24 + bottomInset + 72,
+        ),
         children: [
           Text(
             'Cài đặt',
@@ -35,10 +49,16 @@ class SettingsPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _ProfileCard(onTap: () => _profileDialog(context)),
+          _ProfileCard(
+            displayName: profile.displayName,
+            email: profile.email,
+            initials: profile.initials,
+            avatarPath: profile.avatarPath,
+            onTap: onOpenProfile,
+          ),
           const SizedBox(height: 20),
           _SettingsGroup(
-            title: 'Quản lý tài chính',
+            title: 'Tiền của tôi',
             children: [
               _SettingsRow(
                 key: const Key('settings-finance'),
@@ -49,28 +69,50 @@ class SettingsPage extends StatelessWidget {
                 onTap: onOpenFinance,
               ),
               _SettingsRow(
-                key: const Key('settings-pin'),
-                icon: Icons.lock_outline,
-                iconColor: AppColors.dark ? const Color(0xFF9FA8DA) : const Color(0xFF5C6BC0),
-                iconBg: AppColors.dark ? const Color(0xFF1E2238) : const Color(0xFFE8EAF6),
-                label: 'Mật khẩu quản lý',
-                onTap: onChangePin,
+                key: const Key('settings-currency'),
+                icon: Icons.payments_outlined,
+                iconColor: const Color(0xFFF9A825),
+                iconBg: AppColors.warningContainer,
+                label: 'Tiền tệ',
+                value: 'VND (₫)',
+                onTap: () => _currencyDialog(context),
               ),
             ],
           ),
           const SizedBox(height: 20),
           _SettingsGroup(
-            title: 'Tùy chọn',
+            title: 'Bảo mật & dữ liệu',
             children: [
               _SettingsRow(
-                key: const Key('settings-currency'),
-                icon: Icons.payments_outlined,
-                iconColor: AppColors.primary,
-                iconBg: AppColors.primaryContainer,
-                label: 'Tiền tệ',
-                value: 'VND (₫)',
-                onTap: () => _currencyDialog(context),
+                key: const Key('settings-pin'),
+                icon: Icons.lock_outline,
+                iconColor: AppColors.dark
+                    ? const Color(0xFF9FA8DA)
+                    : const Color(0xFF5C6BC0),
+                iconBg: AppColors.dark
+                    ? const Color(0xFF1E2238)
+                    : const Color(0xFFE8EAF6),
+                label: 'Mật khẩu quản lý',
+                onTap: onChangePin,
               ),
+              _SettingsRow(
+                key: const Key('settings-backup-restore'),
+                icon: Icons.cloud_upload_outlined,
+                iconColor: AppColors.dark
+                    ? const Color(0xFFB39DDB)
+                    : const Color(0xFF7E57C2),
+                iconBg: AppColors.dark
+                    ? const Color(0xFF2A1F3A)
+                    : const Color(0xFFEDE7F6),
+                label: 'Sao lưu & khôi phục',
+                onTap: () => _backupRestoreSheet(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _SettingsGroup(
+            title: 'Ứng dụng',
+            children: [
               _SettingsRow(
                 key: const Key('settings-notifications'),
                 icon: Icons.notifications_outlined,
@@ -98,16 +140,22 @@ class SettingsPage extends StatelessWidget {
                 icon: Icons.visibility_outlined,
                 iconColor: AppColors.income,
                 iconBg: AppColors.incomeContainer,
-                label: 'Riêng tư',
-                value: settings.balanceHidden ? 'Ẩn số' : 'Hiện số',
-                valueKey: const Key('privacy-value'),
-                onTap: () => controller?.toggleBalanceHidden(),
+                label: 'Hiển thị số tiền',
+                trailing: _Toggle(
+                  key: const Key('toggle-privacy'),
+                  on: !settings.balanceHidden,
+                  onChanged: (value) => controller?.setBalanceHidden(!value),
+                ),
               ),
               _SettingsRow(
                 key: const Key('settings-dark'),
                 icon: Icons.dark_mode_outlined,
-                iconColor: AppColors.dark ? const Color(0xFFB39DDB) : const Color(0xFF7E57C2),
-                iconBg: AppColors.dark ? const Color(0xFF2A1F3A) : const Color(0xFFEDE7F6),
+                iconColor: AppColors.dark
+                    ? const Color(0xFFB39DDB)
+                    : const Color(0xFF7E57C2),
+                iconBg: AppColors.dark
+                    ? const Color(0xFF2A1F3A)
+                    : const Color(0xFFEDE7F6),
                 label: 'Giao diện tối',
                 trailing: _Toggle(
                   key: const Key('toggle-dark'),
@@ -117,37 +165,24 @@ class SettingsPage extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 50,
-            child: OutlinedButton(
-              key: const Key('settings-logout'),
-              onPressed: () => _logoutDialog(context),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.expense,
-                backgroundColor: AppColors.expenseContainer,
-                side: BorderSide(color: AppColors.expenseContainer, width: 1.5),
-                shape: const StadiumBorder(),
-                textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          const SizedBox(height: 20),
+          _SettingsGroup(
+            title: 'Về ứng dụng',
+            children: [
+              _SettingsRow(
+                key: const Key('settings-version'),
+                icon: Icons.info_outline,
+                iconColor: AppColors.textSecondary,
+                iconBg: AppColors.dark
+                    ? const Color(0xFF1E2430)
+                    : const Color(0xFFF0F2F5),
+                label: 'Phiên bản',
+                value: AppInfo.displayVersion,
+                valueKey: const Key('settings-version-value'),
+                showChevron: false,
               ),
-              child: const Text('Đăng xuất (prototype)'),
-            ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _profileDialog(BuildContext context) {
-    return showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hồ sơ'),
-        content: const Text(
-          'Minh Khuê · minhkhue@email.com\n(UI prototype — không có backend)',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK')),
         ],
       ),
     );
@@ -170,29 +205,66 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Future<void> _logoutDialog(BuildContext context) async {
-    final ok = await showDialog<bool>(
+  Future<void> _backupRestoreSheet(BuildContext context) {
+    return showModalBottomSheet<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Đăng xuất?'),
-        content: const Text('Dữ liệu cục bộ vẫn được giữ trên thiết bị.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
-          TextButton(
-            key: const Key('dialog-logout-confirm'),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Xác nhận'),
-          ),
-        ],
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  key: const Key('settings-backup'),
+                  leading: Icon(
+                    Icons.file_upload_outlined,
+                    color: AppColors.primary,
+                  ),
+                  title: const Text('Sao lưu dữ liệu'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onBackup?.call();
+                  },
+                ),
+                ListTile(
+                  key: const Key('settings-restore'),
+                  leading: Icon(
+                    Icons.file_download_outlined,
+                    color: AppColors.income,
+                  ),
+                  title: const Text('Khôi phục dữ liệu'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onRestore?.call();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
-    if (ok == true) onLogout?.call();
   }
 }
 
 class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({this.onTap});
+  const _ProfileCard({
+    required this.displayName,
+    required this.email,
+    required this.initials,
+    this.avatarPath,
+    this.onTap,
+  });
 
+  final String displayName;
+  final String email;
+  final String initials;
+  final String? avatarPath;
   final VoidCallback? onTap;
 
   @override
@@ -208,26 +280,11 @@ class _ProfileCard extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           child: Row(
             children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [AppColors.primary, AppColors.primaryDark],
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  'MK',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 22,
-                  ),
-                ),
+              ProfileAvatar(
+                initials: initials,
+                avatarPath: avatarPath,
+                size: 64,
+                fontSize: 22,
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -235,7 +292,8 @@ class _ProfileCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Minh Khuê',
+                      displayName,
+                      key: const Key('settings-profile-name'),
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 17,
@@ -244,7 +302,8 @@ class _ProfileCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'minhkhue@email.com',
+                      email,
+                      key: const Key('settings-profile-email'),
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -253,7 +312,7 @@ class _ProfileCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Hồ sơ (UI)',
+                      'Hồ sơ',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -321,6 +380,7 @@ class _SettingsRow extends StatelessWidget {
     this.valueKey,
     this.trailing,
     this.onTap,
+    this.showChevron = true,
   });
 
   final IconData icon;
@@ -331,6 +391,7 @@ class _SettingsRow extends StatelessWidget {
   final Key? valueKey;
   final Widget? trailing;
   final VoidCallback? onTap;
+  final bool showChevron;
 
   @override
   Widget build(BuildContext context) {
@@ -377,7 +438,7 @@ class _SettingsRow extends StatelessWidget {
                 ),
               if (trailing != null)
                 trailing!
-              else
+              else if (showChevron)
                 Icon(Icons.chevron_right, color: AppColors.textTertiary),
             ],
           ),

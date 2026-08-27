@@ -20,6 +20,9 @@ const protectedPrefKeys = <String>[
   'settings_dark_mode',
   'settings_balance_hidden',
   'settings_notifications',
+  'profile_display_name',
+  'profile_email',
+  'profile_avatar_path',
 ];
 
 const createRecurringTransactionsSql = '''

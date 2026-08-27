@@ -7,6 +7,8 @@ import '../add_transaction/add_transaction_controller.dart';
 import '../add_transaction/add_transaction_page.dart';
 import '../catalog/transaction_catalog_controller.dart';
 import '../format/money_format.dart';
+import '../profile/user_profile_scope.dart';
+import '../profile/widgets/profile_avatar.dart';
 import '../settings/settings_scope.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
@@ -27,8 +29,6 @@ class HomePage extends StatefulWidget {
     required this.catalogController,
     this.viewMonthController,
     this.clock = DateTime.now,
-    this.userName = 'Minh Khuê',
-    this.userInitials = 'MK',
     this.embedNavigation = true,
     this.onSeeAll,
     this.onTransactionTap,
@@ -41,8 +41,6 @@ class HomePage extends StatefulWidget {
   final TransactionCatalogController catalogController;
   final ViewMonthController? viewMonthController;
   final DateTime Function() clock;
-  final String userName;
-  final String userInitials;
   final bool embedNavigation;
   final VoidCallback? onSeeAll;
   final ValueChanged<Transaction>? onTransactionTap;
@@ -203,6 +201,7 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
     final snapshot = controller.snapshot;
+    final profile = UserProfileScope.of(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(20, top + 12, 20, 0),
       child: Column(
@@ -225,7 +224,8 @@ class _Header extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      page.userName,
+                      profile.displayName,
+                      key: const Key('home-user-name'),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -246,22 +246,11 @@ class _Header extends StatelessWidget {
                   key: const Key('btn-avatar'),
                   onTap: page.onAvatarTap,
                   customBorder: const CircleBorder(),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      page.userInitials,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: AppTypography.titleWeight,
-                        fontSize: 14,
-                      ),
-                    ),
+                  child: ProfileAvatar(
+                    initials: profile.initials,
+                    avatarPath: profile.avatarPath,
+                    size: 44,
+                    fontSize: 14,
                   ),
                 ),
               ),
@@ -352,10 +341,10 @@ class _SpendCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final mascotWidth = (constraints.maxWidth * 0.34).clamp(88.0, 132.0);
+        final mascotWidth = (constraints.maxWidth * 0.28).clamp(76.0, 108.0);
         return Container(
           width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 132),
+          constraints: const BoxConstraints(minHeight: 110),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
@@ -376,9 +365,9 @@ class _SpendCard extends StatelessWidget {
             child: Stack(
               children: [
                 Positioned(
-                  right: -mascotWidth * 0.08,
-                  top: -mascotWidth * 0.06,
-                  bottom: -mascotWidth * 0.14,
+                  right: 5,
+                  top: -mascotWidth * 0.08,
+                  bottom: -mascotWidth * 0.16,
                   width: mascotWidth,
                   child: IgnorePointer(
                     child: ExcludeSemantics(
@@ -407,7 +396,7 @@ class _SpendCard extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 16, 20),
+                  padding: const EdgeInsets.fromLTRB(15, 13, 11, 13),
                   child: Row(
                     children: [
                       Expanded(
@@ -423,7 +412,7 @@ class _SpendCard extends StatelessWidget {
                                 height: 1.3,
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 8),
                             FittedBox(
                               fit: BoxFit.scaleDown,
                               alignment: Alignment.centerLeft,
@@ -436,7 +425,7 @@ class _SpendCard extends StatelessWidget {
                                 key: const Key('home-month-spend'),
                                 maxLines: 1,
                                 style: moneyStyle(
-                                  size: 32,
+                                  size: 30,
                                   color: Colors.white,
                                 ),
                               ),
@@ -444,7 +433,7 @@ class _SpendCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      SizedBox(width: mascotWidth * 0.62),
+                      SizedBox(width: mascotWidth * 0.55),
                     ],
                   ),
                 ),
@@ -478,6 +467,12 @@ class _Recent extends StatelessWidget {
         children: [
           Row(
             children: [
+              Icon(
+                Icons.auto_awesome,
+                size: 15,
+                color: AppColors.yellow,
+              ),
+              const SizedBox(width: 7),
               Expanded(
                 child: Text(
                   'Đây nè',

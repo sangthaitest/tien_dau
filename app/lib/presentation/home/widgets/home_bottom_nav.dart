@@ -20,8 +20,8 @@ class HomeBottomNav extends StatelessWidget {
   final AppTab tab;
   final ValueChanged<AppTab>? onTabSelected;
 
-  static const _barHeight = 78.0;
-  static const _androidMinSafeBottom = 22.0;
+  static const _barHeight = 60.0;
+  static const _androidMinSafeBottom = 10.0;
 
   static double _bottomInset(BuildContext context) {
     final inset = math.max(
@@ -35,7 +35,7 @@ class HomeBottomNav extends StatelessWidget {
   }
 
   static double _fabSizeFor(double width) {
-    return (width * 0.155).clamp(58.0, 68.0);
+    return (width * 0.14).clamp(54.0, 58.0);
   }
 
   @override
@@ -45,7 +45,15 @@ class HomeBottomNav extends StatelessWidget {
     final fabSize = _fabSizeFor(width);
     final fabLift = fabSize / 3;
     final sidePad = (width * 0.015).clamp(6.0, 12.0);
-    return _OverflowHitTestStack(
+    final navMedia = MediaQuery.of(context);
+    return MediaQuery(
+      data: navMedia.copyWith(
+        textScaler: navMedia.textScaler.clamp(
+          minScaleFactor: 1.0,
+          maxScaleFactor: 1.1,
+        ),
+      ),
+      child: _OverflowHitTestStack(
       clipBehavior: Clip.none,
       alignment: Alignment.bottomCenter,
       children: [
@@ -57,7 +65,7 @@ class HomeBottomNav extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.navBar,
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(28),
+                top: Radius.circular(24),
               ),
               boxShadow: const [
                 BoxShadow(
@@ -128,6 +136,7 @@ class HomeBottomNav extends StatelessWidget {
           ),
         ),
       ],
+    ),
     );
   }
 }
@@ -336,25 +345,25 @@ class _NavItem extends StatelessWidget {
         overlayColor: const WidgetStatePropertyAll(Colors.transparent),
         borderRadius: BorderRadius.circular(18),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
             SizedBox(
-              width: 50,
-              height: 32,
+              width: 44,
+              height: 26,
               child: Icon(
                 active ? filled : outlined,
                 color: iconColor,
-                size: 25,
+                size: 22,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 12,
-                height: 1.15,
+                fontSize: 10,
+                height: 1.1,
                 fontWeight: active
                     ? AppTypography.strongWeight
                     : AppTypography.titleWeight,
@@ -362,6 +371,7 @@ class _NavItem extends StatelessWidget {
                 letterSpacing: -0.05,
               ),
             ),
+            const SizedBox(height: 6),
           ],
         ),
       ),

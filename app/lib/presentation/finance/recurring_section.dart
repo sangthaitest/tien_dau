@@ -162,30 +162,6 @@ class RecurringSection extends StatelessWidget {
       key: const Key('finance-upcoming-section'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            const Expanded(
-              child: Text(
-                'Khoản định kỳ',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-              ),
-            ),
-            TextButton(
-              key: const Key('finance-upcoming-manage'),
-              onPressed: () => RecurringWorkspace(
-                controller: controller,
-                kind: RecurringKind.expense,
-              ).openManager(context),
-              child: Text(
-                'Quản lý →',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-          ],
-        ),
         Container(
           width: double.infinity,
           decoration: BoxDecoration(
@@ -201,9 +177,60 @@ class RecurringSection extends StatelessWidget {
           ),
           child: Column(
             children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.warningContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.calendar_month_outlined,
+                        size: 22,
+                        color: AppColors.warning,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Khoản định kỳ',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      key: const Key('finance-upcoming-manage'),
+                      onPressed: () => RecurringWorkspace(
+                        controller: controller,
+                        kind: RecurringKind.expense,
+                      ).openManager(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Quản lý →',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               if (snap.managedRecurring.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
                   child: Text(
                     'Chưa có khoản định kỳ. Quản lý để thêm.',
                     key: const Key('finance-upcoming-empty'),
@@ -216,7 +243,7 @@ class RecurringSection extends StatelessWidget {
                 )
               else if (items.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
                   child: Text(
                     'Không có khoản định kỳ trong tháng này.',
                     key: const Key('finance-upcoming-empty'),
@@ -284,8 +311,6 @@ class RecurringSection extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        _ExpectedRemainingCard(amount: snap.projectedRemaining),
       ],
     );
   }
@@ -384,66 +409,6 @@ class RecurringSection extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _ExpectedRemainingCard extends StatelessWidget {
-  const _ExpectedRemainingCard({required this.amount});
-
-  final int amount;
-
-  @override
-  Widget build(BuildContext context) {
-    final hidden = SettingsScope.hideMoney(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 14, 16, 14),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.cardShadow,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Còn lại dự kiến',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Sau khi trừ khoản đã dùng\nvà khoản định kỳ',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            displayVnd(amount, hidden: hidden),
-            key: const Key('finance-upcoming-expected'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.right,
-            style: moneyStyle(size: 18, color: AppColors.primary),
-          ),
-        ],
-      ),
     );
   }
 }

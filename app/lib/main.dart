@@ -2,11 +2,15 @@ import 'package:flutter/widgets.dart';
 import 'package:uuid/uuid.dart';
 
 import 'application/app_settings_service.dart';
+import 'application/backup_service.dart';
 import 'application/finance_service.dart';
+import 'application/restore_service.dart';
 import 'application/session_sensitive_access.dart';
 import 'application/transaction_catalog_service.dart';
 import 'application/transaction_service.dart';
+import 'application/user_profile_service.dart';
 import 'application/view_month_service.dart';
+import 'data/backup/backup_platform.dart';
 import 'data/datasources/finance_local_datasource.dart';
 import 'data/datasources/recurring_transaction_local_datasource.dart';
 import 'data/datasources/transaction_local_datasource.dart';
@@ -16,9 +20,11 @@ import 'data/repositories/finance_repository_impl.dart';
 import 'data/repositories/recurring_transaction_repository_impl.dart';
 import 'data/repositories/transaction_catalog_repository_impl.dart';
 import 'data/repositories/transaction_repository_impl.dart';
+import 'data/repositories/user_profile_repository_impl.dart';
 import 'data/repositories/view_month_repository_impl.dart';
 import 'presentation/app.dart';
 import 'presentation/catalog/transaction_catalog_controller.dart';
+import 'presentation/profile/user_profile_controller.dart';
 import 'presentation/settings/app_settings_controller.dart';
 import 'presentation/view_month/view_month_controller.dart';
 
@@ -50,6 +56,9 @@ Future<void> main() async {
   final settingsController = AppSettingsController(
     AppSettingsService(AppSettingsRepositoryImpl(prefs)),
   );
+  final profileController = UserProfileController(
+    UserProfileService(UserProfileRepositoryImpl(prefs)),
+  );
   final catalogController = TransactionCatalogController(
     TransactionCatalogService(
       TransactionCatalogRepositoryImpl(prefs),
@@ -62,6 +71,7 @@ Future<void> main() async {
   );
   await Future.wait([
     settingsController.load(),
+    profileController.load(),
     catalogController.load(),
     viewMonthController.load(),
   ]);
@@ -75,8 +85,13 @@ Future<void> main() async {
         saltFactory: uuid.v4,
       ),
       settingsController: settingsController,
+      profileController: profileController,
       catalogController: catalogController,
       viewMonthController: viewMonthController,
+      backupService: BackupService(database: database),
+      restoreService: RestoreService(live: database),
+      backupShare: const SharePlusBackupShare(),
+      backupPicker: const FilePickerBackupPick(),
     ),
   );
 }
