@@ -29,10 +29,15 @@ class SharePlusBackupShare implements BackupSharePort {
         bytes: bytes,
         mimeType: 'application/x-tien-daune-backup',
       );
-      return savedUri != null;
+      // Cancel / dismiss → null (or empty). Only a real URI counts as saved.
+      if (savedUri == null) return false;
+      final asText = savedUri.toString().trim();
+      return asText.isNotEmpty;
     } catch (_) {
-      await SharePlus.instance.share(ShareParams(files: [XFile(path)]));
-      return true;
+      final result = await SharePlus.instance.share(
+        ShareParams(files: [XFile(path)]),
+      );
+      return result.status == ShareResultStatus.success;
     }
   }
 }

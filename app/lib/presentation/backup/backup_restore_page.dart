@@ -156,21 +156,36 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
       if (mounted) Navigator.of(context, rootNavigator: true).pop();
       switch (result) {
         case Err(:final failure):
-          if (mounted) _toast(failure.message);
+          if (mounted) await _showNotice(title: 'Không sao lưu được', body: failure.message);
         case Ok(:final value):
           final delivered = await share.deliver(value);
-          await _loadLastBackup();
           if (!mounted) return;
           if (delivered) {
-            _toast('Đã lưu/chia sẻ bản sao lưu. Hãy nhớ vị trí bạn vừa chọn.');
+            await service.markLastBackup();
+            await _loadLastBackup();
+            if (!mounted) return;
+            await _showNotice(
+              title: 'Đã lưu bản sao lưu',
+              body: 'File .tdn đã được lưu/chia sẻ. Hãy nhớ vị trí bạn vừa chọn.',
+              key: const Key('dialog-backup-saved'),
+            );
           } else {
-            _toast('Bạn đã hủy lưu file. Bản sao lưu chưa được lưu ra ngoài.');
+            await _showNotice(
+              title: 'Chưa lưu ra ngoài',
+              body:
+                  'Bạn đã đóng hộp thoại mà chưa chọn nơi lưu. '
+                  'Bản sao lưu chưa được lưu ra ngoài máy.',
+              key: const Key('dialog-backup-cancelled'),
+            );
           }
       }
     } catch (_) {
       if (mounted) {
         Navigator.of(context, rootNavigator: true).maybePop();
-        _toast('Không thể tạo bản sao lưu.');
+        await _showNotice(
+          title: 'Không sao lưu được',
+          body: 'Không thể tạo bản sao lưu.',
+        );
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -356,6 +371,28 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
             Expanded(child: Text(message)),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _showNotice({
+    required String title,
+    required String body,
+    Key? key,
+  }) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        key: key,
+        title: Text(title),
+        content: Text(body),
+        actions: [
+          TextButton(
+            key: const Key('dialog-backup-notice-ok'),
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }

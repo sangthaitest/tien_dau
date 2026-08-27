@@ -55,12 +55,25 @@ class BackupService {
       final packed = _fileManager.pack(document);
       final outPath = p.join(work.path, BackupFormat.fileNameFor(now));
       await File(outPath).writeAsBytes(packed, flush: true);
-      await _codec.writeLastBackupAt(_database, now.toUtc());
+      // Stamp only after the user actually saves/shares the file.
       return Ok(outPath);
     } on AppFailure catch (failure) {
       return Err(failure);
     } catch (error) {
       return Err(BackupFailure('Không thể tạo bản sao lưu.', cause: error));
+    }
+  }
+
+  Future<Result<void>> markLastBackup({DateTime? at}) async {
+    try {
+      await _codec.writeLastBackupAt(_database, (at ?? _clock()).toUtc());
+      return const Ok(null);
+    } on AppFailure catch (failure) {
+      return Err(failure);
+    } catch (error) {
+      return Err(
+        BackupFailure('Không thể ghi thời điểm sao lưu.', cause: error),
+      );
     }
   }
 

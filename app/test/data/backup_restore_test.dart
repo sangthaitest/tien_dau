@@ -59,7 +59,9 @@ void main() {
     expect(utf8.decode(await File(path).readAsBytes()).contains('SQLite format 3'), isFalse);
 
     final last = await env.backup.lastBackupAt();
-    expect(last, DateTime(2026, 8, 26, 14, 35).toUtc());
+    expect(last, isNull);
+    expect((await env.backup.markLastBackup()).isOk, isTrue);
+    expect(await env.backup.lastBackupAt(), DateTime(2026, 8, 26, 14, 35).toUtc());
     await env.close();
   });
 
