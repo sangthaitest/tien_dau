@@ -120,12 +120,20 @@ class HomeTransactionTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                amountText,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.right,
-                style: moneyStyle(size: 15, color: amountColor),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.sizeOf(context).width * 0.42,
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    amountText,
+                    maxLines: 1,
+                    textAlign: TextAlign.right,
+                    style: moneyStyle(size: 15, color: amountColor),
+                  ),
+                ),
               ),
             ],
           ),

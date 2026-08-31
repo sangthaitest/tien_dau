@@ -214,11 +214,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
               _c.isEditing
                   ? AddTransactionCopy.editTitle
                   : AddTransactionCopy.title,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-                color: AppColors.text,
-              ),
+              style: AppTypography.screenTitle(color: AppColors.text),
             ),
           ),
           body: Column(
@@ -352,6 +348,7 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: AppColors.onPrimary,
+                            textStyle: AppTypography.button(),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(14),
                             ),
@@ -360,10 +357,6 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                             _c.isEditing
                                 ? AddTransactionCopy.update
                                 : AddTransactionCopy.save,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
                           ),
                         ),
                       ),

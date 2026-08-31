@@ -5,6 +5,7 @@ import '../../domain/entities/app_settings.dart';
 import '../profile/user_profile_scope.dart';
 import '../profile/widgets/profile_avatar.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dialog.dart';
 import 'settings_scope.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -193,10 +194,10 @@ class SettingsPage extends StatelessWidget {
         title: const Text('Tiền tệ'),
         content: const Text('MVP dùng VND (₫).'),
         actions: [
-          TextButton(
+          AppDialog.confirm(
             key: const Key('dialog-currency-ok'),
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            label: 'OK',
           ),
         ],
       ),

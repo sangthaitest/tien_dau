@@ -6,11 +6,16 @@ import '../../domain/entities/recurring_transaction.dart';
 import '../../domain/failures/result.dart';
 
 class FinanceController extends ChangeNotifier {
-  FinanceController(this._service, {DateTime Function()? month})
-    : _month = month;
+  FinanceController(
+    this._service, {
+    DateTime Function()? month,
+    DateTime Function()? clock,
+  }) : _month = month,
+       clock = clock ?? DateTime.now;
 
   final FinanceService _service;
   final DateTime Function()? _month;
+  final DateTime Function() clock;
 
   bool loading = false;
   String? error;

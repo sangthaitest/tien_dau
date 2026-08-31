@@ -210,88 +210,89 @@ void main() {
     expect(find.byKey(const Key('goal-save')), findsOneWidget);
   });
 
-  testWidgets('finance cash flow shows spendable and remaining without budget', (
-    tester,
-  ) async {
-    _phone(tester);
-    final transactions = TransactionService(MemoryTransactionRepository());
-    await transactions.add(
-      NewTransaction(
-        amount: 6619557,
-        type: TransactionType.expense,
-        categoryId: 'market',
-        occurredOn: DateTime(2026, 8, 18),
-        paymentSourceId: 'cash',
-        paymentSourceName: 'Tiền mặt',
-        paymentMethod: PaymentMethodKind.cash,
-      ),
-    );
-    final home = HomeController(
-      HomeQuery(transactions, clock: () => DateTime(2026, 8, 18, 9)),
-    );
-    final harness = buildShell(
-      transactions: transactions,
-      home: home,
-      clock: () => DateTime(2026, 8, 18, 9),
-    );
-    final now = DateTime.utc(2026, 8, 18);
-    expect(
-      (await harness.finance.saveSalary(
-        const MonthlySalary(amount: 22500000),
-      )).isOk,
-      isTrue,
-    );
-    expect(
-      (await harness.recurring.create(
-        RecurringTransaction(
-          id: 'vk',
-          name: 'Lương VK',
-          kind: RecurringKind.expense,
-          amount: 15000000,
-          frequency: RecurringFrequency.monthly,
-          intervalCount: 1,
-          direction: RecurringDirection.subtract,
-          categoryId: 'transfer',
-          startDate: DateTime(2026, 8, 27),
-          isActive: true,
-          createdAt: now,
-          updatedAt: now,
+  testWidgets(
+    'finance cash flow shows spendable and remaining without budget',
+    (tester) async {
+      _phone(tester);
+      final transactions = TransactionService(MemoryTransactionRepository());
+      await transactions.add(
+        NewTransaction(
+          amount: 6619557,
+          type: TransactionType.expense,
+          categoryId: 'market',
+          occurredOn: DateTime(2026, 8, 18),
+          paymentSourceId: 'cash',
+          paymentSourceName: 'Tiền mặt',
+          paymentMethod: PaymentMethodKind.cash,
         ),
-      )).isOk,
-      isTrue,
-    );
-    await harness.access.setupPin('5820');
-    await harness.access.unlock('5820');
-    await tester.pumpWidget(MaterialApp(home: harness.shell));
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('nav-settings')));
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('settings-finance')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
+      );
+      final home = HomeController(
+        HomeQuery(transactions, clock: () => DateTime(2026, 8, 18, 9)),
+      );
+      final harness = buildShell(
+        transactions: transactions,
+        home: home,
+        clock: () => DateTime(2026, 8, 18, 9),
+      );
+      final now = DateTime.utc(2026, 8, 18);
+      expect(
+        (await harness.finance.saveSalary(
+          const MonthlySalary(amount: 22500000),
+        )).isOk,
+        isTrue,
+      );
+      expect(
+        (await harness.recurring.create(
+          RecurringTransaction(
+            id: 'vk',
+            name: 'Lương VK',
+            kind: RecurringKind.expense,
+            amount: 15000000,
+            frequency: RecurringFrequency.monthly,
+            intervalCount: 1,
+            direction: RecurringDirection.subtract,
+            categoryId: 'transfer',
+            startDate: DateTime(2026, 8, 27),
+            isActive: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        )).isOk,
+        isTrue,
+      );
+      await harness.access.setupPin('5820');
+      await harness.access.unlock('5820');
+      await tester.pumpWidget(MaterialApp(home: harness.shell));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('nav-settings')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('settings-finance')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.text('Ngân sách tháng'), findsNothing);
-    expect(find.byType(LinearProgressIndicator), findsNothing);
-    expect(find.byKey(const Key('btn-edit-budget')), findsNothing);
-    expect(find.text('22.500.000 ₫'), findsWidgets);
-    expect(find.text('15.000.000 ₫'), findsWidgets);
-    expect(find.text('7.500.000 ₫'), findsOneWidget);
-    expect(find.text('6.619.557 ₫'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('finance-remaining-amount')),
-      80,
-      scrollable: find.descendant(
-        of: find.byType(FinancePage),
-        matching: find.byType(Scrollable),
-      ),
-    );
-    expect(find.text('880.443 ₫'), findsOneWidget);
-    expect(find.text('Tiền có thể chi'), findsOneWidget);
-    expect(find.text('Đã chi tiêu'), findsOneWidget);
-    expect(find.text('Còn lại'), findsOneWidget);
-    expect(find.text('Còn lại dự kiến'), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+      expect(find.text('Ngân sách tháng'), findsNothing);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(find.byKey(const Key('btn-edit-budget')), findsNothing);
+      expect(find.text('22.500.000 ₫'), findsWidgets);
+      expect(find.text('15.000.000 ₫'), findsWidgets);
+      expect(find.text('7.500.000 ₫'), findsOneWidget);
+      expect(find.text('6.619.557 ₫'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('finance-remaining-amount')),
+        80,
+        scrollable: find.descendant(
+          of: find.byType(FinancePage),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      expect(find.text('880.443 ₫'), findsOneWidget);
+      expect(find.text('Tiền có thể chi'), findsOneWidget);
+      expect(find.text('Đã chi tiêu'), findsOneWidget);
+      expect(find.text('Còn lại'), findsOneWidget);
+      expect(find.text('Còn lại dự kiến'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('goal amount fields group digits while typing', (tester) async {
     _phone(tester);
@@ -451,6 +452,7 @@ void main() {
     expect(find.text('Loại'), findsNothing);
     expect(find.text('Danh mục'), findsNothing);
     expect(find.byKey(const Key('upcoming-due-input')), findsOneWidget);
+    expect(find.text('2026-08-18'), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('upcoming-name-input')),
       'Wifi',
@@ -560,6 +562,7 @@ void main() {
       expect(find.text('Thêm thu nhập'), findsOneWidget);
       expect(find.text('Loại'), findsNothing);
       expect(find.byKey(const Key('upcoming-due-input')), findsOneWidget);
+      expect(find.text('2026-08-18'), findsOneWidget);
       await tester.enterText(
         find.byKey(const Key('upcoming-name-input')),
         'Lương',
@@ -754,6 +757,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Thêm thu nhập'), findsOneWidget);
     expect(find.byKey(const Key('upcoming-due-input')), findsOneWidget);
+    expect(find.text('2026-08-18'), findsOneWidget);
     await tester.enterText(
       find.byKey(const Key('upcoming-name-input')),
       'Freelance',

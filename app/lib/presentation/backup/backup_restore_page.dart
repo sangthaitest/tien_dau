@@ -6,6 +6,8 @@ import '../../data/backup/backup_ports.dart';
 import '../../domain/backup/backup_manifest.dart';
 import '../../domain/failures/result.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dialog.dart';
+import '../theme/app_progress.dart';
 
 class BackupRestorePage extends StatefulWidget {
   const BackupRestorePage({
@@ -69,10 +71,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
                   child: Text(
                     'Sao lưu & khôi phục',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
                   ),
                 ),
                 const SizedBox(width: 48),
@@ -151,12 +150,16 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
     if (service == null || share == null || _busy) return;
     setState(() => _busy = true);
     try {
-      _showBusy('Đang sao lưu…');
+      AppBusyDialog.show(context, message: 'Đang sao lưu…');
       final result = await service.export();
       if (mounted) Navigator.of(context, rootNavigator: true).pop();
       switch (result) {
         case Err(:final failure):
-          if (mounted) await _showNotice(title: 'Không sao lưu được', body: failure.message);
+          if (mounted)
+            await _showNotice(
+              title: 'Không sao lưu được',
+              body: failure.message,
+            );
         case Ok(:final value):
           final delivered = await share.deliver(value);
           if (!mounted) return;
@@ -166,7 +169,8 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
             if (!mounted) return;
             await _showNotice(
               title: 'Đã lưu bản sao lưu',
-              body: 'File .tdn đã được lưu/chia sẻ. Hãy nhớ vị trí bạn vừa chọn.',
+              body:
+                  'File .tdn đã được lưu/chia sẻ. Hãy nhớ vị trí bạn vừa chọn.',
               key: const Key('dialog-backup-saved'),
             );
           } else {
@@ -202,7 +206,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
         final path = await picker.pickBackup();
         if (path == null || !mounted) return;
 
-        _showBusy('Đang kiểm tra bản sao lưu…');
+        AppBusyDialog.show(context, message: 'Đang kiểm tra bản sao lưu…');
         final inspected = await service.inspect(path);
         if (mounted) Navigator.of(context, rootNavigator: true).pop();
 
@@ -225,7 +229,7 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
             final confirmed = await _showConfirm();
             if (confirmed != true || !mounted) return;
 
-            _showBusy('Đang khôi phục…');
+            AppBusyDialog.show(context, message: 'Đang khôi phục…');
             final restored = await service.restore(path);
             if (mounted) Navigator.of(context, rootNavigator: true).pop();
 
@@ -267,24 +271,30 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _PreviewLine(label: 'Thời gian', value: _formatStamp(preview.createdAt.toLocal())),
+            _PreviewLine(
+              label: 'Thời gian',
+              value: _formatStamp(preview.createdAt.toLocal()),
+            ),
             _PreviewLine(label: 'Phiên bản app', value: appVersion),
-            _PreviewLine(label: 'Giao dịch', value: '${summary.transactionCount}'),
+            _PreviewLine(
+              label: 'Giao dịch',
+              value: '${summary.transactionCount}',
+            ),
             _PreviewLine(label: 'Danh mục', value: '${summary.categoryCount}'),
             _PreviewLine(label: 'Thu nhập', value: '${summary.incomeCount}'),
-            _PreviewLine(label: 'Khoản định kỳ', value: '${summary.recurringCount}'),
+            _PreviewLine(
+              label: 'Khoản định kỳ',
+              value: '${summary.recurringCount}',
+            ),
             const _PreviewLine(label: 'Tài chính', value: 'Đã bao gồm'),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
+          AppDialog.cancel(onPressed: () => Navigator.pop(context, false)),
+          AppDialog.confirm(
             key: const Key('dialog-restore-continue'),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Tiếp tục'),
+            label: 'Tiếp tục',
           ),
         ],
       ),
@@ -300,14 +310,11 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
           'Dữ liệu hiện tại trên thiết bị sẽ được thay thế bằng dữ liệu trong bản sao lưu.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
+          AppDialog.cancel(onPressed: () => Navigator.pop(context, false)),
+          AppDialog.confirm(
             key: const Key('dialog-restore-confirm'),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Khôi phục dữ liệu'),
+            label: 'Khôi phục',
           ),
         ],
       ),
@@ -324,14 +331,14 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
         title: Text(title),
         content: Text(message),
         actions: [
-          TextButton(
+          AppDialog.cancel(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Quay lại'),
+            label: 'Quay lại',
           ),
-          TextButton(
+          AppDialog.confirm(
             key: const Key('dialog-restore-pick-other'),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Chọn file khác'),
+            label: 'Chọn file khác',
           ),
         ],
       ),
@@ -345,32 +352,12 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
         title: const Text('✓ Khôi phục thành công'),
         content: const Text('Dữ liệu của bạn đã được khôi phục.'),
         actions: [
-          TextButton(
+          AppDialog.confirm(
             key: const Key('dialog-restore-success-ok'),
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            label: 'OK',
           ),
         ],
-      ),
-    );
-  }
-
-  void _showBusy(String message) {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        content: Row(
-          children: [
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            const SizedBox(width: 16),
-            Expanded(child: Text(message)),
-          ],
-        ),
       ),
     );
   }
@@ -387,10 +374,10 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
         title: Text(title),
         content: Text(body),
         actions: [
-          TextButton(
+          AppDialog.confirm(
             key: const Key('dialog-backup-notice-ok'),
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            label: 'OK',
           ),
         ],
       ),
@@ -398,7 +385,9 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
   }
 
   void _toast(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _formatStamp(DateTime local) {

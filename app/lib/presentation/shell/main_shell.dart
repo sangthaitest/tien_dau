@@ -27,6 +27,7 @@ import '../settings/settings_scope.dart';
 import '../statistics/statistics_controller.dart';
 import '../statistics/statistics_page.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dialog.dart';
 import '../transactions/transaction_detail_sheet.dart';
 import '../transactions/transaction_list_controller.dart';
 import '../transactions/transaction_list_page.dart';
@@ -93,6 +94,7 @@ class _MainShellState extends State<MainShell> {
     _financeController = FinanceController(
       widget.financeService,
       month: () => widget.viewMonthController.month,
+      clock: widget.clock,
     );
     _statsController = StatisticsController(
       StatisticsQuery(
@@ -181,13 +183,10 @@ class _MainShellState extends State<MainShell> {
         title: const Text('Xóa giao dịch?'),
         content: const Text('Thao tác này không thể hoàn tác.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
+          AppDialog.cancel(onPressed: () => Navigator.pop(context, false)),
+          AppDialog.confirm(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Xác nhận'),
+            label: 'Xác nhận',
           ),
         ],
       ),
@@ -307,6 +306,7 @@ class _MainShellState extends State<MainShell> {
       child: Scaffold(
         backgroundColor: AppColors.bg,
         body: Stack(
+          clipBehavior: Clip.none,
           children: [
             Column(
               children: [
@@ -335,7 +335,8 @@ class _MainShellState extends State<MainShell> {
                       : _tabHost(),
                 ),
                 HomeBottomNav(
-                  tab: _tab == AppTab.settings ||
+                  tab:
+                      _tab == AppTab.settings ||
                           _showFinance ||
                           _showProfile ||
                           _showBackupRestore

@@ -11,6 +11,7 @@ import '../profile/user_profile_scope.dart';
 import '../profile/widgets/profile_avatar.dart';
 import '../settings/settings_scope.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_progress.dart';
 import '../theme/app_typography.dart';
 import '../transactions/transaction_detail_sheet.dart';
 import '../transactions/transaction_list_controller.dart';
@@ -342,6 +343,8 @@ class _SpendCard extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final mascotWidth = (constraints.maxWidth * 0.28).clamp(76.0, 108.0);
+        // Mascot sits a little low in the card; nudge copy down to match.
+        final textNudge = (mascotWidth * 0.04).clamp(3.0, 5.0);
         return Container(
           width: double.infinity,
           constraints: const BoxConstraints(minHeight: 110),
@@ -396,7 +399,12 @@ class _SpendCard extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(15, 13, 11, 13),
+                  padding: EdgeInsets.fromLTRB(
+                    15,
+                    13 + textNudge,
+                    11,
+                    13 - textNudge,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
@@ -467,11 +475,7 @@ class _Recent extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.auto_awesome,
-                size: 15,
-                color: AppColors.yellow,
-              ),
+              Icon(Icons.auto_awesome, size: 15, color: AppColors.yellow),
               const SizedBox(width: 7),
               Expanded(
                 child: Text(
@@ -527,11 +531,11 @@ class _Recent extends StatelessWidget {
           else if (controller.loading)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(child: AppCircularProgress()),
             )
           else if (recent.isEmpty)
             Text(
-              'Chưa có giao dịch. Nhấn + để thêm.',
+              'Hiện tại tiền chưa đi đâu cả. Nhấn + để thêm nhé!',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: AppTypography.bodyWeight,

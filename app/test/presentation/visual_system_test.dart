@@ -38,10 +38,38 @@ void main() {
       AppTypography.metadataWeight,
     );
     expect(theme.textTheme.titleMedium?.fontWeight, AppTypography.titleWeight);
+    expect(theme.textTheme.labelLarge?.fontWeight, AppTypography.extraWeight);
     expect(
       theme.textTheme.headlineMedium?.fontWeight,
       AppTypography.strongWeight,
     );
+    expect(theme.textTheme.titleLarge?.fontWeight, AppTypography.strongWeight);
+    expect(
+      theme.dialogTheme.titleTextStyle?.fontWeight,
+      AppTypography.extraWeight,
+    );
+    expect(theme.dialogTheme.titleTextStyle?.fontSize, 18);
+    expect(
+      theme.filledButtonTheme.style?.textStyle?.resolve(const {})?.fontSize,
+      16,
+    );
+    expect(
+      theme.filledButtonTheme.style?.textStyle?.resolve(const {})?.fontWeight,
+      AppTypography.extraWeight,
+    );
+    expect(
+      theme.outlinedButtonTheme.style?.textStyle?.resolve(const {})?.fontWeight,
+      AppTypography.extraWeight,
+    );
+    expect(
+      theme.textButtonTheme.style?.textStyle?.resolve(const {})?.fontWeight,
+      AppTypography.extraWeight,
+    );
+    expect(theme.progressIndicatorTheme.strokeCap, StrokeCap.round);
+    expect(theme.progressIndicatorTheme.strokeWidth, 3);
+    expect(theme.progressIndicatorTheme.linearMinHeight, 8);
+    expect(theme.progressIndicatorTheme.trackGap, 0);
+    expect(theme.progressIndicatorTheme.color, const Color(0xFF00B67A));
   });
 
   testWidgets('polished Home fits small and large Android densities', (

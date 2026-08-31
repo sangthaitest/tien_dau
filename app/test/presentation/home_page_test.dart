@@ -71,7 +71,10 @@ void main() {
     expect(find.text('0 ₫'), findsOneWidget);
     expect(find.text('Đây nè'), findsOneWidget);
     expect(find.text('Xem tất cả'), findsOneWidget);
-    expect(find.text('Chưa có giao dịch. Nhấn + để thêm.'), findsOneWidget);
+    expect(
+      find.text('Hiện tại tiền chưa đi đâu cả. Nhấn + để thêm nhé!'),
+      findsOneWidget,
+    );
     expect(find.text('Trang chủ'), findsOneWidget);
     expect(find.byKey(const Key('fab-add')), findsOneWidget);
     expect(find.text('Lương'), findsNothing);
@@ -133,6 +136,9 @@ void main() {
         .widgetList<Text>(find.text('45.000 ₫'))
         .firstWhere((text) => text.key != const Key('home-month-spend'));
     expect(amount.style?.color, AppColors.text);
+    final amountRect = tester.getRect(find.byWidget(amount));
+    final tileRect = tester.getRect(find.byKey(const Key('tx-tile-1')));
+    expect(tileRect.right - amountRect.right, closeTo(16, 1));
   });
 
   testWidgets('Home load error does not fake a zero monthly total', (

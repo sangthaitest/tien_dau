@@ -8,6 +8,9 @@ import '../../domain/failures/result.dart';
 import '../format/money_format.dart';
 import '../settings/settings_scope.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dialog.dart';
+import '../theme/app_progress.dart';
+import '../theme/app_typography.dart';
 import 'finance_controller.dart';
 import 'recurring_section.dart';
 
@@ -63,11 +66,7 @@ class FinancePage extends StatelessWidget {
               ),
               Expanded(
                 child: controller.loading
-                    ? Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                        ),
-                      )
+                    ? const Center(child: AppCircularProgress())
                     : ListView(
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 88),
                         children: [
@@ -173,13 +172,10 @@ class FinancePage extends StatelessWidget {
         title: const Text('Xóa mục tiêu?'),
         content: const Text('Bạn có chắc muốn xóa mục tiêu này?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
+          AppDialog.cancel(onPressed: () => Navigator.pop(context, false)),
+          AppDialog.confirm(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Xác nhận'),
+            label: 'Xác nhận',
           ),
         ],
       ),
@@ -323,7 +319,9 @@ class _FinanceBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: background,
         shape: BoxShape.circle,
-        border: outlined ? Border.all(color: foreground.withValues(alpha: 0.35)) : null,
+        border: outlined
+            ? Border.all(color: foreground.withValues(alpha: 0.35))
+            : null,
       ),
       child: Icon(icon, size: 22, color: foreground),
     );
@@ -626,7 +624,9 @@ class _RemainingCard extends StatelessWidget {
     final hidden = SettingsScope.hideMoney(context);
     final positive = amount >= 0;
     final accent = positive ? AppColors.warning : AppColors.expense;
-    final bg = positive ? AppColors.warningContainer : AppColors.expenseContainer;
+    final bg = positive
+        ? AppColors.warningContainer
+        : AppColors.expenseContainer;
     return Container(
       key: const Key('finance-remaining-card'),
       width: double.infinity,
@@ -767,7 +767,7 @@ class _GoalSheetState extends State<_GoalSheet> {
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 17,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -844,11 +844,9 @@ class _GoalSheetState extends State<_GoalSheet> {
                   },
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
+                    textStyle: AppTypography.button(),
                   ),
-                  child: const Text(
-                    'Lưu',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
+                  child: const Text('Lưu'),
                 ),
               ),
             ],
@@ -899,12 +897,7 @@ class _GoalCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: goal.progressPercent / 100,
-            minHeight: 8,
-            color: AppColors.primary,
-            backgroundColor: AppColors.surfaceVariant,
-          ),
+          AppLinearProgress(value: goal.progressPercent / 100),
           const SizedBox(height: 8),
           Row(
             children: [

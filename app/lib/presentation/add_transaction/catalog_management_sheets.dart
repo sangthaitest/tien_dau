@@ -6,6 +6,8 @@ import '../../domain/entities/payment_method_kind.dart';
 import '../../domain/failures/result.dart';
 import '../catalog/transaction_catalog_controller.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dialog.dart';
+import '../theme/app_typography.dart';
 import '../theme/category_look.dart';
 
 Future<void> showCategoryManager(
@@ -272,7 +274,10 @@ class _PaymentManager extends StatelessWidget {
                     CircleAvatar(
                       backgroundColor: AppColors.primaryContainer,
                       foregroundColor: AppColors.primary,
-                      child: Icon(_paymentIcon(payment.source.method), size: 20),
+                      child: Icon(
+                        _paymentIcon(payment.source.method),
+                        size: 20,
+                      ),
                     ),
                   ],
                 ),
@@ -603,7 +608,7 @@ class _EditorBody extends StatelessWidget {
               FilledButton(
                 key: const Key('save-catalog-item'),
                 onPressed: onSave,
-                child: const Text('Lưu'),
+                child: Text('Lưu', style: AppTypography.button()),
               ),
             ],
           ),
@@ -661,13 +666,10 @@ Future<bool> _confirmDelete(BuildContext context, String name) async {
         'Các giao dịch đã lưu vẫn được giữ nguyên.',
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('Hủy'),
-        ),
-        TextButton(
+        AppDialog.cancel(onPressed: () => Navigator.pop(context, false)),
+        AppDialog.confirm(
           onPressed: () => Navigator.pop(context, true),
-          child: const Text('Xóa'),
+          label: 'Xóa',
         ),
       ],
     ),

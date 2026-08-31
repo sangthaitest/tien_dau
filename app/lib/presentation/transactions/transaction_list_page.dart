@@ -9,6 +9,8 @@ import '../catalog/transaction_catalog_scope.dart';
 import '../home/widgets/home_bottom_nav.dart';
 import '../home/widgets/home_transaction_tile.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_progress.dart';
+import '../theme/app_typography.dart';
 import 'transaction_list_controller.dart';
 
 class TransactionListPage extends StatefulWidget {
@@ -206,13 +208,9 @@ class _TransactionListPageState extends State<TransactionListPage> {
                       ),
                     )
                   else if (c.loading)
-                    Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                        ),
-                      ),
+                    const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Center(child: AppCircularProgress()),
                     )
                   else if (c.snapshot.isEmpty)
                     _Empty(onAdd: widget.onAddPressed)
@@ -224,11 +222,11 @@ class _TransactionListPageState extends State<TransactionListPage> {
                         onDelete: widget.onDelete,
                       ),
                   if (c.loadingMore)
-                    Padding(
-                      padding: const EdgeInsets.all(20),
+                    const Padding(
+                      padding: EdgeInsets.all(20),
                       child: Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primary,
+                        child: AppCircularProgress(
+                          size: AppProgress.compactSize,
                         ),
                       ),
                     ),
@@ -402,11 +400,9 @@ class _Empty extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: AppColors.onPrimary,
+              textStyle: AppTypography.button(),
             ),
-            child: const Text(
-              'Thêm giao dịch',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
+            child: const Text('Thêm giao dịch'),
           ),
         ],
       ),

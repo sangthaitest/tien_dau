@@ -6,6 +6,7 @@ import 'package:tien_day/presentation/add_transaction/add_transaction_controller
 import 'package:tien_day/presentation/add_transaction/add_transaction_page.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
 import 'package:tien_day/presentation/home/home_page.dart';
+import 'package:tien_day/presentation/theme/app_typography.dart';
 
 import '../support/memory_transaction_repository.dart';
 import '../support/memory_transaction_catalog_repository.dart';
@@ -73,6 +74,9 @@ void main() {
     await _openAdd(tester);
 
     expect(find.text('Thêm giao dịch'), findsOneWidget);
+    final title = tester.widget<Text>(find.text('Thêm giao dịch'));
+    expect(title.style?.fontSize, AppTypography.screenTitleSize);
+    expect(title.style?.fontWeight, AppTypography.extraWeight);
     expect(find.text('Số tiền'), findsOneWidget);
     expect(find.text('10k'), findsOneWidget);
     expect(find.text('200k'), findsOneWidget);
@@ -81,6 +85,13 @@ void main() {
     await _scrollAddTo(tester, find.text('Thanh toán bằng'));
     expect(find.text('Thanh toán bằng'), findsOneWidget);
     expect(find.text('Lưu giao dịch'), findsOneWidget);
+    final save = tester.widget<FilledButton>(
+      find.byKey(const Key('btn-save-tx')),
+    );
+    expect(
+      save.style?.textStyle?.resolve(const {})?.fontWeight,
+      AppTypography.extraWeight,
+    );
     expect(find.text('Cafe'), findsWidgets);
   });
 

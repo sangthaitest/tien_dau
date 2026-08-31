@@ -751,7 +751,7 @@ function renderHome() {
   const recent = sortedTransactions().filter(t => inMonth(t.date, viewMonth())).slice(0, 5);
   $('#home-tx-list').innerHTML = recent.length
     ? recent.map(t => renderTxItem(t, { compact: true })).join('')
-    : `<p class="caption">Chưa có giao dịch. Nhấn + để thêm.</p>`;
+    : `<p class="caption">Hiện tại tiền chưa đi đâu cả. Nhấn + để thêm nhé!</p>`;
 
   $$('#home-tx-list .tx-item').forEach(el => {
     el.addEventListener('click', () => openDetail(Number(el.dataset.id)));

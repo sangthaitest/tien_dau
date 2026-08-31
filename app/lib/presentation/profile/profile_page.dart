@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_dialog.dart';
 import 'user_profile_controller.dart';
 import 'user_profile_scope.dart';
 import 'widgets/profile_avatar.dart';
@@ -36,10 +37,7 @@ class ProfilePage extends StatelessWidget {
                   child: Text(
                     'Hồ sơ',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
                   ),
                 ),
                 const SizedBox(width: 48),
@@ -233,14 +231,11 @@ class _ProfileTextDialogState extends State<_ProfileTextDialog> {
         onSubmitted: (value) => Navigator.pop(context, value),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Hủy'),
-        ),
-        TextButton(
+        AppDialog.cancel(onPressed: () => Navigator.pop(context)),
+        AppDialog.confirm(
           key: widget.saveKey,
           onPressed: () => Navigator.pop(context, _field.text),
-          child: const Text('Lưu'),
+          label: 'Lưu',
         ),
       ],
     );

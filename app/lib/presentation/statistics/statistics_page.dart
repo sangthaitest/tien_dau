@@ -6,6 +6,7 @@ import '../../application/statistics_query.dart';
 import '../format/money_format.dart';
 import '../catalog/transaction_catalog_scope.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_progress.dart';
 import '../theme/category_look.dart';
 import 'statistics_controller.dart';
 
@@ -45,13 +46,9 @@ class StatisticsPage extends StatelessWidget {
                     ),
                   )
                 else if (controller.loading)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 48),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                      ),
-                    ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 48),
+                    child: Center(child: AppCircularProgress()),
                   )
                 else ...[
                   _InsightCard(snapshot: snap),

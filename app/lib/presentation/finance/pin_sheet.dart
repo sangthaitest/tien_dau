@@ -3,15 +3,12 @@ import 'package:flutter/services.dart';
 
 import '../../domain/security/sensitive_access_port.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
 
 enum PinSheetMode { setup, unlock, change }
 
 class PinSheet extends StatefulWidget {
-  const PinSheet({
-    super.key,
-    required this.access,
-    required this.mode,
-  });
+  const PinSheet({super.key, required this.access, required this.mode});
 
   final SensitiveAccessPort access;
   final PinSheetMode mode;
@@ -60,16 +57,16 @@ class _PinSheetState extends State<PinSheet> {
   }
 
   String get _title => switch (widget.mode) {
-        PinSheetMode.setup => 'Tạo mật khẩu',
-        PinSheetMode.unlock => 'Mật khẩu quản lý tài chính',
-        PinSheetMode.change => 'Đổi mật khẩu',
-      };
+    PinSheetMode.setup => 'Tạo mật khẩu',
+    PinSheetMode.unlock => 'Mật khẩu quản lý tài chính',
+    PinSheetMode.change => 'Đổi mật khẩu',
+  };
 
   String get _hint => switch (widget.mode) {
-        PinSheetMode.setup => 'Tạo mật khẩu 4 số để bảo vệ Tài chính.',
-        PinSheetMode.unlock => 'Nhập mật khẩu 4 số để xem Tài chính.',
-        PinSheetMode.change => 'Nhập mật khẩu hiện tại để đổi.',
-      };
+    PinSheetMode.setup => 'Tạo mật khẩu 4 số để bảo vệ Tài chính.',
+    PinSheetMode.unlock => 'Nhập mật khẩu 4 số để xem Tài chính.',
+    PinSheetMode.change => 'Nhập mật khẩu hiện tại để đổi.',
+  };
 
   Future<void> _submit() async {
     if (_busy) return;
@@ -81,9 +78,9 @@ class _PinSheetState extends State<PinSheet> {
       PinSheetMode.setup => await widget.access.setupPin(_pin.text.trim()),
       PinSheetMode.unlock => await widget.access.unlock(_pin.text.trim()),
       PinSheetMode.change => await widget.access.changePin(
-          current: _current.text.trim(),
-          next: _next.text.trim(),
-        ),
+        current: _current.text.trim(),
+        next: _next.text.trim(),
+      ),
     };
     if (!mounted) return;
     setState(() {
@@ -114,7 +111,7 @@ class _PinSheetState extends State<PinSheet> {
           const SizedBox(height: 12),
           Text(
             _title,
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           Text(
@@ -152,10 +149,12 @@ class _PinSheetState extends State<PinSheet> {
             child: FilledButton(
               key: const Key('btn-submit-pin'),
               onPressed: _busy ? null : _submit,
-              style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                textStyle: AppTypography.button(),
+              ),
               child: Text(
                 widget.mode == PinSheetMode.setup ? 'Lưu mật khẩu' : 'Xác nhận',
-                style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -166,11 +165,7 @@ class _PinSheetState extends State<PinSheet> {
 }
 
 class _PinField extends StatelessWidget {
-  const _PinField({
-    super.key,
-    required this.controller,
-    required this.label,
-  });
+  const _PinField({super.key, required this.controller, required this.label});
 
   final TextEditingController controller;
   final String label;

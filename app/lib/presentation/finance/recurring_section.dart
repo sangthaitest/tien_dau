@@ -9,6 +9,8 @@ import '../../domain/time/clock_format.dart';
 import '../format/money_format.dart';
 import '../settings/settings_scope.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_dialog.dart';
+import '../theme/app_typography.dart';
 import '../theme/category_look.dart';
 import 'finance_controller.dart';
 
@@ -89,7 +91,7 @@ class RecurringWorkspace {
       ),
       builder: (context) => _RecurringEditorSheet(
         rule: rule,
-        month: controller.snapshot.month,
+        clock: controller.clock,
         lockedKind: kind,
         createTitle: editorCreateTitle,
         editTitle: editorEditTitle,
@@ -114,14 +116,11 @@ class RecurringWorkspace {
         title: Text(isIncome ? 'Xóa khoản thu nhập?' : 'Xóa khoản định kỳ?'),
         content: Text('Bạn có chắc muốn xóa “${rule.name}”?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
+          AppDialog.cancel(onPressed: () => Navigator.pop(context, false)),
+          AppDialog.confirm(
             key: const Key('finance-upcoming-confirm-delete'),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Xác nhận'),
+            label: 'Xác nhận',
           ),
         ],
       ),
@@ -615,7 +614,7 @@ class _RecurringManager extends StatelessWidget {
 
 class _RecurringEditorSheet extends StatefulWidget {
   const _RecurringEditorSheet({
-    required this.month,
+    required this.clock,
     required this.lockedKind,
     required this.createTitle,
     required this.editTitle,
@@ -624,7 +623,7 @@ class _RecurringEditorSheet extends StatefulWidget {
   });
 
   final RecurringTransaction? rule;
-  final DateTime month;
+  final DateTime Function() clock;
   final RecurringKind lockedKind;
   final String createTitle;
   final String editTitle;
@@ -650,15 +649,12 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
   void initState() {
     super.initState();
     final rule = widget.rule;
-    final month = widget.month;
     _name = TextEditingController(text: rule?.name ?? '');
     _amount = TextEditingController(
       text: rule == null ? '' : AmountInput.formatGrouped(rule.amount),
     );
     _note = TextEditingController(text: rule?.note ?? '');
-    final day = rule?.dayOfMonth ?? month.day;
-    final maxDay = DateTime(month.year, month.month + 1, 0).day;
-    _dueDate = DateTime(month.year, month.month, day.clamp(1, maxDay));
+    _dueDate = dateOnly(rule?.startDate ?? widget.clock());
     _categoryId = rule?.categoryId;
     _paymentSourceId = rule?.paymentSourceId;
     _isActive = rule?.isActive ?? true;
@@ -735,7 +731,7 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
               Text(
                 widget.rule == null ? widget.createTitle : widget.editTitle,
                 style: const TextStyle(
-                  fontSize: 17,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -792,11 +788,9 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
                   onPressed: _save,
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
+                    textStyle: AppTypography.button(),
                   ),
-                  child: const Text(
-                    'Lưu',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
+                  child: const Text('Lưu'),
                 ),
               ),
             ],

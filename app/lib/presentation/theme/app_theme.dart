@@ -58,8 +58,8 @@ ThemeData buildAppTheme([Brightness brightness = Brightness.light]) {
       letterSpacing: -0.25,
     ),
     titleLarge: baseTextTheme.titleLarge?.copyWith(
-      fontWeight: AppTypography.titleWeight,
-      letterSpacing: -0.2,
+      fontWeight: AppTypography.strongWeight,
+      letterSpacing: -0.25,
     ),
     titleMedium: baseTextTheme.titleMedium?.copyWith(
       fontWeight: AppTypography.titleWeight,
@@ -81,7 +81,7 @@ ThemeData buildAppTheme([Brightness brightness = Brightness.light]) {
       height: 1.35,
     ),
     labelLarge: baseTextTheme.labelLarge?.copyWith(
-      fontWeight: AppTypography.titleWeight,
+      fontWeight: AppTypography.extraWeight,
     ),
     labelMedium: baseTextTheme.labelMedium?.copyWith(
       fontWeight: AppTypography.metadataWeight,
@@ -110,22 +110,37 @@ ThemeData buildAppTheme([Brightness brightness = Brightness.light]) {
     dividerTheme: DividerThemeData(color: divider, thickness: 1, space: 1),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        minimumSize: const Size(48, 48),
+        minimumSize: const Size(64, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         elevation: 0,
-        textStyle: const TextStyle(
-          fontFamily: AppTypography.fontFamily,
-          fontWeight: AppTypography.titleWeight,
-        ),
+        textStyle: AppTypography.button(),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(64, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+        textStyle: AppTypography.buttonSecondary(),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        textStyle: const TextStyle(
-          fontFamily: AppTypography.fontFamily,
-          fontWeight: AppTypography.titleWeight,
-        ),
+        minimumSize: const Size(64, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        textStyle: AppTypography.buttonSecondary().copyWith(fontSize: 15),
       ),
+    ),
+    dialogTheme: DialogThemeData(
+      titleTextStyle: AppTypography.dialogTitle(color: text),
+      contentTextStyle: textTheme.bodyMedium?.copyWith(
+        fontSize: 15,
+        height: 1.45,
+        fontWeight: AppTypography.bodyWeight,
+        color: text,
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       elevation: 2,
@@ -141,6 +156,31 @@ ThemeData buildAppTheme([Brightness brightness = Brightness.light]) {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: primary,
+      // ignore: deprecated_member_use
+      year2023: false,
+      strokeWidth: 3,
+      strokeCap: StrokeCap.round,
+      strokeAlign: CircularProgressIndicator.strokeAlignInside,
+      circularTrackColor: primary.withValues(alpha: 0.16),
+      circularTrackPadding: const EdgeInsets.all(2),
+      constraints: const BoxConstraints(
+        minWidth: 32,
+        minHeight: 32,
+        maxWidth: 40,
+        maxHeight: 40,
+      ),
+      linearTrackColor: dark
+          ? const Color(0xFF242A35)
+          : const Color(0xFFEEF1F5),
+      linearMinHeight: 8,
+      borderRadius: BorderRadius.circular(4),
+      stopIndicatorColor: Colors.transparent,
+      stopIndicatorRadius: 0,
+      trackGap: 0,
+      refreshBackgroundColor: card,
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
