@@ -15,12 +15,14 @@ class SettingsPage extends StatelessWidget {
     this.onOpenProfile,
     this.onChangePin,
     this.onOpenBackupRestore,
+    this.onOpenTutorial,
   });
 
   final VoidCallback? onOpenFinance;
   final VoidCallback? onOpenProfile;
   final VoidCallback? onChangePin;
   final VoidCallback? onOpenBackupRestore;
+  final VoidCallback? onOpenTutorial;
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +114,15 @@ class SettingsPage extends StatelessWidget {
           _SettingsGroup(
             title: 'Ứng dụng',
             children: [
+              _SettingsRow(
+                key: const Key('settings-tutorial'),
+                icon: Icons.menu_book_outlined,
+                iconColor: AppColors.primary,
+                iconBg: AppColors.primaryContainer,
+                label: 'Hướng dẫn sử dụng',
+                subtitle: 'Xem lại cách sử dụng Tiền đâu nè',
+                onTap: onOpenTutorial,
+              ),
               _SettingsRow(
                 key: const Key('settings-notifications'),
                 icon: Icons.notifications_outlined,
@@ -329,6 +340,7 @@ class _SettingsRow extends StatelessWidget {
     required this.iconColor,
     required this.iconBg,
     required this.label,
+    this.subtitle,
     this.value,
     this.valueKey,
     this.trailing,
@@ -340,6 +352,7 @@ class _SettingsRow extends StatelessWidget {
   final Color iconColor;
   final Color iconBg;
   final String label;
+  final String? subtitle;
   final String? value;
   final Key? valueKey;
   final Widget? trailing;
@@ -367,13 +380,29 @@ class _SettingsRow extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: AppColors.text,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               if (value != null)

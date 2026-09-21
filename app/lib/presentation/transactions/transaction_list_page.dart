@@ -11,6 +11,7 @@ import '../home/widgets/home_transaction_tile.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_progress.dart';
 import '../theme/app_typography.dart';
+import '../tutorial/tutorial_targets.dart';
 import 'transaction_list_controller.dart';
 
 class TransactionListPage extends StatefulWidget {
@@ -23,6 +24,8 @@ class TransactionListPage extends StatefulWidget {
     this.onTransactionTap,
     this.onDelete,
     this.clock = DateTime.now,
+    this.summaryTargetKey,
+    this.filtersTargetKey,
   });
 
   final TransactionListController controller;
@@ -32,6 +35,8 @@ class TransactionListPage extends StatefulWidget {
   final ValueChanged<Transaction>? onTransactionTap;
   final Future<bool> Function(Transaction tx)? onDelete;
   final DateTime Function() clock;
+  final GlobalKey? summaryTargetKey;
+  final GlobalKey? filtersTargetKey;
 
   @override
   State<TransactionListPage> createState() => _TransactionListPageState();
@@ -92,83 +97,96 @@ class _TransactionListPageState extends State<TransactionListPage> {
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.card,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0x0D1A1D26)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'CHI TIÊU',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textTertiary,
-                              letterSpacing: 0.4,
+                    child: tutorialAnchor(
+                      key: widget.summaryTargetKey,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.card,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0x0D1A1D26)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'CHI TIÊU',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textTertiary,
+                                letterSpacing: 0.4,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '−${formatVndShort(c.snapshot.expenseSum)}',
-                            key: const Key('tx-sum-expense'),
-                            style: moneyStyle(
-                              size: 17,
-                              color: AppColors.expense,
+                            const SizedBox(height: 4),
+                            Text(
+                              '−${formatVndShort(c.snapshot.expenseSum)}',
+                              key: const Key('tx-sum-expense'),
+                              style: moneyStyle(
+                                size: 17,
+                                color: AppColors.expense,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                  _ChipRow(
-                    children: [
-                      _FilterChip(
-                        key: const Key('cat-all'),
-                        label: 'Tất cả',
-                        selected: c.filter.categoryId == 'all',
-                        onTap: () => c.setCategory('all'),
-                      ),
-                      for (final category
-                          in (TransactionCatalogScope.maybeOf(
-                                context,
-                              )?.categories ??
-                              ChiChoCatalog.all))
-                        _FilterChip(
-                          key: Key('cat-${category.id}'),
-                          label: category.name,
-                          selected: c.filter.categoryId == category.id,
-                          onTap: () => c.setCategory(category.id),
+                  tutorialAnchor(
+                    key: widget.filtersTargetKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _ChipRow(
+                          children: [
+                            _FilterChip(
+                              key: const Key('cat-all'),
+                              label: 'Tất cả',
+                              selected: c.filter.categoryId == 'all',
+                              onTap: () => c.setCategory('all'),
+                            ),
+                            for (final category
+                                in (TransactionCatalogScope.maybeOf(
+                                      context,
+                                    )?.categories ??
+                                    ChiChoCatalog.all))
+                              _FilterChip(
+                                key: Key('cat-${category.id}'),
+                                label: category.name,
+                                selected: c.filter.categoryId == category.id,
+                                onTap: () => c.setCategory(category.id),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
-                  _ChipRow(
-                    children: [
-                      _FilterChip(
-                        key: const Key('date-thisMonth'),
-                        label: 'Tháng này',
-                        selected: c.filter.date == TxDateFilter.thisMonth,
-                        onTap: () => c.setDateFilter(TxDateFilter.thisMonth),
-                      ),
-                      _FilterChip(
-                        key: const Key('date-lastMonth'),
-                        label: 'Tháng trước',
-                        selected: c.filter.date == TxDateFilter.lastMonth,
-                        onTap: () => c.setDateFilter(TxDateFilter.lastMonth),
-                      ),
-                      _FilterChip(
-                        key: const Key('date-custom'),
-                        label: 'Tùy chọn',
-                        selected: c.filter.date == TxDateFilter.custom,
-                        onTap: () => c.setDateFilter(TxDateFilter.custom),
-                      ),
-                    ],
+                        _ChipRow(
+                          children: [
+                            _FilterChip(
+                              key: const Key('date-thisMonth'),
+                              label: 'Tháng này',
+                              selected: c.filter.date == TxDateFilter.thisMonth,
+                              onTap: () =>
+                                  c.setDateFilter(TxDateFilter.thisMonth),
+                            ),
+                            _FilterChip(
+                              key: const Key('date-lastMonth'),
+                              label: 'Tháng trước',
+                              selected: c.filter.date == TxDateFilter.lastMonth,
+                              onTap: () =>
+                                  c.setDateFilter(TxDateFilter.lastMonth),
+                            ),
+                            _FilterChip(
+                              key: const Key('date-custom'),
+                              label: 'Tùy chọn',
+                              selected: c.filter.date == TxDateFilter.custom,
+                              onTap: () => c.setDateFilter(TxDateFilter.custom),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   if (c.filter.date == TxDateFilter.custom)
                     Padding(

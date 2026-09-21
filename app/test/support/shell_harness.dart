@@ -8,6 +8,7 @@ import 'package:tien_day/application/transaction_catalog_service.dart';
 import 'package:tien_day/application/transaction_service.dart';
 import 'package:tien_day/application/user_profile_service.dart';
 import 'package:tien_day/data/backup/backup_ports.dart';
+import 'package:tien_day/domain/entities/app_settings.dart';
 import 'package:tien_day/presentation/catalog/transaction_catalog_controller.dart';
 import 'package:tien_day/presentation/catalog/transaction_catalog_scope.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
@@ -58,8 +59,21 @@ buildShell({
     repository: pins,
     saltFactory: () => 'test-salt',
   );
+  final resolvedSettings =
+      settingsRepo ??
+      MemoryAppSettingsRepository(
+        stored: AppSettings.defaults.copyWith(
+          hasCompletedTutorial: true,
+          hasCompletedFinanceTutorial: true,
+          hasCompletedBackupTutorial: true,
+          hasCompletedTransactionsTutorial: true,
+          hasCompletedStatisticsTutorial: true,
+          hasCompletedAddTutorial: true,
+        ),
+      );
   final settings = AppSettingsController(
-    AppSettingsService(settingsRepo ?? MemoryAppSettingsRepository()),
+    AppSettingsService(resolvedSettings),
+    initial: resolvedSettings.stored,
   );
   final profile = UserProfileController(
     UserProfileService(profileRepo ?? MemoryUserProfileRepository()),

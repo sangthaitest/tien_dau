@@ -9,6 +9,7 @@ import '../../domain/time/clock_format.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../theme/category_look.dart';
+import '../tutorial/tutorial_targets.dart';
 import 'add_transaction_controller.dart';
 import 'add_transaction_copy.dart';
 import 'catalog_management_sheets.dart';
@@ -19,11 +20,17 @@ class AddTransactionPage extends StatefulWidget {
     required this.controller,
     this.autofocusAmount = true,
     this.onFinished,
+    this.amountTargetKey,
+    this.categoryTargetKey,
+    this.saveTargetKey,
   });
 
   final AddTransactionController controller;
   final bool autofocusAmount;
   final ValueChanged<bool>? onFinished;
+  final GlobalKey? amountTargetKey;
+  final GlobalKey? categoryTargetKey;
+  final GlobalKey? saveTargetKey;
 
   @override
   State<AddTransactionPage> createState() => _AddTransactionPageState();
@@ -223,27 +230,43 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                 child: ListView(
                   padding: EdgeInsets.fromLTRB(20, 4, 20, 20 + bottomInset),
                   children: [
-                    const _FieldLabel(AddTransactionCopy.amountLabel),
-                    _AmountField(
-                      controller: _amount,
-                      focusNode: _amountFocus,
-                      onChanged: _c.setAmountFromRaw,
-                    ),
-                    const SizedBox(height: 12),
-                    _QuickAmounts(
-                      active: _c.draft.activeShortcut,
-                      onTap: _c.applyShortcut,
+                    tutorialAnchor(
+                      key: widget.amountTargetKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const _FieldLabel(AddTransactionCopy.amountLabel),
+                          _AmountField(
+                            controller: _amount,
+                            focusNode: _amountFocus,
+                            onChanged: _c.setAmountFromRaw,
+                          ),
+                          const SizedBox(height: 12),
+                          _QuickAmounts(
+                            active: _c.draft.activeShortcut,
+                            onTap: _c.applyShortcut,
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 20),
-                    _ManagedFieldLabel(
-                      text: AddTransactionCopy.chiCho,
-                      manageKey: const Key('manage-categories'),
-                      onManage: _manageCategories,
-                    ),
-                    _ChiChoGrid(
-                      categories: _c.categories,
-                      selectedId: _c.draft.categoryId,
-                      onSelect: _c.selectCategory,
+                    tutorialAnchor(
+                      key: widget.categoryTargetKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _ManagedFieldLabel(
+                            text: AddTransactionCopy.chiCho,
+                            manageKey: const Key('manage-categories'),
+                            onManage: _manageCategories,
+                          ),
+                          _ChiChoGrid(
+                            categories: _c.categories,
+                            selectedId: _c.draft.categoryId,
+                            onSelect: _c.selectCategory,
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 20),
                     _ManagedFieldLabel(
@@ -342,21 +365,24 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                       ],
                       SizedBox(
                         height: 52,
-                        child: FilledButton(
-                          key: const Key('btn-save-tx'),
-                          onPressed: _c.saving ? null : _save,
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: AppColors.onPrimary,
-                            textStyle: AppTypography.button(),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                        child: tutorialAnchor(
+                          key: widget.saveTargetKey,
+                          child: FilledButton(
+                            key: const Key('btn-save-tx'),
+                            onPressed: _c.saving ? null : _save,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: AppColors.onPrimary,
+                              textStyle: AppTypography.button(),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            _c.isEditing
-                                ? AddTransactionCopy.update
-                                : AddTransactionCopy.save,
+                            child: Text(
+                              _c.isEditing
+                                  ? AddTransactionCopy.update
+                                  : AddTransactionCopy.save,
+                            ),
                           ),
                         ),
                       ),

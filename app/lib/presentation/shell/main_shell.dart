@@ -31,6 +31,9 @@ import '../theme/app_dialog.dart';
 import '../transactions/transaction_detail_sheet.dart';
 import '../transactions/transaction_list_controller.dart';
 import '../transactions/transaction_list_page.dart';
+import '../tutorial/tutorial_overlay.dart';
+import '../tutorial/tutorial_steps.dart';
+import '../tutorial/tutorial_targets.dart';
 import '../view_month/view_month_controller.dart';
 
 class MainShell extends StatefulWidget {
@@ -75,12 +78,17 @@ class _MainShellState extends State<MainShell> {
   bool _openingSensitive = false;
   bool _openingDetail = false;
   bool _paintWarm = true;
+  bool _tutorialActive = false;
+  bool _tutorialBusy = false;
+  TutorialTrack _tutorialTrack = TutorialTrack.firstLaunch;
+  TutorialStep _tutorialStep = TutorialStep.welcome;
   late final TransactionListController _listController;
   late final FinanceController _financeController;
   late final StatisticsController _statsController;
   late final AddTransactionController _addController;
   late final Map<AppTab, GlobalKey> _tabKeys;
   final GlobalKey _addKey = GlobalKey();
+  final TutorialTargets _tutorialTargets = TutorialTargets();
 
   @override
   void initState() {
@@ -127,11 +135,225 @@ class _MainShellState extends State<MainShell> {
     if (!mounted) return;
     if (_paintWarm) {
       setState(() => _paintWarm = false);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _maybeStartFirstLaunchTutorial();
+      });
+    }
+  }
+
+  void _maybeStartFirstLaunchTutorial() {
+    _maybeStartTrack(TutorialTrack.firstLaunch);
+  }
+
+  bool _isTrackCompleted(TutorialTrack track) {
+    final settings = SettingsScope.maybeOf(context)?.settings;
+    if (settings == null) return true;
+    return switch (track) {
+      TutorialTrack.firstLaunch => settings.hasCompletedTutorial,
+      TutorialTrack.add => settings.hasCompletedAddTutorial,
+      TutorialTrack.finance => settings.hasCompletedFinanceTutorial,
+      TutorialTrack.backup => settings.hasCompletedBackupTutorial,
+      TutorialTrack.transactions => settings.hasCompletedTransactionsTutorial,
+      TutorialTrack.statistics => settings.hasCompletedStatisticsTutorial,
+      TutorialTrack.full => false,
+    };
+  }
+
+  Future<void> _maybeStartTrack(TutorialTrack track) async {
+    if (!mounted || _tutorialActive || _tutorialBusy) return;
+    if (_isTrackCompleted(track)) return;
+    await _startTutorial(track);
+  }
+
+  Future<void> _startTutorial(TutorialTrack track) async {
+    if (_tutorialActive || _tutorialBusy) return;
+    _tutorialBusy = true;
+    try {
+      final first = track.steps.first;
+      setState(() {
+        _tutorialTrack = track;
+        _tutorialStep = first;
+        _tutorialActive = true;
+        if (track.resetsShell) {
+          _showAdd = false;
+          _showProfile = false;
+          _showBackupRestore = false;
+          _showFinance = false;
+          _tab = AppTab.home;
+        }
+      });
+      await _prepareTutorialStep(first);
+    } finally {
+      _tutorialBusy = false;
+    }
+  }
+
+  Future<void> _prepareTutorialStep(TutorialStep step) async {
+    if (step.usesFinance) {
+      if (!_showFinance) {
+        await _financeController.load();
+        if (!mounted) return;
+        setState(() {
+          _showAdd = false;
+          _showProfile = false;
+          _showBackupRestore = false;
+          _showFinance = true;
+        });
+      }
+    } else if (step.usesAdd) {
+      _addController.reset(now: widget.clock());
+      if (!_showAdd || _showFinance || _showBackupRestore) {
+        setState(() {
+          _showFinance = false;
+          _showProfile = false;
+          _showBackupRestore = false;
+          _showAdd = true;
+        });
+      }
+    } else if (step.usesBackup) {
+      if (!_showBackupRestore) {
+        setState(() {
+          _showAdd = false;
+          _showProfile = false;
+          _showFinance = false;
+          _showBackupRestore = true;
+          _tab = AppTab.settings;
+        });
+      }
+    } else if (step.usesTransactions) {
+      await _listController.load();
+      if (!mounted) return;
+      if (_showAdd ||
+          _showFinance ||
+          _showBackupRestore ||
+          _tab != AppTab.transactions) {
+        setState(() {
+          _showAdd = false;
+          _showFinance = false;
+          _showProfile = false;
+          _showBackupRestore = false;
+          _tab = AppTab.transactions;
+        });
+      }
+    } else if (step.usesStatistics) {
+      await _statsController.load();
+      if (!mounted) return;
+      if (_showAdd ||
+          _showFinance ||
+          _showBackupRestore ||
+          _tab != AppTab.statistics) {
+        setState(() {
+          _showAdd = false;
+          _showFinance = false;
+          _showProfile = false;
+          _showBackupRestore = false;
+          _tab = AppTab.statistics;
+        });
+      }
+    } else {
+      if (_showAdd ||
+          _showFinance ||
+          _showBackupRestore ||
+          _tab != AppTab.home) {
+        setState(() {
+          _showAdd = false;
+          _showFinance = false;
+          _showProfile = false;
+          _showBackupRestore = false;
+          _tab = AppTab.home;
+        });
+      }
+    }
+    if (!mounted) return;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    final target = _tutorialTargets.keyFor(step).currentContext;
+    if (target != null && target.mounted) {
+      await Scrollable.ensureVisible(
+        target,
+        duration: const Duration(milliseconds: 280),
+        alignment: 0.2,
+        curve: Curves.easeInOutCubic,
+      );
+    }
+  }
+
+  Future<void> _onTutorialContinue() async {
+    if (_tutorialBusy) return;
+    final next = _tutorialStep.nextIn(_tutorialTrack);
+    if (next == null) {
+      await _finishTutorial(completed: true);
+      return;
+    }
+    _tutorialBusy = true;
+    try {
+      await _prepareTutorialStep(next);
+      if (!mounted) return;
+      setState(() => _tutorialStep = next);
+    } finally {
+      _tutorialBusy = false;
+    }
+  }
+
+  Future<void> _finishTutorial({required bool completed}) async {
+    if (!_tutorialActive) return;
+    final track = _tutorialTrack;
+    final stayOnFinance = track == TutorialTrack.finance;
+    final stayOnBackup = track == TutorialTrack.backup;
+    final stayOnTransactions = track == TutorialTrack.transactions;
+    final stayOnStatistics = track == TutorialTrack.statistics;
+    final stayOnAdd = track == TutorialTrack.add;
+    setState(() {
+      _tutorialActive = false;
+      if (!stayOnAdd) _showAdd = false;
+      if (!stayOnFinance) _showFinance = false;
+      if (!stayOnBackup) _showBackupRestore = false;
+      if (track.returnsToSettings) {
+        _tab = AppTab.settings;
+      } else if (stayOnFinance || stayOnBackup || stayOnAdd) {
+        // Keep the screen that was just introduced.
+      } else if (stayOnTransactions) {
+        _tab = AppTab.transactions;
+      } else if (stayOnStatistics) {
+        _tab = AppTab.statistics;
+      } else {
+        _tab = AppTab.home;
+      }
+    });
+    if (completed && mounted) {
+      final settings = SettingsScope.maybeOf(context);
+      if (settings == null) return;
+      switch (track) {
+        case TutorialTrack.firstLaunch:
+          await settings.setTutorialCompleted(true);
+        case TutorialTrack.add:
+          await settings.setAddTutorialCompleted(true);
+        case TutorialTrack.finance:
+          await settings.setFinanceTutorialCompleted(true);
+        case TutorialTrack.backup:
+          await settings.setBackupTutorialCompleted(true);
+        case TutorialTrack.transactions:
+          await settings.setTransactionsTutorialCompleted(true);
+        case TutorialTrack.statistics:
+          await settings.setStatisticsTutorialCompleted(true);
+        case TutorialTrack.full:
+          await settings.completeAllTutorials();
+      }
     }
   }
 
   void _onViewMonthChanged() {
     _refresh();
+  }
+
+  AppTab get _tutorialNavTab {
+    if (_tutorialStep.usesFinance || _tutorialStep.usesBackup) {
+      return AppTab.settings;
+    }
+    if (_tutorialStep.usesTransactions) return AppTab.transactions;
+    if (_tutorialStep.usesStatistics) return AppTab.statistics;
+    return AppTab.home;
   }
 
   Future<void> _refresh() async {
@@ -144,16 +366,17 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _openAdd() {
-    if (_openingAdd || _showAdd) return;
+    if (_tutorialActive || _openingAdd || _showAdd) return;
     _openingAdd = true;
     traceInteraction('openAdd.start');
     _addController.reset(now: widget.clock());
     setState(() => _showAdd = true);
     _openingAdd = false;
+    _maybeStartTrack(TutorialTrack.add);
   }
 
   Future<void> _onAddFinished(bool saved) async {
-    if (!_showAdd) return;
+    if (_tutorialActive || !_showAdd) return;
     setState(() => _showAdd = false);
     _addController.reset(now: widget.clock());
     if (saved && mounted) await _refresh();
@@ -200,6 +423,7 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _selectTab(AppTab tab) {
+    if (_tutorialActive) return;
     if (_tab == tab && !_showFinance && !_showProfile && !_showBackupRestore) {
       return;
     }
@@ -211,6 +435,15 @@ class _MainShellState extends State<MainShell> {
         _showBackupRestore = false;
       }
     });
+    switch (tab) {
+      case AppTab.transactions:
+        _maybeStartTrack(TutorialTrack.transactions);
+      case AppTab.statistics:
+        _maybeStartTrack(TutorialTrack.statistics);
+      case AppTab.home:
+      case AppTab.settings:
+        break;
+    }
   }
 
   Future<bool> _ensureUnlocked() async {
@@ -222,7 +455,7 @@ class _MainShellState extends State<MainShell> {
   }
 
   Future<void> _openFinance() async {
-    if (_openingSensitive) return;
+    if (_tutorialActive || _openingSensitive) return;
     _openingSensitive = true;
     try {
       final ok = await _ensureUnlocked();
@@ -234,6 +467,7 @@ class _MainShellState extends State<MainShell> {
         _showBackupRestore = false;
         _showFinance = true;
       });
+      await _maybeStartTrack(TutorialTrack.finance);
     } finally {
       _openingSensitive = false;
     }
@@ -249,12 +483,14 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _openBackupRestore() {
+    if (_tutorialActive) return;
     setState(() {
       _tab = AppTab.settings;
       _showFinance = false;
       _showProfile = false;
       _showBackupRestore = true;
     });
+    _maybeStartTrack(TutorialTrack.backup);
   }
 
   Future<void> _onBackupRestored() async {
@@ -298,9 +534,14 @@ class _MainShellState extends State<MainShell> {
     SettingsScope.maybeOf(context);
     UserProfileScope.maybeOf(context);
     return PopScope(
-      canPop: !_showAdd,
+      canPop: !_showAdd && !_tutorialActive,
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop || !_showAdd) return;
+        if (didPop) return;
+        if (_tutorialActive) {
+          _finishTutorial(completed: false);
+          return;
+        }
+        if (!_showAdd) return;
         _onAddFinished(false);
       },
       child: Scaffold(
@@ -314,9 +555,15 @@ class _MainShellState extends State<MainShell> {
                   child: _showFinance
                       ? FinancePage(
                           controller: _financeController,
-                          onBack: () => setState(() => _showFinance = false),
+                          onBack: () {
+                            if (_tutorialActive) return;
+                            setState(() => _showFinance = false);
+                          },
                           onOpenTransactions: () =>
                               _selectTab(AppTab.transactions),
+                          incomeTargetKey: _tutorialTargets.income,
+                          recurringTargetKey: _tutorialTargets.recurring,
+                          spendingTargetKey: _tutorialTargets.spending,
                         )
                       : _showProfile
                       ? ProfilePage(
@@ -324,26 +571,32 @@ class _MainShellState extends State<MainShell> {
                         )
                       : _showBackupRestore
                       ? BackupRestorePage(
-                          onBack: () =>
-                              setState(() => _showBackupRestore = false),
+                          onBack: () {
+                            if (_tutorialActive) return;
+                            setState(() => _showBackupRestore = false);
+                          },
                           onRestored: _onBackupRestored,
                           backupService: widget.backupService,
                           restoreService: widget.restoreService,
                           backupShare: widget.backupShare,
                           backupPicker: widget.backupPicker,
+                          backupTargetKey: _tutorialTargets.backup,
+                          restoreTargetKey: _tutorialTargets.restore,
                         )
                       : _tabHost(),
                 ),
                 HomeBottomNav(
-                  tab:
-                      _tab == AppTab.settings ||
-                          _showFinance ||
-                          _showProfile ||
-                          _showBackupRestore
+                  tab: _tutorialActive
+                      ? _tutorialNavTab
+                      : _tab == AppTab.settings ||
+                            _showFinance ||
+                            _showProfile ||
+                            _showBackupRestore
                       ? AppTab.settings
                       : _tab,
                   onAddPressed: _openAdd,
                   onTabSelected: _selectTab,
+                  addTargetKey: _tutorialTargets.addButton,
                 ),
               ],
             ),
@@ -353,10 +606,22 @@ class _MainShellState extends State<MainShell> {
               child: AddTransactionPage(
                 key: _addKey,
                 controller: _addController,
-                autofocusAmount: _showAdd,
+                autofocusAmount: _showAdd && !_tutorialActive,
                 onFinished: _onAddFinished,
+                amountTargetKey: _tutorialTargets.amount,
+                categoryTargetKey: _tutorialTargets.category,
+                saveTargetKey: _tutorialTargets.save,
               ),
             ),
+            if (_tutorialActive)
+              TutorialOverlay(
+                key: const Key('tutorial-overlay'),
+                step: _tutorialStep,
+                isLast: _tutorialStep.isLastIn(_tutorialTrack),
+                targetKey: _tutorialTargets.keyFor(_tutorialStep),
+                onContinue: _onTutorialContinue,
+                onSkip: () => _finishTutorial(completed: false),
+              ),
           ],
         ),
       ),
@@ -389,6 +654,7 @@ class _MainShellState extends State<MainShell> {
         onSeeAll: () => _selectTab(AppTab.transactions),
         onTransactionTap: _openDetail,
         onAvatarTap: () => _selectTab(AppTab.settings),
+        overviewTargetKey: _tutorialTargets.overview,
       ),
       AppTab.transactions => TransactionListPage(
         controller: _listController,
@@ -397,13 +663,20 @@ class _MainShellState extends State<MainShell> {
         onAddPressed: _openAdd,
         onTransactionTap: _openDetail,
         onDelete: _deleteTransaction,
+        summaryTargetKey: _tutorialTargets.txList,
+        filtersTargetKey: _tutorialTargets.txFilters,
       ),
-      AppTab.statistics => StatisticsPage(controller: _statsController),
+      AppTab.statistics => StatisticsPage(
+        controller: _statsController,
+        insightTargetKey: _tutorialTargets.statsMonth,
+        chartTargetKey: _tutorialTargets.statsCategories,
+      ),
       AppTab.settings => SettingsPage(
         onOpenFinance: _openFinance,
         onOpenProfile: _openProfile,
         onChangePin: _changePin,
         onOpenBackupRestore: _openBackupRestore,
+        onOpenTutorial: () => _startTutorial(TutorialTrack.full),
       ),
     };
   }

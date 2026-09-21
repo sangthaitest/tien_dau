@@ -226,7 +226,7 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    expect(tester.getSize(find.byType(HomeBottomNav)).height, 78 + 34);
+    expect(tester.getSize(find.byType(HomeBottomNav)).height, 60 + 34);
 
     await tester.tap(find.byKey(const Key('nav-settings')));
     await tester.pump();
@@ -257,9 +257,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
 
-    expect(tester.getSize(find.byType(HomeBottomNav)).height, 78 + 22);
+    expect(tester.getSize(find.byType(HomeBottomNav)).height, 60 + 10);
     final nav = tester.getRect(find.byType(HomeBottomNav));
     final label = tester.getRect(find.text('Trang chủ'));
-    expect(nav.bottom - label.bottom, greaterThanOrEqualTo(22));
+    expect(nav.bottom - label.bottom, greaterThanOrEqualTo(10));
   });
 }

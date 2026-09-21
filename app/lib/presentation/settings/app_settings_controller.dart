@@ -6,7 +6,8 @@ import '../../domain/failures/result.dart';
 import '../theme/app_colors.dart';
 
 class AppSettingsController extends ChangeNotifier {
-  AppSettingsController(this._service) {
+  AppSettingsController(this._service, {AppSettings? initial}) {
+    if (initial != null) settings = initial;
     AppColors.dark = settings.darkMode;
   }
 
@@ -34,7 +35,8 @@ class AppSettingsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setDarkMode(bool value) => _update(settings.copyWith(darkMode: value));
+  Future<void> setDarkMode(bool value) =>
+      _update(settings.copyWith(darkMode: value));
 
   Future<void> setBalanceHidden(bool value) =>
       _update(settings.copyWith(balanceHidden: value));
@@ -42,7 +44,37 @@ class AppSettingsController extends ChangeNotifier {
   Future<void> setNotificationsEnabled(bool value) =>
       _update(settings.copyWith(notificationsEnabled: value));
 
-  Future<void> toggleBalanceHidden() => setBalanceHidden(!settings.balanceHidden);
+  Future<void> setTutorialCompleted(bool value) =>
+      _update(settings.copyWith(hasCompletedTutorial: value));
+
+  Future<void> setFinanceTutorialCompleted(bool value) =>
+      _update(settings.copyWith(hasCompletedFinanceTutorial: value));
+
+  Future<void> setBackupTutorialCompleted(bool value) =>
+      _update(settings.copyWith(hasCompletedBackupTutorial: value));
+
+  Future<void> setTransactionsTutorialCompleted(bool value) =>
+      _update(settings.copyWith(hasCompletedTransactionsTutorial: value));
+
+  Future<void> setStatisticsTutorialCompleted(bool value) =>
+      _update(settings.copyWith(hasCompletedStatisticsTutorial: value));
+
+  Future<void> setAddTutorialCompleted(bool value) =>
+      _update(settings.copyWith(hasCompletedAddTutorial: value));
+
+  Future<void> completeAllTutorials() => _update(
+    settings.copyWith(
+      hasCompletedTutorial: true,
+      hasCompletedFinanceTutorial: true,
+      hasCompletedBackupTutorial: true,
+      hasCompletedTransactionsTutorial: true,
+      hasCompletedStatisticsTutorial: true,
+      hasCompletedAddTutorial: true,
+    ),
+  );
+
+  Future<void> toggleBalanceHidden() =>
+      setBalanceHidden(!settings.balanceHidden);
 
   Future<void> _update(AppSettings next) async {
     final previous = settings;

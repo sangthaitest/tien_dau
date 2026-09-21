@@ -8,12 +8,20 @@ import '../catalog/transaction_catalog_scope.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_progress.dart';
 import '../theme/category_look.dart';
+import '../tutorial/tutorial_targets.dart';
 import 'statistics_controller.dart';
 
 class StatisticsPage extends StatelessWidget {
-  const StatisticsPage({super.key, required this.controller});
+  const StatisticsPage({
+    super.key,
+    required this.controller,
+    this.insightTargetKey,
+    this.chartTargetKey,
+  });
 
   final StatisticsController controller;
+  final GlobalKey? insightTargetKey;
+  final GlobalKey? chartTargetKey;
 
   @override
   Widget build(BuildContext context) {
@@ -51,9 +59,15 @@ class StatisticsPage extends StatelessWidget {
                     child: Center(child: AppCircularProgress()),
                   )
                 else ...[
-                  _InsightCard(snapshot: snap),
+                  tutorialAnchor(
+                    key: insightTargetKey,
+                    child: _InsightCard(snapshot: snap),
+                  ),
                   const SizedBox(height: 16),
-                  _CategoryChart(snapshot: snap),
+                  tutorialAnchor(
+                    key: chartTargetKey,
+                    child: _CategoryChart(snapshot: snap),
+                  ),
                   const SizedBox(height: 20),
                   const Text(
                     'Danh mục chi nhiều nhất',

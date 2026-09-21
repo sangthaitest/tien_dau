@@ -11,6 +11,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_dialog.dart';
 import '../theme/app_progress.dart';
 import '../theme/app_typography.dart';
+import '../tutorial/tutorial_targets.dart';
 import 'finance_controller.dart';
 import 'recurring_section.dart';
 
@@ -20,11 +21,17 @@ class FinancePage extends StatelessWidget {
     required this.controller,
     required this.onBack,
     this.onOpenTransactions,
+    this.incomeTargetKey,
+    this.recurringTargetKey,
+    this.spendingTargetKey,
   });
 
   final FinanceController controller;
   final VoidCallback onBack;
   final VoidCallback? onOpenTransactions;
+  final GlobalKey? incomeTargetKey;
+  final GlobalKey? recurringTargetKey;
+  final GlobalKey? spendingTargetKey;
 
   @override
   Widget build(BuildContext context) {
@@ -78,32 +85,45 @@ class FinancePage extends StatelessWidget {
                                 style: TextStyle(color: AppColors.expense),
                               ),
                             ),
-                          _IncomeCard(
-                            month: snap.month,
-                            amount: snap.recurringIncomeTotal,
-                            onManage: () => showRecurringManager(
-                              context: context,
-                              controller: controller,
-                              kind: RecurringKind.income,
+                          tutorialAnchor(
+                            key: incomeTargetKey,
+                            child: _IncomeCard(
+                              month: snap.month,
+                              amount: snap.recurringIncomeTotal,
+                              onManage: () => showRecurringManager(
+                                context: context,
+                                controller: controller,
+                                kind: RecurringKind.income,
+                              ),
                             ),
                           ),
                           const _FlowConnector(
                             symbol: '−',
                             label: 'Trừ khoản định kỳ',
                           ),
-                          RecurringSection(controller: controller),
+                          tutorialAnchor(
+                            key: recurringTargetKey,
+                            child: RecurringSection(controller: controller),
+                          ),
                           const _FlowConnector(symbol: '='),
                           _SpendableCard(amount: snap.spendableAmount),
                           const _FlowConnector(
                             symbol: '−',
                             label: 'Trừ chi tiêu',
                           ),
-                          _SpentCard(
-                            amount: snap.used,
-                            onTap: onOpenTransactions,
+                          tutorialAnchor(
+                            key: spendingTargetKey,
+                            child: Column(
+                              children: [
+                                _SpentCard(
+                                  amount: snap.used,
+                                  onTap: onOpenTransactions,
+                                ),
+                                const _FlowConnector(symbol: '='),
+                                _RemainingCard(amount: snap.projectedRemaining),
+                              ],
+                            ),
                           ),
-                          const _FlowConnector(symbol: '='),
-                          _RemainingCard(amount: snap.projectedRemaining),
                           const SizedBox(height: 28),
                           Row(
                             children: [

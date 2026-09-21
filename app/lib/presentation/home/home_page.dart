@@ -16,6 +16,7 @@ import '../theme/app_typography.dart';
 import '../transactions/transaction_detail_sheet.dart';
 import '../transactions/transaction_list_controller.dart';
 import '../transactions/transaction_list_page.dart';
+import '../tutorial/tutorial_targets.dart';
 import '../view_month/month_picker_sheet.dart';
 import '../view_month/view_month_controller.dart';
 import 'home_controller.dart';
@@ -35,6 +36,7 @@ class HomePage extends StatefulWidget {
     this.onTransactionTap,
     this.onTabSelected,
     this.onAvatarTap,
+    this.overviewTargetKey,
   });
 
   final HomeController controller;
@@ -47,6 +49,7 @@ class HomePage extends StatefulWidget {
   final ValueChanged<Transaction>? onTransactionTap;
   final ValueChanged<AppTab>? onTabSelected;
   final VoidCallback? onAvatarTap;
+  final GlobalKey? overviewTargetKey;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -313,11 +316,14 @@ class _Header extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _SpendCard(
-            loading: controller.loading,
-            error: controller.error,
-            amount: snapshot.monthExpense,
-            hidden: hidden,
+          tutorialAnchor(
+            key: page.overviewTargetKey,
+            child: _SpendCard(
+              loading: controller.loading,
+              error: controller.error,
+              amount: snapshot.monthExpense,
+              hidden: hidden,
+            ),
           ),
         ],
       ),

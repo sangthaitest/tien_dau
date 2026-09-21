@@ -8,6 +8,7 @@ import '../../domain/failures/result.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_dialog.dart';
 import '../theme/app_progress.dart';
+import '../tutorial/tutorial_targets.dart';
 
 class BackupRestorePage extends StatefulWidget {
   const BackupRestorePage({
@@ -18,6 +19,8 @@ class BackupRestorePage extends StatefulWidget {
     this.restoreService,
     this.backupShare,
     this.backupPicker,
+    this.backupTargetKey,
+    this.restoreTargetKey,
   });
 
   final VoidCallback onBack;
@@ -26,6 +29,8 @@ class BackupRestorePage extends StatefulWidget {
   final RestoreService? restoreService;
   final BackupSharePort? backupShare;
   final BackupPickPort? backupPicker;
+  final GlobalKey? backupTargetKey;
+  final GlobalKey? restoreTargetKey;
 
   @override
   State<BackupRestorePage> createState() => _BackupRestorePageState();
@@ -117,24 +122,31 @@ class _BackupRestorePageState extends State<BackupRestorePage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                _ActionCard(
-                  keyId: const Key('backup-export'),
-                  icon: Icons.file_upload_outlined,
-                  iconColor: AppColors.primary,
-                  iconBg: AppColors.primaryContainer,
-                  title: 'Sao lưu dữ liệu',
-                  subtitle: 'Tạo file .tdn — bạn chọn nơi lưu (Files/Drive/…)',
-                  onTap: _busy ? null : _export,
+                tutorialAnchor(
+                  key: widget.backupTargetKey,
+                  child: _ActionCard(
+                    keyId: const Key('backup-export'),
+                    icon: Icons.file_upload_outlined,
+                    iconColor: AppColors.primary,
+                    iconBg: AppColors.primaryContainer,
+                    title: 'Sao lưu dữ liệu',
+                    subtitle:
+                        'Tạo file .tdn — bạn chọn nơi lưu (Files/Drive/…)',
+                    onTap: _busy ? null : _export,
+                  ),
                 ),
                 const SizedBox(height: 12),
-                _ActionCard(
-                  keyId: const Key('backup-import'),
-                  icon: Icons.file_download_outlined,
-                  iconColor: AppColors.income,
-                  iconBg: AppColors.incomeContainer,
-                  title: 'Khôi phục dữ liệu',
-                  subtitle: 'Thay thế dữ liệu hiện tại bằng bản sao lưu',
-                  onTap: _busy ? null : _restoreFlow,
+                tutorialAnchor(
+                  key: widget.restoreTargetKey,
+                  child: _ActionCard(
+                    keyId: const Key('backup-import'),
+                    icon: Icons.file_download_outlined,
+                    iconColor: AppColors.income,
+                    iconBg: AppColors.incomeContainer,
+                    title: 'Khôi phục dữ liệu',
+                    subtitle: 'Thay thế dữ liệu hiện tại bằng bản sao lưu',
+                    onTap: _busy ? null : _restoreFlow,
+                  ),
                 ),
               ],
             ),

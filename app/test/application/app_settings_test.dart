@@ -28,6 +28,12 @@ void main() {
     expect(AppSettings.defaults.darkMode, isFalse);
     expect(AppSettings.defaults.balanceHidden, isFalse);
     expect(AppSettings.defaults.notificationsEnabled, isTrue);
+    expect(AppSettings.defaults.hasCompletedTutorial, isFalse);
+    expect(AppSettings.defaults.hasCompletedFinanceTutorial, isFalse);
+    expect(AppSettings.defaults.hasCompletedBackupTutorial, isFalse);
+    expect(AppSettings.defaults.hasCompletedTransactionsTutorial, isFalse);
+    expect(AppSettings.defaults.hasCompletedStatisticsTutorial, isFalse);
+    expect(AppSettings.defaults.hasCompletedAddTutorial, isFalse);
   });
 
   test('displayVnd masks like Demo maskMoney', () {
@@ -67,6 +73,45 @@ void main() {
     controller.dispose();
   });
 
+  test('tutorial completion persists across a fresh controller load', () async {
+    final repo = MemoryAppSettingsRepository();
+    final first = AppSettingsController(AppSettingsService(repo));
+    await first.load();
+    expect(first.settings.hasCompletedTutorial, isFalse);
+
+    await first.setTutorialCompleted(true);
+    await first.setFinanceTutorialCompleted(true);
+    await first.setBackupTutorialCompleted(true);
+    await first.setTransactionsTutorialCompleted(true);
+    await first.setStatisticsTutorialCompleted(true);
+    await first.setAddTutorialCompleted(true);
+    first.dispose();
+
+    final second = AppSettingsController(AppSettingsService(repo));
+    await second.load();
+    expect(second.settings.hasCompletedTutorial, isTrue);
+    expect(second.settings.hasCompletedFinanceTutorial, isTrue);
+    expect(second.settings.hasCompletedBackupTutorial, isTrue);
+    expect(second.settings.hasCompletedTransactionsTutorial, isTrue);
+    expect(second.settings.hasCompletedStatisticsTutorial, isTrue);
+    expect(second.settings.hasCompletedAddTutorial, isTrue);
+    second.dispose();
+  });
+
+  test('completeAllTutorials marks every section', () async {
+    final repo = MemoryAppSettingsRepository();
+    final controller = AppSettingsController(AppSettingsService(repo));
+    await controller.load();
+    await controller.completeAllTutorials();
+    expect(controller.settings.hasCompletedTutorial, isTrue);
+    expect(controller.settings.hasCompletedFinanceTutorial, isTrue);
+    expect(controller.settings.hasCompletedBackupTutorial, isTrue);
+    expect(controller.settings.hasCompletedTransactionsTutorial, isTrue);
+    expect(controller.settings.hasCompletedStatisticsTutorial, isTrue);
+    expect(controller.settings.hasCompletedAddTutorial, isTrue);
+    controller.dispose();
+  });
+
   test('SQLite prefs persist settings across reload', () async {
     final dir = await Directory.systemTemp.createTemp('tien_day_settings');
     final db = await AppDatabase.openPath(p.join(dir.path, 'tien_day.db'));
@@ -78,6 +123,12 @@ void main() {
     await first.setDarkMode(true);
     await first.setBalanceHidden(true);
     await first.setNotificationsEnabled(false);
+    await first.setTutorialCompleted(true);
+    await first.setFinanceTutorialCompleted(true);
+    await first.setBackupTutorialCompleted(true);
+    await first.setTransactionsTutorialCompleted(true);
+    await first.setStatisticsTutorialCompleted(true);
+    await first.setAddTutorialCompleted(true);
     first.dispose();
 
     final second = AppSettingsController(AppSettingsService(repo));
@@ -85,6 +136,12 @@ void main() {
     expect(second.settings.darkMode, isTrue);
     expect(second.settings.balanceHidden, isTrue);
     expect(second.settings.notificationsEnabled, isFalse);
+    expect(second.settings.hasCompletedTutorial, isTrue);
+    expect(second.settings.hasCompletedFinanceTutorial, isTrue);
+    expect(second.settings.hasCompletedBackupTutorial, isTrue);
+    expect(second.settings.hasCompletedTransactionsTutorial, isTrue);
+    expect(second.settings.hasCompletedStatisticsTutorial, isTrue);
+    expect(second.settings.hasCompletedAddTutorial, isTrue);
     second.dispose();
   });
 }

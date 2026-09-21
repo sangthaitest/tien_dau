@@ -15,11 +15,13 @@ class HomeBottomNav extends StatefulWidget {
     this.onAddPressed,
     this.tab = AppTab.home,
     this.onTabSelected,
+    this.addTargetKey,
   });
 
   final VoidCallback? onAddPressed;
   final AppTab tab;
   final ValueChanged<AppTab>? onTabSelected;
+  final GlobalKey? addTargetKey;
 
   static const _barHeight = 60.0;
   static const _androidMinSafeBottom = 10.0;
@@ -371,6 +373,7 @@ class _HomeBottomNavState extends State<HomeBottomNav>
             height: fabSize,
             child: Center(
               child: _AddActionButton(
+                key: widget.addTargetKey,
                 size: fabSize,
                 onPressed: widget.onAddPressed,
               ),
@@ -433,7 +436,7 @@ class _RenderOverflowHitTestStack extends RenderStack {
 }
 
 class _AddActionButton extends StatefulWidget {
-  const _AddActionButton({required this.size, this.onPressed});
+  const _AddActionButton({super.key, required this.size, this.onPressed});
 
   final double size;
   final VoidCallback? onPressed;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tien_day/application/home_query.dart';
 import 'package:tien_day/application/transaction_service.dart';
+import 'package:tien_day/domain/entities/app_settings.dart';
 import 'package:tien_day/domain/entities/finance.dart';
 import 'package:tien_day/domain/entities/payment_method_kind.dart';
 import 'package:tien_day/domain/entities/transaction.dart';
@@ -55,6 +56,22 @@ Future<void> _submitPin(WidgetTester tester, String pin) async {
   await tester.pump(const Duration(milliseconds: 50));
 }
 
+Finder _settingsScrollable() {
+  return find
+      .descendant(of: find.byType(ListView), matching: find.byType(Scrollable))
+      .first;
+}
+
+Future<void> _revealSettingsKey(WidgetTester tester, Key key) async {
+  await tester.scrollUntilVisible(
+    find.byKey(key),
+    80,
+    scrollable: _settingsScrollable(),
+  );
+  await tester.drag(_settingsScrollable(), const Offset(0, -120));
+  await tester.pump();
+}
+
 void main() {
   setUpAll(() {});
 
@@ -91,6 +108,8 @@ void main() {
     expect(find.text('Mật khẩu quản lý'), findsOneWidget);
     expect(find.text('Sao lưu & khôi phục'), findsOneWidget);
     expect(find.text('Thông báo'), findsOneWidget);
+    expect(find.text('Hướng dẫn sử dụng'), findsOneWidget);
+    expect(find.text('Xem lại cách sử dụng Tiền đâu nè'), findsOneWidget);
     expect(find.text('Hiển thị số tiền'), findsOneWidget);
     expect(find.text('Giao diện tối'), findsOneWidget);
     expect(find.text('Đăng xuất'), findsNothing);
@@ -121,7 +140,9 @@ void main() {
 
   testWidgets('notifications toggle persists and shows toast', (tester) async {
     _phone(tester);
-    final repo = MemoryAppSettingsRepository();
+    final repo = MemoryAppSettingsRepository(
+      stored: AppSettings.defaults.copyWith(hasCompletedTutorial: true),
+    );
     final service = TransactionService(MemoryTransactionRepository());
     final home = HomeController(
       HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
@@ -169,6 +190,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav-settings')));
     await tester.pump();
+    await _revealSettingsKey(tester, const Key('toggle-privacy'));
     await tester.tap(find.byKey(const Key('toggle-privacy')));
     await tester.pump();
     expect(harness.settings.settings.balanceHidden, isTrue);
@@ -205,7 +227,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     await tester.tap(find.byKey(const Key('nav-settings')));
     await tester.pump();
+    await _revealSettingsKey(tester, const Key('toggle-privacy'));
     await tester.tap(find.byKey(const Key('toggle-privacy')));
+    await tester.pump();
+    tester.state<ScrollableState>(_settingsScrollable()).position.jumpTo(0);
     await tester.pump();
     await tester.tap(find.byKey(const Key('settings-finance')));
     await tester.pump();
@@ -218,7 +243,9 @@ void main() {
 
   testWidgets('dark mode toggle applies and persists', (tester) async {
     _phone(tester);
-    final repo = MemoryAppSettingsRepository();
+    final repo = MemoryAppSettingsRepository(
+      stored: AppSettings.defaults.copyWith(hasCompletedTutorial: true),
+    );
     final service = TransactionService(MemoryTransactionRepository());
     final home = HomeController(
       HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
