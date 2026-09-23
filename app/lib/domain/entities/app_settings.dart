@@ -1,3 +1,5 @@
+import '../notifications/reminder_schedule.dart';
+
 class AppSettings {
   const AppSettings({
     this.darkMode = false,
@@ -9,6 +11,13 @@ class AppSettings {
     this.hasCompletedTransactionsTutorial = false,
     this.hasCompletedStatisticsTutorial = false,
     this.hasCompletedAddTutorial = false,
+    this.transactionReminderEnabled = false,
+    this.transactionReminderHour = ReminderDefaults.transactionHour,
+    this.transactionReminderMinute = ReminderDefaults.transactionMinute,
+    this.financialSummaryEnabled = false,
+    this.financialSummaryWeekday = ReminderDefaults.summaryWeekday,
+    this.financialSummaryHour = ReminderDefaults.summaryHour,
+    this.financialSummaryMinute = ReminderDefaults.summaryMinute,
   });
 
   final bool darkMode;
@@ -20,6 +29,13 @@ class AppSettings {
   final bool hasCompletedTransactionsTutorial;
   final bool hasCompletedStatisticsTutorial;
   final bool hasCompletedAddTutorial;
+  final bool transactionReminderEnabled;
+  final int transactionReminderHour;
+  final int transactionReminderMinute;
+  final bool financialSummaryEnabled;
+  final int financialSummaryWeekday;
+  final int financialSummaryHour;
+  final int financialSummaryMinute;
 
   static const defaults = AppSettings();
 
@@ -33,6 +49,13 @@ class AppSettings {
     bool? hasCompletedTransactionsTutorial,
     bool? hasCompletedStatisticsTutorial,
     bool? hasCompletedAddTutorial,
+    bool? transactionReminderEnabled,
+    int? transactionReminderHour,
+    int? transactionReminderMinute,
+    bool? financialSummaryEnabled,
+    int? financialSummaryWeekday,
+    int? financialSummaryHour,
+    int? financialSummaryMinute,
   }) {
     return AppSettings(
       darkMode: darkMode ?? this.darkMode,
@@ -50,6 +73,19 @@ class AppSettings {
           hasCompletedStatisticsTutorial ?? this.hasCompletedStatisticsTutorial,
       hasCompletedAddTutorial:
           hasCompletedAddTutorial ?? this.hasCompletedAddTutorial,
+      transactionReminderEnabled:
+          transactionReminderEnabled ?? this.transactionReminderEnabled,
+      transactionReminderHour:
+          transactionReminderHour ?? this.transactionReminderHour,
+      transactionReminderMinute:
+          transactionReminderMinute ?? this.transactionReminderMinute,
+      financialSummaryEnabled:
+          financialSummaryEnabled ?? this.financialSummaryEnabled,
+      financialSummaryWeekday:
+          financialSummaryWeekday ?? this.financialSummaryWeekday,
+      financialSummaryHour: financialSummaryHour ?? this.financialSummaryHour,
+      financialSummaryMinute:
+          financialSummaryMinute ?? this.financialSummaryMinute,
     );
   }
 
@@ -66,7 +102,14 @@ class AppSettings {
             hasCompletedTransactionsTutorial &&
         other.hasCompletedStatisticsTutorial ==
             hasCompletedStatisticsTutorial &&
-        other.hasCompletedAddTutorial == hasCompletedAddTutorial;
+        other.hasCompletedAddTutorial == hasCompletedAddTutorial &&
+        other.transactionReminderEnabled == transactionReminderEnabled &&
+        other.transactionReminderHour == transactionReminderHour &&
+        other.transactionReminderMinute == transactionReminderMinute &&
+        other.financialSummaryEnabled == financialSummaryEnabled &&
+        other.financialSummaryWeekday == financialSummaryWeekday &&
+        other.financialSummaryHour == financialSummaryHour &&
+        other.financialSummaryMinute == financialSummaryMinute;
   }
 
   @override
@@ -80,5 +123,12 @@ class AppSettings {
     hasCompletedTransactionsTutorial,
     hasCompletedStatisticsTutorial,
     hasCompletedAddTutorial,
+    transactionReminderEnabled,
+    transactionReminderHour,
+    transactionReminderMinute,
+    financialSummaryEnabled,
+    financialSummaryWeekday,
+    financialSummaryHour,
+    financialSummaryMinute,
   );
 }

@@ -28,6 +28,13 @@ void main() {
     expect(AppSettings.defaults.darkMode, isFalse);
     expect(AppSettings.defaults.balanceHidden, isFalse);
     expect(AppSettings.defaults.notificationsEnabled, isTrue);
+    expect(AppSettings.defaults.transactionReminderEnabled, isFalse);
+    expect(AppSettings.defaults.transactionReminderHour, 21);
+    expect(AppSettings.defaults.transactionReminderMinute, 0);
+    expect(AppSettings.defaults.financialSummaryEnabled, isFalse);
+    expect(AppSettings.defaults.financialSummaryWeekday, DateTime.sunday);
+    expect(AppSettings.defaults.financialSummaryHour, 20);
+    expect(AppSettings.defaults.financialSummaryMinute, 0);
     expect(AppSettings.defaults.hasCompletedTutorial, isFalse);
     expect(AppSettings.defaults.hasCompletedFinanceTutorial, isFalse);
     expect(AppSettings.defaults.hasCompletedBackupTutorial, isFalse);
@@ -123,6 +130,14 @@ void main() {
     await first.setDarkMode(true);
     await first.setBalanceHidden(true);
     await first.setNotificationsEnabled(false);
+    await first.setTransactionReminderEnabled(true);
+    await first.setTransactionReminderTime(hour: 8, minute: 15);
+    await first.setFinancialSummaryEnabled(true);
+    await first.setFinancialSummarySchedule(
+      weekday: DateTime.friday,
+      hour: 19,
+      minute: 45,
+    );
     await first.setTutorialCompleted(true);
     await first.setFinanceTutorialCompleted(true);
     await first.setBackupTutorialCompleted(true);
@@ -136,6 +151,13 @@ void main() {
     expect(second.settings.darkMode, isTrue);
     expect(second.settings.balanceHidden, isTrue);
     expect(second.settings.notificationsEnabled, isFalse);
+    expect(second.settings.transactionReminderEnabled, isTrue);
+    expect(second.settings.transactionReminderHour, 8);
+    expect(second.settings.transactionReminderMinute, 15);
+    expect(second.settings.financialSummaryEnabled, isTrue);
+    expect(second.settings.financialSummaryWeekday, DateTime.friday);
+    expect(second.settings.financialSummaryHour, 19);
+    expect(second.settings.financialSummaryMinute, 45);
     expect(second.settings.hasCompletedTutorial, isTrue);
     expect(second.settings.hasCompletedFinanceTutorial, isTrue);
     expect(second.settings.hasCompletedBackupTutorial, isTrue);

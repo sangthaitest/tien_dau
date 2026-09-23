@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tien_day/application/home_query.dart';
+import 'package:tien_day/application/notification_service.dart';
 import 'package:tien_day/application/transaction_service.dart';
 import 'package:tien_day/domain/entities/app_settings.dart';
 import 'package:tien_day/domain/entities/finance.dart';
@@ -11,6 +12,7 @@ import 'package:tien_day/presentation/format/money_format.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
 import 'package:tien_day/presentation/theme/app_colors.dart';
 
+import '../support/fake_notification_scheduler.dart';
 import '../support/memory_app_settings_repository.dart';
 import '../support/memory_finance_repository.dart';
 import '../support/memory_transaction_repository.dart';
@@ -101,17 +103,14 @@ void main() {
     expect(find.text('Hồ sơ'), findsOneWidget);
     expect(find.text('TIỀN CỦA TÔI'), findsOneWidget);
     expect(find.text('BẢO MẬT & DỮ LIỆU'), findsOneWidget);
-    expect(find.text('ỨNG DỤNG'), findsOneWidget);
+    expect(find.text('THÔNG BÁO'), findsOneWidget);
+    expect(find.text('Nhắc ghi giao dịch'), findsOneWidget);
+    expect(find.text('Tổng kết tài chính'), findsOneWidget);
     expect(find.text('Tài chính'), findsOneWidget);
     expect(find.text('Tiền tệ'), findsOneWidget);
     expect(find.text('VND (₫)'), findsOneWidget);
     expect(find.text('Mật khẩu quản lý'), findsOneWidget);
     expect(find.text('Sao lưu & khôi phục'), findsOneWidget);
-    expect(find.text('Thông báo'), findsOneWidget);
-    expect(find.text('Hướng dẫn sử dụng'), findsOneWidget);
-    expect(find.text('Xem lại cách sử dụng Tiền đâu nè'), findsOneWidget);
-    expect(find.text('Hiển thị số tiền'), findsOneWidget);
-    expect(find.text('Giao diện tối'), findsOneWidget);
     expect(find.text('Đăng xuất'), findsNothing);
     expect(find.text('Đăng xuất (prototype)'), findsNothing);
     expect(find.text('Riêng tư'), findsNothing);
@@ -129,16 +128,25 @@ void main() {
       80,
       scrollable: scrollable,
     );
+    expect(find.text('ỨNG DỤNG'), findsOneWidget);
+    expect(find.text('Hướng dẫn sử dụng'), findsOneWidget);
+    expect(find.text('Xem lại cách sử dụng Tiền đâu nè'), findsOneWidget);
+    expect(find.text('Hiển thị số tiền'), findsOneWidget);
+    expect(find.text('Giao diện tối'), findsOneWidget);
     expect(find.text('VỀ ỨNG DỤNG'), findsOneWidget);
     expect(find.text('Phiên bản'), findsOneWidget);
     expect(find.text('v1.0.0'), findsOneWidget);
 
+    tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+    await tester.pump();
     await tester.tap(find.byKey(const Key('settings-currency')));
     await tester.pump();
     expect(find.text('MVP dùng VND (₫).'), findsOneWidget);
   });
 
-  testWidgets('notifications toggle persists and shows toast', (tester) async {
+  testWidgets('reminder schedules stay hidden until each switch is on', (
+    tester,
+  ) async {
     _phone(tester);
     final repo = MemoryAppSettingsRepository(
       stored: AppSettings.defaults.copyWith(hasCompletedTutorial: true),
@@ -159,11 +167,82 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     await tester.tap(find.byKey(const Key('nav-settings')));
     await tester.pump();
-    await tester.tap(find.byKey(const Key('toggle-notif')));
+
+    expect(find.text('21:00'), findsNothing);
+    expect(find.text('Mỗi ngày'), findsNothing);
+    expect(find.text('Chủ nhật · 20:00'), findsNothing);
+    expect(find.text('Mỗi tuần'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('toggle-transaction-reminder')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    expect(find.text('Đã tắt thông báo'), findsOneWidget);
-    expect(repo.stored.notificationsEnabled, isFalse);
+    expect(repo.stored.transactionReminderEnabled, isTrue);
+    expect(find.text('Thời gian'), findsOneWidget);
+    expect(find.text('21:00'), findsOneWidget);
+    expect(find.text('Mỗi ngày'), findsOneWidget);
+    expect(find.text('Chủ nhật · 20:00'), findsNothing);
+
+    await _revealSettingsKey(tester, const Key('toggle-financial-summary'));
+    await tester.tap(find.byKey(const Key('toggle-financial-summary')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(repo.stored.financialSummaryEnabled, isTrue);
+    expect(find.text('Chủ nhật · 20:00'), findsOneWidget);
+    expect(find.text('Mỗi tuần'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('toggle-transaction-reminder')),
+      -200,
+      scrollable: _settingsScrollable(),
+    );
+    await tester.drag(_settingsScrollable(), const Offset(0, 180));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('toggle-transaction-reminder')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(repo.stored.transactionReminderEnabled, isFalse);
+    expect(find.text('21:00'), findsNothing);
+    expect(find.text('Mỗi ngày'), findsNothing);
+  });
+
+  testWidgets('denied notification permission keeps the reminder off', (
+    tester,
+  ) async {
+    _phone(tester);
+    final repo = MemoryAppSettingsRepository(
+      stored: AppSettings.defaults.copyWith(hasCompletedTutorial: true),
+    );
+    final scheduler = FakeNotificationScheduler(permission: false);
+    final service = TransactionService(MemoryTransactionRepository());
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
+    final harness = buildShell(
+      transactions: service,
+      home: home,
+      clock: () => DateTime(2026, 8, 18, 9),
+      settingsRepo: repo,
+      notifications: NotificationService(scheduler),
+    );
+    addTearDown(harness.settings.dispose);
+    await tester.pumpWidget(MaterialApp(home: harness.shell));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const Key('nav-settings')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('toggle-transaction-reminder')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(repo.stored.transactionReminderEnabled, isFalse);
+    expect(find.text('21:00'), findsNothing);
+    expect(find.text('Chưa cấp quyền thông báo.'), findsOneWidget);
+    expect(scheduler.requestCount, 1);
+
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byKey(const Key('notification-permission-settings')));
+    await tester.pump();
+    expect(scheduler.openedSettings, isTrue);
   });
 
   testWidgets('amount visibility hides Home amounts and keeps category names', (

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../app_info.dart';
+import '../../application/notification_service.dart';
 import '../../domain/entities/app_settings.dart';
+import '../../domain/notifications/reminder_schedule.dart';
 import '../profile/user_profile_scope.dart';
 import '../profile/widgets/profile_avatar.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_dialog.dart';
+import 'app_settings_controller.dart';
+import 'notification_schedule_sheet.dart';
 import 'settings_scope.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -112,6 +116,56 @@ class SettingsPage extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           _SettingsGroup(
+            title: 'Thông báo',
+            children: [
+              _ReminderTile(
+                icon: Icons.edit_note_outlined,
+                title: 'Nhắc ghi giao dịch',
+                subtitle: 'Nhắc bạn ghi lại giao dịch trong ngày',
+                enabled: settings.transactionReminderEnabled,
+                toggleKey: const Key('toggle-transaction-reminder'),
+                scheduleKey: const Key('schedule-transaction-reminder'),
+                scheduleLabel: 'Thời gian',
+                scheduleValue: formatReminderClock(
+                  settings.transactionReminderHour,
+                  settings.transactionReminderMinute,
+                ),
+                cadence: 'Mỗi ngày',
+                onChanged: (value) => _setReminder(
+                  context,
+                  controller,
+                  controller?.setTransactionReminderEnabled(value),
+                ),
+                onEdit: () => _pickDailyReminder(context, controller),
+              ),
+              _ReminderTile(
+                icon: Icons.event_note_outlined,
+                title: 'Tổng kết tài chính',
+                subtitle: 'Nhắc xem lại tình hình tài chính',
+                enabled: settings.financialSummaryEnabled,
+                toggleKey: const Key('toggle-financial-summary'),
+                scheduleKey: const Key('schedule-financial-summary'),
+                scheduleLabel: formatWeeklyReminder(
+                  settings.financialSummaryWeekday,
+                  settings.financialSummaryHour,
+                  settings.financialSummaryMinute,
+                ),
+                cadence: 'Mỗi tuần',
+                onChanged: (value) => _setReminder(
+                  context,
+                  controller,
+                  controller?.setFinancialSummaryEnabled(value),
+                ),
+                onEdit: () => _pickWeeklyReminder(context, controller),
+              ),
+              if (controller?.notificationsNeedSystemAccess ?? false)
+                _NotificationPermissionNote(
+                  onOpen: () => controller?.openNotificationSettings(),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _SettingsGroup(
             title: 'Ứng dụng',
             children: [
               _SettingsRow(
@@ -122,28 +176,6 @@ class SettingsPage extends StatelessWidget {
                 label: 'Hướng dẫn sử dụng',
                 subtitle: 'Xem lại cách sử dụng Tiền đâu nè',
                 onTap: onOpenTutorial,
-              ),
-              _SettingsRow(
-                key: const Key('settings-notifications'),
-                icon: Icons.notifications_outlined,
-                iconColor: const Color(0xFFFB8C00),
-                iconBg: AppColors.warningContainer,
-                label: 'Thông báo',
-                trailing: _Toggle(
-                  key: const Key('toggle-notif'),
-                  on: settings.notificationsEnabled,
-                  onChanged: (value) async {
-                    await controller?.setNotificationsEnabled(value);
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          value ? 'Đã bật thông báo' : 'Đã tắt thông báo',
-                        ),
-                      ),
-                    );
-                  },
-                ),
               ),
               _SettingsRow(
                 key: const Key('settings-privacy'),
@@ -198,6 +230,55 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  Future<void> _pickDailyReminder(
+    BuildContext context,
+    AppSettingsController? controller,
+  ) async {
+    if (controller == null) return;
+    final settings = controller.settings;
+    final picked = await pickReminderTime(
+      context,
+      initial: TimeOfDay(
+        hour: settings.transactionReminderHour,
+        minute: settings.transactionReminderMinute,
+      ),
+    );
+    if (picked == null || !context.mounted) return;
+    await _setReminder(
+      context,
+      controller,
+      controller.setTransactionReminderTime(
+        hour: picked.hour,
+        minute: picked.minute,
+      ),
+    );
+  }
+
+  Future<void> _pickWeeklyReminder(
+    BuildContext context,
+    AppSettingsController? controller,
+  ) async {
+    if (controller == null) return;
+    final settings = controller.settings;
+    await showWeeklyReminderSheet(
+      context,
+      weekday: settings.financialSummaryWeekday,
+      hour: settings.financialSummaryHour,
+      minute: settings.financialSummaryMinute,
+      onChanged: ({required weekday, required hour, required minute}) async {
+        final result = await controller.setFinancialSummarySchedule(
+          weekday: weekday,
+          hour: hour,
+          minute: minute,
+        );
+        if (context.mounted) {
+          _showNotificationFeedback(context, controller, result);
+        }
+        return result == NotificationChange.applied;
+      },
+    );
+  }
+
   Future<void> _currencyDialog(BuildContext context) {
     return showDialog<void>(
       context: context,
@@ -209,6 +290,212 @@ class SettingsPage extends StatelessWidget {
             key: const Key('dialog-currency-ok'),
             onPressed: () => Navigator.pop(context),
             label: 'OK',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Future<void> _setReminder(
+  BuildContext context,
+  AppSettingsController? controller,
+  Future<NotificationChange>? change,
+) async {
+  final result = await change;
+  if (!context.mounted || result == null || controller == null) return;
+  _showNotificationFeedback(context, controller, result);
+}
+
+void _showNotificationFeedback(
+  BuildContext context,
+  AppSettingsController controller,
+  NotificationChange result,
+) {
+  switch (result) {
+    case NotificationChange.applied:
+      return;
+    case NotificationChange.permissionDenied:
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+          content: const Text('Chưa cấp quyền thông báo.'),
+          action: SnackBarAction(
+            key: const Key('notification-permission-settings'),
+            label: 'Cài đặt',
+            onPressed: controller.openNotificationSettings,
+          ),
+        ),
+      );
+    case NotificationChange.failed:
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Chưa đặt được thông báo. Thử lại.')),
+      );
+  }
+}
+
+class _ReminderTile extends StatelessWidget {
+  const _ReminderTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.enabled,
+    required this.toggleKey,
+    required this.scheduleKey,
+    required this.scheduleLabel,
+    required this.cadence,
+    required this.onChanged,
+    required this.onEdit,
+    this.scheduleValue,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool enabled;
+  final Key toggleKey;
+  final Key scheduleKey;
+  final String scheduleLabel;
+  final String? scheduleValue;
+  final String cadence;
+  final ValueChanged<bool> onChanged;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.warningContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: const Color(0xFFFB8C00), size: 20),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _Toggle(key: toggleKey, on: enabled, onChanged: onChanged),
+            ],
+          ),
+          if (enabled) ...[
+            const SizedBox(height: 8),
+            InkWell(
+              key: scheduleKey,
+              onTap: onEdit,
+              borderRadius: BorderRadius.circular(12),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 54, right: 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              scheduleLabel,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.text,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              cadence,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (scheduleValue != null)
+                        Text(
+                          scheduleValue!,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      Icon(Icons.chevron_right, color: AppColors.textTertiary),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _NotificationPermissionNote extends StatelessWidget {
+  const _NotificationPermissionNote({required this.onOpen});
+
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Thông báo đang tắt trong hệ thống.',
+            key: const Key('settings-notification-permission'),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          TextButton(
+            key: const Key('settings-notification-open'),
+            onPressed: onOpen,
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+              minimumSize: const Size(48, 40),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              alignment: Alignment.centerLeft,
+            ),
+            child: const Text('Mở Cài đặt'),
           ),
         ],
       ),

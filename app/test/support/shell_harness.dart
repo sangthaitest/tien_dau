@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:tien_day/application/app_settings_service.dart';
+import 'package:tien_day/application/notification_service.dart';
 import 'package:tien_day/application/backup_service.dart';
 import 'package:tien_day/application/finance_service.dart';
 import 'package:tien_day/application/restore_service.dart';
@@ -44,6 +45,7 @@ buildShell({
   MemoryFinanceRepository? financeRepo,
   MemoryRecurringTransactionRepository? recurringRepo,
   MemoryAppSettingsRepository? settingsRepo,
+  NotificationService? notifications,
   MemoryUserProfileRepository? profileRepo,
   ViewMonthController? viewMonth,
   BackupService? backupService,
@@ -74,6 +76,7 @@ buildShell({
   final settings = AppSettingsController(
     AppSettingsService(resolvedSettings),
     initial: resolvedSettings.stored,
+    notifications: notifications,
   );
   final profile = UserProfileController(
     UserProfileService(profileRepo ?? MemoryUserProfileRepository()),

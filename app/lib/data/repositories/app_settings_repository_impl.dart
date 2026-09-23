@@ -1,6 +1,7 @@
 import '../../domain/entities/app_settings.dart';
 import '../../domain/failures/app_failure.dart';
 import '../../domain/failures/result.dart';
+import '../../domain/notifications/reminder_schedule.dart';
 import '../../domain/repositories/app_settings_repository.dart';
 import '../datasources/finance_local_datasource.dart';
 
@@ -18,6 +19,18 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
   static const statisticsTutorialKey =
       'settings_has_completed_statistics_tutorial';
   static const addTutorialKey = 'settings_has_completed_add_tutorial';
+  static const transactionReminderEnabledKey =
+      'settings_transaction_reminder_enabled';
+  static const transactionReminderHourKey =
+      'settings_transaction_reminder_hour';
+  static const transactionReminderMinuteKey =
+      'settings_transaction_reminder_minute';
+  static const financialSummaryEnabledKey =
+      'settings_financial_summary_enabled';
+  static const financialSummaryWeekdayKey =
+      'settings_financial_summary_weekday';
+  static const financialSummaryHourKey = 'settings_financial_summary_hour';
+  static const financialSummaryMinuteKey = 'settings_financial_summary_minute';
 
   final PrefsLocalDataSource _prefs;
 
@@ -41,6 +54,44 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
             false,
           ),
           hasCompletedAddTutorial: await _flag(addTutorialKey, false),
+          transactionReminderEnabled: await _flag(
+            transactionReminderEnabledKey,
+            false,
+          ),
+          transactionReminderHour: await _boundedInt(
+            transactionReminderHourKey,
+            ReminderDefaults.transactionHour,
+            0,
+            23,
+          ),
+          transactionReminderMinute: await _boundedInt(
+            transactionReminderMinuteKey,
+            ReminderDefaults.transactionMinute,
+            0,
+            59,
+          ),
+          financialSummaryEnabled: await _flag(
+            financialSummaryEnabledKey,
+            false,
+          ),
+          financialSummaryWeekday: await _boundedInt(
+            financialSummaryWeekdayKey,
+            ReminderDefaults.summaryWeekday,
+            DateTime.monday,
+            DateTime.sunday,
+          ),
+          financialSummaryHour: await _boundedInt(
+            financialSummaryHourKey,
+            ReminderDefaults.summaryHour,
+            0,
+            23,
+          ),
+          financialSummaryMinute: await _boundedInt(
+            financialSummaryMinuteKey,
+            ReminderDefaults.summaryMinute,
+            0,
+            59,
+          ),
         ),
       );
     } on PersistenceFailure catch (e) {
@@ -75,6 +126,34 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
         addTutorialKey,
         settings.hasCompletedAddTutorial ? '1' : '0',
       );
+      await _prefs.set(
+        transactionReminderEnabledKey,
+        settings.transactionReminderEnabled ? '1' : '0',
+      );
+      await _prefs.set(
+        transactionReminderHourKey,
+        '${normalizeReminderHour(settings.transactionReminderHour)}',
+      );
+      await _prefs.set(
+        transactionReminderMinuteKey,
+        '${normalizeReminderMinute(settings.transactionReminderMinute)}',
+      );
+      await _prefs.set(
+        financialSummaryEnabledKey,
+        settings.financialSummaryEnabled ? '1' : '0',
+      );
+      await _prefs.set(
+        financialSummaryWeekdayKey,
+        '${normalizeReminderWeekday(settings.financialSummaryWeekday)}',
+      );
+      await _prefs.set(
+        financialSummaryHourKey,
+        '${normalizeReminderHour(settings.financialSummaryHour, fallback: ReminderDefaults.summaryHour)}',
+      );
+      await _prefs.set(
+        financialSummaryMinuteKey,
+        '${normalizeReminderMinute(settings.financialSummaryMinute)}',
+      );
       return const Ok(null);
     } on PersistenceFailure catch (e) {
       return Err(e);
@@ -85,5 +164,12 @@ class AppSettingsRepositoryImpl implements AppSettingsRepository {
     final raw = await _prefs.get(key);
     if (raw == null) return fallback;
     return raw == '1';
+  }
+
+  Future<int> _boundedInt(String key, int fallback, int min, int max) async {
+    final raw = await _prefs.get(key);
+    final value = int.tryParse(raw ?? '');
+    if (value == null || value < min || value > max) return fallback;
+    return value;
   }
 }

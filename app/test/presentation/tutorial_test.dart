@@ -63,6 +63,8 @@ Future<void> _openTutorialFromSettings(WidgetTester tester) async {
     80,
     scrollable: _settingsScrollable(),
   );
+  await tester.drag(_settingsScrollable(), const Offset(0, -140));
+  await tester.pump();
   await tester.tap(find.byKey(const Key('settings-tutorial')));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 400));
@@ -286,6 +288,11 @@ void main() {
       expect(find.byKey(const Key('tutorial-overlay')), findsNothing);
       expect(find.byType(SettingsPage), findsOneWidget);
       expect(find.text('Cài đặt'), findsWidgets);
+      await tester.scrollUntilVisible(
+        find.text('Hướng dẫn sử dụng'),
+        80,
+        scrollable: _settingsScrollable(),
+      );
       expect(find.text('Hướng dẫn sử dụng'), findsOneWidget);
       expect(repo.stored.hasCompletedTutorial, isTrue);
       expect(repo.stored.hasCompletedFinanceTutorial, isTrue);

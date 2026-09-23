@@ -50,23 +50,32 @@ class TienDayApp extends StatefulWidget {
   State<TienDayApp> createState() => _TienDayAppState();
 }
 
-class _TienDayAppState extends State<TienDayApp> {
+class _TienDayAppState extends State<TienDayApp> with WidgetsBindingObserver {
   late final HomeController _homeController;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _homeController = HomeController(HomeQuery(widget.transactionService));
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _homeController.dispose();
     widget.settingsController.dispose();
     widget.profileController.dispose();
     widget.catalogController.dispose();
     widget.viewMonthController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      widget.settingsController.syncScheduledNotifications();
+    }
   }
 
   @override
