@@ -101,7 +101,6 @@ class _HomePageState extends State<HomePage> {
             widget.transactionService,
             clock: widget.clock,
           ),
-          clock: widget.clock,
           onAddPressed: () => _openAdd(context),
           onTabSelected: (tab) {
             if (tab == AppTab.home) Navigator.of(context).pop();

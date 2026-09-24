@@ -111,12 +111,12 @@ extension TutorialStepX on TutorialStep {
     TutorialStep.txList => const TutorialCopy(
       title: 'Danh sách giao dịch',
       description:
-          'Mọi khoản chi nằm ở đây, cùng tổng chi tiêu theo bộ lọc bạn đang chọn.',
+          'Theo ngày, bạn xem timeline và tổng chi của ngày đang chọn.',
     ),
     TutorialStep.txFilters => const TutorialCopy(
       title: 'Lọc giao dịch',
       description:
-          'Chọn danh mục hoặc khoảng thời gian để xem đúng những gì bạn cần.',
+          'Chuyển sang Theo tháng để xem cả tháng và lọc theo danh mục.',
     ),
     TutorialStep.statsMonth => const TutorialCopy(
       title: 'Chi tiêu tháng này',

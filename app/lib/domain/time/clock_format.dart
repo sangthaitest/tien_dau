@@ -10,7 +10,8 @@ String formatIsoDate(DateTime value) {
   return '${value.year}-$month-$day';
 }
 
-DateTime dateOnly(DateTime value) => DateTime(value.year, value.month, value.day);
+DateTime dateOnly(DateTime value) =>
+    DateTime(value.year, value.month, value.day);
 
 DateTime monthStart(DateTime value) => DateTime(value.year, value.month);
 
@@ -37,6 +38,47 @@ List<DateTime> lastTwelveMonths(DateTime now) {
 DateTime previousMonthStart(DateTime value) {
   if (value.month == 1) return DateTime(value.year - 1, 12);
   return DateTime(value.year, value.month - 1);
+}
+
+DateTime nextMonthStart(DateTime value) =>
+    DateTime(value.year, value.month + 1);
+
+DateTime addCalendarDays(DateTime value, int days) =>
+    DateTime(value.year, value.month, value.day + days);
+
+DateTime addCalendarMonths(DateTime value, int months) =>
+    DateTime(value.year, value.month + months);
+
+/// Exclusive end of a calendar day for range queries.
+DateTime dayToExclusive(DateTime value) => addCalendarDays(dateOnly(value), 1);
+
+String formatWeekdayVi(DateTime date) {
+  const names = [
+    'Thứ 2',
+    'Thứ 3',
+    'Thứ 4',
+    'Thứ 5',
+    'Thứ 6',
+    'Thứ 7',
+    'Chủ nhật',
+  ];
+  return names[date.weekday - 1];
+}
+
+String formatWeekdayShort(DateTime date) {
+  const names = ['Th 2', 'Th 3', 'Th 4', 'Th 5', 'Th 6', 'Th 7', 'CN'];
+  return names[date.weekday - 1];
+}
+
+String formatDayMonth(DateTime date) {
+  final day = date.day.toString().padLeft(2, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  return '$day/$month';
+}
+
+String formatMonthYear(DateTime month) {
+  final padded = month.month.toString().padLeft(2, '0');
+  return 'Tháng $padded/${month.year}';
 }
 
 bool inMonth(DateTime date, DateTime month) {

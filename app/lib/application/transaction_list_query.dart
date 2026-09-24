@@ -80,6 +80,7 @@ class TransactionListQuery {
     required TransactionListFilter filter,
     DateTime? viewMonth,
     int? expenseSumOverride,
+    bool chronological = false,
   }) {
     final month = monthStart(viewMonth ?? now);
     final previous = previousMonthStart(month);
@@ -108,7 +109,7 @@ class TransactionListQuery {
       list = list.where((tx) => tx.categoryId == filter.categoryId).toList();
     }
 
-    list.sort(_byRecency);
+    list.sort(chronological ? _byChronology : _byRecency);
 
     final expenseSum =
         expenseSumOverride ?? list.fold<int>(0, (sum, tx) => sum + tx.amount);
@@ -150,5 +151,11 @@ class TransactionListQuery {
     final date = b.occurredOn.compareTo(a.occurredOn);
     if (date != 0) return date;
     return (b.occurredTime ?? '').compareTo(a.occurredTime ?? '');
+  }
+
+  int _byChronology(Transaction a, Transaction b) {
+    final date = a.occurredOn.compareTo(b.occurredOn);
+    if (date != 0) return date;
+    return (a.occurredTime ?? '').compareTo(b.occurredTime ?? '');
   }
 }

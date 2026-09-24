@@ -89,10 +89,16 @@ void main() {
       repo.querySpecs.where((spec) => spec.limit == HomeQuery.recentLimit),
       isNotEmpty,
     );
-    expect(find.byType(TransactionListPage, skipOffstage: false), findsOneWidget);
+    expect(
+      find.byType(TransactionListPage, skipOffstage: false),
+      findsOneWidget,
+    );
     expect(find.byType(StatisticsPage, skipOffstage: false), findsOneWidget);
     expect(find.byType(SettingsPage, skipOffstage: false), findsOneWidget);
-    expect(find.byType(AddTransactionPage, skipOffstage: false), findsOneWidget);
+    expect(
+      find.byType(AddTransactionPage, skipOffstage: false),
+      findsOneWidget,
+    );
   });
 
   testWidgets('idle warmup mounts tabs and add before the first tap', (
@@ -106,7 +112,10 @@ void main() {
     );
     expect(find.byType(StatisticsPage, skipOffstage: false), findsOneWidget);
     expect(find.byType(SettingsPage, skipOffstage: false), findsOneWidget);
-    expect(find.byType(AddTransactionPage, skipOffstage: false), findsOneWidget);
+    expect(
+      find.byType(AddTransactionPage, skipOffstage: false),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('nav-transactions')));
     await tester.pump();

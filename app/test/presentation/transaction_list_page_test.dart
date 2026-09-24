@@ -76,8 +76,10 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-transactions')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
-    expect(find.text('Chưa có giao dịch'), findsOneWidget);
-    expect(find.text('Nhấn + để thêm giao dịch đầu tiên.'), findsOneWidget);
+    expect(find.text('Chưa có giao dịch hôm nay'), findsOneWidget);
+    expect(find.text('Nhấn + để thêm giao dịch'), findsOneWidget);
+    expect(find.byKey(const Key('tx-empty-add')), findsNothing);
+    expect(find.byKey(const Key('cat-all')), findsNothing);
   });
 
   testWidgets('Home Xem tất cả opens Giao dịch with real rows', (tester) async {
@@ -99,6 +101,9 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('Giao dịch'), findsWidgets);
+    await tester.tap(find.byKey(const Key('mode-month')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
     expect(find.text('Highlands'), findsWidgets);
     expect(find.textContaining('45.000'), findsWidgets);
     expect(find.text('Cafe'), findsWidgets);
@@ -125,7 +130,11 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('Grab'), findsOneWidget);
-    expect(find.text('Tháng này'), findsOneWidget);
+    expect(find.text('Theo ngày'), findsOneWidget);
+    expect(find.text('1 giao dịch'), findsOneWidget);
+    expect(find.textContaining('CHI TIÊU NGÀY'), findsOneWidget);
+    expect(find.text('Tháng này'), findsNothing);
+    expect(find.byKey(const Key('cat-all')), findsNothing);
   });
 
   testWidgets('row tap opens detail', (tester) async {
@@ -138,7 +147,7 @@ void main() {
             _tx(
               id: '1',
               amount: 45000,
-              date: DateTime(2026, 8, 7),
+              date: DateTime(2026, 8, 18),
               detail: 'Highlands',
             ),
           ],
@@ -178,7 +187,7 @@ void main() {
             _tx(
               id: '1',
               amount: 45000,
-              date: DateTime(2026, 8, 7),
+              date: DateTime(2026, 8, 18),
               detail: 'Highlands',
             ),
           ],
@@ -199,15 +208,24 @@ void main() {
 
     final sheet = find.byType(TransactionDetailSheet);
     expect(
-      find.descendant(of: sheet, matching: find.byType(CircularProgressIndicator)),
+      find.descendant(
+        of: sheet,
+        matching: find.byType(CircularProgressIndicator),
+      ),
       findsNothing,
     );
     expect(
-      find.descendant(of: sheet, matching: find.byType(LinearProgressIndicator)),
+      find.descendant(
+        of: sheet,
+        matching: find.byType(LinearProgressIndicator),
+      ),
       findsNothing,
     );
     expect(
-      find.descendant(of: sheet, matching: find.byType(RefreshProgressIndicator)),
+      find.descendant(
+        of: sheet,
+        matching: find.byType(RefreshProgressIndicator),
+      ),
       findsNothing,
     );
     expect(
@@ -259,7 +277,9 @@ void main() {
     expect(find.byKey(const Key('tx-list-error')), findsOneWidget);
   });
 
-  testWidgets('type filter chips are not on the transaction list', (tester) async {
+  testWidgets('type filter chips are not on the transaction list', (
+    tester,
+  ) async {
     _phone(tester);
     await _pumpShell(
       tester,
@@ -272,9 +292,7 @@ void main() {
     expect(find.byKey(const Key('type-expense')), findsNothing);
   });
 
-  testWidgets('swipe-to-delete removes a transaction after confirm', (
-    tester,
-  ) async {
+  testWidgets('delete goes through transaction detail', (tester) async {
     _phone(tester);
     final repo = MemoryTransactionRepository(
       seed: [
@@ -291,13 +309,121 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('Grab'), findsOneWidget);
+    expect(find.byKey(const Key('tx-swipe-1')), findsNothing);
 
-    await tester.drag(find.byKey(const Key('tx-swipe-1')), const Offset(-300, 0));
-    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('tx-tile-1')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byKey(const Key('btn-detail-delete')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
     expect(find.text('Xóa giao dịch?'), findsOneWidget);
     await tester.tap(find.text('Xác nhận'));
-    await tester.pumpAndSettle();
-    expect(find.text('Grab'), findsNothing);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const Key('tx-tile-1')), findsNothing);
+    expect(find.text('Chi tiết'), findsNothing);
     expect(repo.items, isEmpty);
+  });
+
+  testWidgets(
+    'month mode shows category filters and opens a day on header tap',
+    (tester) async {
+      _phone(tester);
+      await _pumpShell(
+        tester,
+        service: TransactionService(
+          MemoryTransactionRepository(
+            seed: [
+              _tx(
+                id: '1',
+                amount: 12000,
+                date: DateTime(2026, 8, 7),
+                detail: 'Shopee',
+              ),
+              _tx(
+                id: '2',
+                amount: 15000,
+                date: DateTime(2026, 8, 18),
+                detail: 'Cơm',
+              ),
+            ],
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const Key('nav-transactions')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Cơm'), findsOneWidget);
+      expect(find.text('Shopee'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('mode-month')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.byKey(const Key('cat-all')), findsOneWidget);
+      expect(find.textContaining('CHI TIÊU THÁNG'), findsOneWidget);
+      expect(find.text('Shopee'), findsOneWidget);
+      expect(find.text('Cơm'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('month-toggle-2026-08-07')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.text('Shopee'), findsNothing);
+      expect(find.text('Cơm'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('month-toggle-2026-08-07')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(find.text('Shopee'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('month-day-2026-08-07')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(find.text('Theo ngày'), findsOneWidget);
+      expect(find.text('Shopee'), findsOneWidget);
+      expect(find.text('Cơm'), findsNothing);
+      expect(find.byKey(const Key('cat-all')), findsNothing);
+      expect(find.text('CHI TIÊU NGÀY 07/08'), findsOneWidget);
+    },
+  );
+
+  testWidgets('day arrows move the selected date', (tester) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(
+          seed: [
+            _tx(
+              id: '1',
+              amount: 10000,
+              date: DateTime(2026, 8, 17),
+              detail: 'Hôm qua',
+            ),
+            _tx(
+              id: '2',
+              amount: 20000,
+              date: DateTime(2026, 8, 18),
+              detail: 'Hôm nay',
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('nav-transactions')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Hôm nay'), findsWidgets);
+    expect(find.text('Hôm qua'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('date-prev')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('Hôm qua'), findsWidgets);
+    expect(find.textContaining('17/08'), findsWidgets);
+
+    await tester.tap(find.byKey(const Key('date-next')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.text('Hôm nay'), findsWidgets);
   });
 }

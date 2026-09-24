@@ -7,7 +7,6 @@ import '../../application/statistics_query.dart';
 import '../../application/transaction_service.dart';
 import '../../data/backup/backup_ports.dart';
 import '../../domain/entities/transaction.dart';
-import '../../domain/failures/result.dart';
 import '../../domain/security/sensitive_access_port.dart';
 import '../add_transaction/add_transaction_controller.dart';
 import '../add_transaction/add_transaction_page.dart';
@@ -27,7 +26,6 @@ import '../settings/settings_scope.dart';
 import '../statistics/statistics_controller.dart';
 import '../statistics/statistics_page.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_dialog.dart';
 import '../transactions/transaction_detail_sheet.dart';
 import '../transactions/transaction_list_controller.dart';
 import '../transactions/transaction_list_page.dart';
@@ -399,29 +397,6 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
-  Future<bool> _deleteTransaction(Transaction tx) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xóa giao dịch?'),
-        content: const Text('Thao tác này không thể hoàn tác.'),
-        actions: [
-          AppDialog.cancel(onPressed: () => Navigator.pop(context, false)),
-          AppDialog.confirm(
-            onPressed: () => Navigator.pop(context, true),
-            label: 'Xác nhận',
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return false;
-    final result = await widget.transactionService.remove(tx.id);
-    if (result is Ok && mounted) {
-      await _refresh();
-    }
-    return false;
-  }
-
   void _selectTab(AppTab tab) {
     if (_tutorialActive) return;
     if (_tab == tab && !_showFinance && !_showProfile && !_showBackupRestore) {
@@ -658,11 +633,9 @@ class _MainShellState extends State<MainShell> {
       ),
       AppTab.transactions => TransactionListPage(
         controller: _listController,
-        clock: widget.clock,
         embedNavigation: false,
         onAddPressed: _openAdd,
         onTransactionTap: _openDetail,
-        onDelete: _deleteTransaction,
         summaryTargetKey: _tutorialTargets.txList,
         filtersTargetKey: _tutorialTargets.txFilters,
       ),

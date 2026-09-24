@@ -254,7 +254,7 @@ void main() {
 
       await _advance(tester);
       expect(find.text('Lọc giao dịch'), findsOneWidget);
-      expect(find.byKey(const Key('date-thisMonth')), findsOneWidget);
+      expect(find.byKey(const Key('mode-month')), findsOneWidget);
 
       await _advance(tester);
       expect(find.text('Chi tiêu tháng này'), findsOneWidget);
@@ -400,7 +400,7 @@ void main() {
 
     await _advance(tester);
     expect(find.text('Lọc giao dịch'), findsOneWidget);
-    expect(find.byKey(const Key('date-thisMonth')), findsOneWidget);
+    expect(find.byKey(const Key('mode-month')), findsOneWidget);
     expect(find.text('Bắt đầu sử dụng'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('tutorial-next')));

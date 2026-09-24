@@ -55,6 +55,25 @@ void main() {
     expect(snap.expenseSum, 0);
   });
 
+  test('chronological ordering for a single day', () {
+    const query = TransactionListQuery();
+    final snap = query.apply(
+      all: [
+        _tx(id: 'a', amount: 10000, date: DateTime(2026, 8, 18), time: '18:45'),
+        _tx(id: 'b', amount: 20000, date: DateTime(2026, 8, 18), time: '07:30'),
+        _tx(id: 'c', amount: 30000, date: DateTime(2026, 8, 18), time: '12:20'),
+      ],
+      now: now,
+      filter: TransactionListFilter(
+        date: TxDateFilter.custom,
+        customFrom: DateTime(2026, 8, 18),
+        customTo: DateTime(2026, 8, 18),
+      ),
+      chronological: true,
+    );
+    expect(snap.items.map((e) => e.id), ['b', 'c', 'a']);
+  });
+
   test('newest-first ordering and grouping', () {
     const query = TransactionListQuery();
     final snap = query.apply(
@@ -158,9 +177,70 @@ void main() {
       clock: () => now,
     );
     await controller.load();
+    expect(controller.mode, TxListMode.day);
+    expect(controller.snapshot.isEmpty, isTrue);
+    await controller.setMode(TxListMode.month);
     expect(controller.snapshot.items.single.id, '1');
-    await controller.setDateFilter(TxDateFilter.lastMonth);
+    await controller.shiftMonth(-1);
     expect(controller.snapshot.items.single.id, '2');
+  });
+
+  test(
+    'selectDay loads only that calendar day in chronological order',
+    () async {
+      final repo = MemoryTransactionRepository(
+        seed: [
+          _tx(
+            id: 'late',
+            amount: 10000,
+            date: DateTime(2026, 8, 2),
+            time: '18:00',
+          ),
+          _tx(
+            id: 'early',
+            amount: 20000,
+            date: DateTime(2026, 8, 2),
+            time: '08:00',
+          ),
+          _tx(id: 'other', amount: 30000, date: DateTime(2026, 8, 3)),
+        ],
+      );
+      final controller = TransactionListController(
+        TransactionService(repo),
+        clock: () => now,
+      );
+      await controller.selectDay(DateTime(2026, 8, 2));
+      expect(controller.mode, TxListMode.day);
+      expect(controller.snapshot.items.map((e) => e.id), ['early', 'late']);
+    },
+  );
+
+  test('month category filter keeps the month headline total', () async {
+    final repo = MemoryTransactionRepository(
+      seed: [
+        _tx(
+          id: 'cafe',
+          amount: 10000,
+          date: DateTime(2026, 8, 2),
+          category: 'cafe',
+        ),
+        _tx(
+          id: 'lunch',
+          amount: 20000,
+          date: DateTime(2026, 8, 3),
+          category: 'lunch',
+        ),
+      ],
+    );
+    final controller = TransactionListController(
+      TransactionService(repo),
+      clock: () => now,
+    );
+    await controller.setMode(TxListMode.month);
+    expect(controller.snapshot.expenseSum, 30000);
+    await controller.setCategory('cafe');
+    expect(controller.snapshot.items.single.id, 'cafe');
+    expect(controller.snapshot.expenseSum, 30000);
   });
 
   test('list controller thisMonth uses viewMonth', () async {
@@ -176,6 +256,8 @@ void main() {
       viewMonth: () => DateTime(2026, 7),
     );
     await controller.load();
+    expect(controller.snapshot.isEmpty, isTrue);
+    await controller.setMode(TxListMode.month);
     expect(controller.snapshot.items.single.id, 'jul');
   });
 
@@ -218,7 +300,7 @@ void main() {
       clock: () => now,
     );
 
-    await controller.load();
+    await controller.setMode(TxListMode.month);
     expect(controller.snapshot.items, hasLength(50));
     expect(controller.snapshot.expenseSum, 125000);
     expect(controller.hasMore, isTrue);
