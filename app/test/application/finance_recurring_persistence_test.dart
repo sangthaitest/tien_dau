@@ -9,6 +9,7 @@ import 'package:tien_day/data/datasources/finance_local_datasource.dart';
 import 'package:tien_day/data/datasources/recurring_transaction_local_datasource.dart';
 import 'package:tien_day/data/datasources/transaction_local_datasource.dart';
 import 'package:tien_day/data/db/app_database.dart';
+import 'package:tien_day/data/db/migrations/recurring_month_entries.dart';
 import 'package:tien_day/data/db/migrations/recurring_transactions.dart';
 import 'package:tien_day/data/repositories/finance_repository_impl.dart';
 import 'package:tien_day/data/repositories/recurring_transaction_repository_impl.dart';
@@ -86,7 +87,7 @@ void main() {
       final version = (await stack.database.raw.rawQuery(
         'PRAGMA user_version',
       )).first['user_version'];
-      expect(version, 5);
+      expect(version, 6);
     },
   );
 
@@ -305,5 +306,51 @@ void main() {
     expect(salaryRows, isEmpty);
     expect(prefs, isEmpty);
     expect(((await stack.finance.load()) as Ok).value.salary, 0);
+  });
+
+  test('editing September leaves the August snapshot unchanged', () async {
+    final dir = await Directory.systemTemp.createTemp('tien_day_month_entry');
+    addTearDown(() => dir.delete(recursive: true));
+    final path = p.join(dir.path, 'tien_day.db');
+    final stack = await openStack(path);
+    addTearDown(stack.database.close);
+
+    expect((await stack.finance.createRecurring(rentDraft())).isOk, isTrue);
+    final augustRule =
+        ((await stack.finance.load(month: DateTime(2026, 8))) as Ok)
+            .value
+            .recurringItems
+            .single;
+    expect(
+      (await stack.finance.updateRecurring(
+        augustRule,
+        rentDraft(amount: 7000000),
+        month: DateTime(2026, 9),
+      )).isOk,
+      isTrue,
+    );
+    final october =
+        ((await stack.finance.load(month: DateTime(2026, 10))) as Ok).value;
+
+    final rows = await stack.database.raw.query(
+      recurringMonthEntriesTable,
+      columns: ['month_key', 'amount', 'template_id'],
+      orderBy: 'month_key ASC',
+    );
+    expect(rows, [
+      {'month_key': '2026-08', 'amount': 5000000, 'template_id': 'rent'},
+      {'month_key': '2026-09', 'amount': 7000000, 'template_id': 'rent'},
+      {'month_key': '2026-10', 'amount': 7000000, 'template_id': 'rent'},
+    ]);
+    expect(
+      ((await stack.finance.load(month: DateTime(2026, 8))) as Ok)
+          .value
+          .recurringItems
+          .single
+          .amount,
+      5000000,
+    );
+    expect(october.recurringItems.single.amount, 7000000);
+    expect(await stack.database.raw.query('transactions'), isEmpty);
   });
 }

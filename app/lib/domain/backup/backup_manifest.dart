@@ -47,12 +47,12 @@ class BackupSummary {
   final bool includesFinance;
 
   Map<String, Object?> toJson() => {
-        'transactionCount': transactionCount,
-        'categoryCount': categoryCount,
-        'incomeCount': incomeCount,
-        'recurringCount': recurringCount,
-        'includesFinance': includesFinance,
-      };
+    'transactionCount': transactionCount,
+    'categoryCount': categoryCount,
+    'incomeCount': incomeCount,
+    'recurringCount': recurringCount,
+    'includesFinance': includesFinance,
+  };
 
   static BackupSummary parse(Object? raw) {
     if (raw is! Map) {
@@ -96,6 +96,7 @@ class BackupDocument {
     required this.recurring,
     required this.savingsGoals,
     required this.prefs,
+    this.recurringMonthEntries = const [],
   });
 
   final int backupVersion;
@@ -106,30 +107,32 @@ class BackupDocument {
   final List<Map<String, Object?>> transactions;
   final Map<String, Object?> categories;
   final List<Map<String, Object?>> recurring;
+  final List<Map<String, Object?>> recurringMonthEntries;
   final List<Map<String, Object?>> savingsGoals;
   final Map<String, String> prefs;
 
   Map<String, Object?> toJson() => {
-        'format': BackupFormat.name,
-        'backupVersion': backupVersion,
-        'createdAt': createdAt.toUtc().toIso8601String(),
-        'appVersion': appVersion,
-        'platform': platform,
-        'summary': summary.toJson(),
-        'financial': {
-          'savingsGoals': savingsGoals,
-          'recurring': recurring,
-          'budgetMonth': prefs['budget_month'],
-          'budgetLimit': prefs['budget_limit'],
-        },
-        'transactions': transactions,
-        'categories': categories,
-        'settings': {
-          for (final entry in prefs.entries)
-            if (entry.key != 'budget_month' && entry.key != 'budget_limit')
-              entry.key: entry.value,
-        },
-      };
+    'format': BackupFormat.name,
+    'backupVersion': backupVersion,
+    'createdAt': createdAt.toUtc().toIso8601String(),
+    'appVersion': appVersion,
+    'platform': platform,
+    'summary': summary.toJson(),
+    'financial': {
+      'savingsGoals': savingsGoals,
+      'recurring': recurring,
+      'recurringMonthEntries': recurringMonthEntries,
+      'budgetMonth': prefs['budget_month'],
+      'budgetLimit': prefs['budget_limit'],
+    },
+    'transactions': transactions,
+    'categories': categories,
+    'settings': {
+      for (final entry in prefs.entries)
+        if (entry.key != 'budget_month' && entry.key != 'budget_limit')
+          entry.key: entry.value,
+    },
+  };
 
   String encode() => const JsonEncoder.withIndent('  ').convert(toJson());
 
@@ -203,13 +206,21 @@ class BackupDocument {
     if (financial is! Map) {
       throw const BackupFailure('Thiếu dữ liệu Tài chính trong bản sao lưu.');
     }
-    final savingsGoals =
-        _asObjectList(financial['savingsGoals'], 'savingsGoals');
+    final savingsGoals = _asObjectList(
+      financial['savingsGoals'],
+      'savingsGoals',
+    );
     final recurring = _asObjectList(financial['recurring'], 'recurring');
+    final recurringMonthEntries = _asObjectList(
+      financial['recurringMonthEntries'],
+      'recurringMonthEntries',
+    );
 
     final categoriesRaw = map['categories'];
     if (categoriesRaw is! Map) {
-      throw const BackupFailure('Dữ liệu danh mục trong bản sao lưu không hợp lệ.');
+      throw const BackupFailure(
+        'Dữ liệu danh mục trong bản sao lưu không hợp lệ.',
+      );
     }
     final categories = <String, Object?>{
       for (final entry in categoriesRaw.entries)
@@ -241,10 +252,12 @@ class BackupDocument {
 
     _validateTransactions(transactions);
     _validateRecurring(recurring);
+    _validateMonthEntries(recurringMonthEntries);
     _validateGoals(savingsGoals);
 
-    final incomeCount =
-        recurring.where((row) => row['kind']?.toString() == 'income').length;
+    final incomeCount = recurring
+        .where((row) => row['kind']?.toString() == 'income')
+        .length;
     final expenseRecurringCount = recurring
         .where((row) => row['kind']?.toString() != 'income')
         .length;
@@ -274,6 +287,7 @@ class BackupDocument {
       transactions: transactions,
       categories: categories,
       recurring: recurring,
+      recurringMonthEntries: recurringMonthEntries,
       savingsGoals: savingsGoals,
       prefs: prefs,
     );
@@ -281,10 +295,7 @@ class BackupDocument {
 }
 
 class BackupPreview {
-  const BackupPreview({
-    required this.document,
-    required this.path,
-  });
+  const BackupPreview({required this.document, required this.path});
 
   final BackupDocument document;
   final String path;
@@ -337,10 +348,14 @@ void _validateTransactions(List<Map<String, Object?>> rows) {
     }
     final id = row['id']?.toString();
     if (id == null || !ids.add(id)) {
-      throw const BackupFailure('Giao dịch trong bản sao lưu có id không hợp lệ.');
+      throw const BackupFailure(
+        'Giao dịch trong bản sao lưu có id không hợp lệ.',
+      );
     }
     if (_asInt(row['amount']) == null) {
-      throw const BackupFailure('Số tiền giao dịch trong bản sao lưu không hợp lệ.');
+      throw const BackupFailure(
+        'Số tiền giao dịch trong bản sao lưu không hợp lệ.',
+      );
     }
   }
 }
@@ -371,6 +386,46 @@ void _validateRecurring(List<Map<String, Object?>> rows) {
     if (id == null || !ids.add(id)) {
       throw const BackupFailure(
         'Khoản định kỳ/thu nhập trong bản sao lưu có id không hợp lệ.',
+      );
+    }
+  }
+}
+
+void _validateMonthEntries(List<Map<String, Object?>> rows) {
+  const required = {
+    'id',
+    'template_id',
+    'month_key',
+    'name',
+    'kind',
+    'amount',
+    'direction',
+    'day_of_month',
+    'is_active',
+    'created_at',
+    'updated_at',
+  };
+  final ids = <String>{};
+  final pairs = <String>{};
+  for (final row in rows) {
+    for (final key in required) {
+      final value = row[key];
+      if (value == null || (value is String && value.isEmpty)) {
+        throw const BackupFailure(
+          'Khoản định kỳ theo tháng trong bản sao lưu bị thiếu trường bắt buộc.',
+        );
+      }
+    }
+    final id = row['id']?.toString();
+    if (id == null || !ids.add(id)) {
+      throw const BackupFailure(
+        'Khoản định kỳ theo tháng trong bản sao lưu có id không hợp lệ.',
+      );
+    }
+    final pair = '${row['template_id']}|${row['month_key']}';
+    if (!pairs.add(pair)) {
+      throw const BackupFailure(
+        'Khoản định kỳ theo tháng trong bản sao lưu bị trùng tháng.',
       );
     }
   }

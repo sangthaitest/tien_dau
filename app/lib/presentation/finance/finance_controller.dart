@@ -46,7 +46,7 @@ class FinanceController extends ChangeNotifier {
   }
 
   Future<Result<void>> saveSalary(int amount) async {
-    final result = await _service.saveSalary(amount);
+    final result = await _service.saveSalary(amount, month: _month?.call());
     if (result.isOk) await load();
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }
@@ -112,13 +112,17 @@ class FinanceController extends ChangeNotifier {
     RecurringTransaction existing,
     bool isActive,
   ) async {
-    final result = await _service.setRecurringActive(existing, isActive);
+    final result = await _service.setRecurringActive(
+      existing,
+      isActive,
+      month: _month?.call(),
+    );
     if (result.isOk) await load();
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }
 
   Future<Result<void>> deleteRecurring(String id) async {
-    final result = await _service.deleteRecurring(id);
+    final result = await _service.deleteRecurring(id, month: _month?.call());
     if (result.isOk) await load();
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }

@@ -1,3 +1,4 @@
+import '../entities/recurring_month_entry.dart';
 import '../entities/recurring_transaction.dart';
 import '../failures/result.dart';
 
@@ -14,4 +15,15 @@ abstract class RecurringTransactionRepository {
   Future<Result<RecurringTransaction>> replaceSalary(RecurringTransaction row);
 
   Future<Result<void>> delete(String id);
+
+  Future<Result<List<RecurringMonthEntry>>> listMonthEntries(String monthKey);
+
+  /// Insert or replace the snapshot for one template and one month.
+  Future<Result<void>> saveMonthEntry(RecurringMonthEntry entry);
+
+  /// Removes one month snapshot. Does not delete the template or other months.
+  Future<Result<void>> deleteMonthEntry({
+    required String templateId,
+    required String monthKey,
+  });
 }

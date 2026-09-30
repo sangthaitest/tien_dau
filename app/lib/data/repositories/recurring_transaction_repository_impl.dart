@@ -1,3 +1,4 @@
+import '../../domain/entities/recurring_month_entry.dart';
 import '../../domain/entities/recurring_transaction.dart';
 import '../../domain/failures/app_failure.dart';
 import '../../domain/failures/result.dart';
@@ -80,6 +81,40 @@ class RecurringTransactionRepositoryImpl
       if (changed == 0) {
         return const Err(NotFoundFailure('Không tìm thấy khoản định kỳ'));
       }
+      return const Ok(null);
+    } on PersistenceFailure catch (e) {
+      return Err(e);
+    }
+  }
+
+  @override
+  Future<Result<List<RecurringMonthEntry>>> listMonthEntries(
+    String monthKey,
+  ) async {
+    try {
+      return Ok(await _local.findMonthEntries(monthKey));
+    } on PersistenceFailure catch (e) {
+      return Err(e);
+    }
+  }
+
+  @override
+  Future<Result<void>> saveMonthEntry(RecurringMonthEntry entry) async {
+    try {
+      await _local.saveMonthEntry(entry);
+      return const Ok(null);
+    } on PersistenceFailure catch (e) {
+      return Err(e);
+    }
+  }
+
+  @override
+  Future<Result<void>> deleteMonthEntry({
+    required String templateId,
+    required String monthKey,
+  }) async {
+    try {
+      await _local.deleteMonthEntry(templateId: templateId, monthKey: monthKey);
       return const Ok(null);
     } on PersistenceFailure catch (e) {
       return Err(e);

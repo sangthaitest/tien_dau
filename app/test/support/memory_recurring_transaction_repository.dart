@@ -1,4 +1,5 @@
 import 'package:tien_day/data/db/migrations/recurring_transactions.dart';
+import 'package:tien_day/domain/entities/recurring_month_entry.dart';
 import 'package:tien_day/domain/entities/recurring_transaction.dart';
 import 'package:tien_day/domain/failures/app_failure.dart';
 import 'package:tien_day/domain/failures/result.dart';
@@ -7,6 +8,7 @@ import 'package:tien_day/domain/repositories/recurring_transaction_repository.da
 class MemoryRecurringTransactionRepository
     implements RecurringTransactionRepository {
   final Map<String, RecurringTransaction> _items = {};
+  final Map<String, RecurringMonthEntry> _months = {};
 
   @override
   Future<Result<List<RecurringTransaction>>> listAll() async {
@@ -55,6 +57,41 @@ class MemoryRecurringTransactionRepository
     if (_items.remove(id) == null) {
       return const Err(NotFoundFailure('Không tìm thấy khoản định kỳ'));
     }
+    return const Ok(null);
+  }
+
+  @override
+  Future<Result<List<RecurringMonthEntry>>> listMonthEntries(
+    String monthKey,
+  ) async {
+    final rows = [
+      for (final entry in _months.values)
+        if (entry.monthKey == monthKey) entry,
+    ];
+    return Ok(rows);
+  }
+
+  @override
+  Future<Result<void>> saveMonthEntry(RecurringMonthEntry entry) async {
+    _months.removeWhere(
+      (_, existing) =>
+          existing.templateId == entry.templateId &&
+          existing.monthKey == entry.monthKey &&
+          existing.id != entry.id,
+    );
+    _months[entry.id] = entry;
+    return const Ok(null);
+  }
+
+  @override
+  Future<Result<void>> deleteMonthEntry({
+    required String templateId,
+    required String monthKey,
+  }) async {
+    _months.removeWhere(
+      (_, entry) =>
+          entry.templateId == templateId && entry.monthKey == monthKey,
+    );
     return const Ok(null);
   }
 }

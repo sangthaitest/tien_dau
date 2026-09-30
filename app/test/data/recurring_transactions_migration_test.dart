@@ -12,68 +12,71 @@ void main() {
     databaseFactory = databaseFactoryFfi;
   });
 
-  test('v4 to v5 realistic upgrade preserves transactions and migrates salary', () async {
-    final path = await _v4FixturePath();
-    final beforeDb = await databaseFactory.openDatabase(path);
-    final before = await captureTransactionIntegrity(beforeDb);
-    final prefsBefore = await _prefs(beforeDb);
-    final transactionRowsBefore = await beforeDb.query(
-      'transactions',
-      orderBy: 'id ASC',
-    );
-    await beforeDb.close();
+  test(
+    'v4 to v5 realistic upgrade preserves transactions and migrates salary',
+    () async {
+      final path = await _v4FixturePath();
+      final beforeDb = await databaseFactory.openDatabase(path);
+      final before = await captureTransactionIntegrity(beforeDb);
+      final prefsBefore = await _prefs(beforeDb);
+      final transactionRowsBefore = await beforeDb.query(
+        'transactions',
+        orderBy: 'id ASC',
+      );
+      await beforeDb.close();
 
-    expect(before.count, 6);
-    expect(before.sum, 1586195);
-    expect(
-      before.checksum,
-      '8bc2bc445d729fc8d4b6762ddd42175d36375831cc88d0146b4fa44fa75b2030',
-    );
-    expect(prefsBefore[salaryAmountPrefKey], '20000000');
+      expect(before.count, 6);
+      expect(before.sum, 1586195);
+      expect(
+        before.checksum,
+        '8bc2bc445d729fc8d4b6762ddd42175d36375831cc88d0146b4fa44fa75b2030',
+      );
+      expect(prefsBefore[salaryAmountPrefKey], '20000000');
 
-    final upgraded = await AppDatabase.openPath(path);
-    final version = await _userVersion(upgraded.raw);
-    final after = await captureTransactionIntegrity(upgraded.raw);
-    final prefsAfter = await _prefs(upgraded.raw);
-    final integrity = await pragmaIntegrityCheck(upgraded.raw);
-    final salary = await upgraded.raw.query(
-      recurringTransactionsTable,
-      where: 'id = ?',
-      whereArgs: [recurringSalaryId],
-    );
-    final transactionRowsAfter = await upgraded.raw.query(
-      'transactions',
-      orderBy: 'id ASC',
-    );
-    final incomeInTransactions = await upgraded.raw.query(
-      'transactions',
-      where: 'type = ?',
-      whereArgs: ['income'],
-    );
+      final upgraded = await AppDatabase.openPath(path);
+      final version = await _userVersion(upgraded.raw);
+      final after = await captureTransactionIntegrity(upgraded.raw);
+      final prefsAfter = await _prefs(upgraded.raw);
+      final integrity = await pragmaIntegrityCheck(upgraded.raw);
+      final salary = await upgraded.raw.query(
+        recurringTransactionsTable,
+        where: 'id = ?',
+        whereArgs: [recurringSalaryId],
+      );
+      final transactionRowsAfter = await upgraded.raw.query(
+        'transactions',
+        orderBy: 'id ASC',
+      );
+      final incomeInTransactions = await upgraded.raw.query(
+        'transactions',
+        where: 'type = ?',
+        whereArgs: ['income'],
+      );
 
-    expect(version, 5);
-    expect(after.count, before.count);
-    expect(after.sum, before.sum);
-    expect(after.checksum, before.checksum);
-    expect(after.ids, before.ids);
-    expect(transactionRowsAfter, transactionRowsBefore);
-    expect(incomeInTransactions, isEmpty);
-    expect(integrity, 'ok');
-    expect(salary, hasLength(1));
-    expect(salary.single['name'], recurringSalaryName);
-    expect(salary.single['kind'], 'income');
-    expect(salary.single['amount'], 20000000);
-    expect(salary.single['frequency'], 'monthly');
-    expect(salary.single['interval_count'], 1);
-    expect(salary.single['direction'], 'add');
-    expect(salary.single['is_active'], 1);
-    expect(prefsAfter.containsKey(salaryAmountPrefKey), isFalse);
-    for (final key in protectedPrefKeys) {
-      expect(prefsAfter[key], prefsBefore[key], reason: key);
-    }
+      expect(version, 6);
+      expect(after.count, before.count);
+      expect(after.sum, before.sum);
+      expect(after.checksum, before.checksum);
+      expect(after.ids, before.ids);
+      expect(transactionRowsAfter, transactionRowsBefore);
+      expect(incomeInTransactions, isEmpty);
+      expect(integrity, 'ok');
+      expect(salary, hasLength(1));
+      expect(salary.single['name'], recurringSalaryName);
+      expect(salary.single['kind'], 'income');
+      expect(salary.single['amount'], 20000000);
+      expect(salary.single['frequency'], 'monthly');
+      expect(salary.single['interval_count'], 1);
+      expect(salary.single['direction'], 'add');
+      expect(salary.single['is_active'], 1);
+      expect(prefsAfter.containsKey(salaryAmountPrefKey), isFalse);
+      for (final key in protectedPrefKeys) {
+        expect(prefsAfter[key], prefsBefore[key], reason: key);
+      }
 
-    await upgraded.close();
-  });
+      await upgraded.close();
+    },
+  );
 
   test('v5 second open does not remigrate or duplicate salary', () async {
     final path = await _v4FixturePath();
@@ -87,7 +90,7 @@ void main() {
     final secondSalary = await second.raw.query(recurringTransactionsTable);
     final version = await _userVersion(second.raw);
 
-    expect(version, 5);
+    expect(version, 6);
     expect(secondSnap.count, firstSnap.count);
     expect(secondSnap.checksum, firstSnap.checksum);
     expect(secondSalary, hasLength(1));
@@ -97,39 +100,39 @@ void main() {
     await second.close();
   });
 
-  test('fresh v5 install has recurring table and no seeded money data', () async {
-    final dir = await Directory.systemTemp.createTemp('tien_day_v5_fresh');
-    addTearDown(() => dir.delete(recursive: true));
-    final path = p.join(dir.path, 'tien_day.db');
+  test(
+    'fresh v5 install has recurring table and no seeded money data',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('tien_day_v5_fresh');
+      addTearDown(() => dir.delete(recursive: true));
+      final path = p.join(dir.path, 'tien_day.db');
 
-    final db = await AppDatabase.openPath(path);
-    final version = await _userVersion(db.raw);
-    final tables = await db.raw.rawQuery(
-      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
-      [recurringTransactionsTable],
-    );
-    final transactions = await db.raw.query('transactions');
-    final recurring = await db.raw.query(recurringTransactionsTable);
-    final prefs = await _prefs(db.raw);
-    final income = await db.raw.query(
-      'transactions',
-      where: 'type = ?',
-      whereArgs: ['income'],
-    );
+      final db = await AppDatabase.openPath(path);
+      final version = await _userVersion(db.raw);
+      final tables = await db.raw.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+        [recurringTransactionsTable],
+      );
+      final transactions = await db.raw.query('transactions');
+      final recurring = await db.raw.query(recurringTransactionsTable);
+      final prefs = await _prefs(db.raw);
+      final income = await db.raw.query(
+        'transactions',
+        where: 'type = ?',
+        whereArgs: ['income'],
+      );
 
-    expect(version, 5);
-    expect(tables, isNotEmpty);
-    expect(transactions, isEmpty);
-    expect(recurring, isEmpty);
-    expect(income, isEmpty);
-    expect(prefs, isEmpty);
-    expect(
-      await pragmaIntegrityCheck(db.raw),
-      'ok',
-    );
+      expect(version, 6);
+      expect(tables, isNotEmpty);
+      expect(transactions, isEmpty);
+      expect(recurring, isEmpty);
+      expect(income, isEmpty);
+      expect(prefs, isEmpty);
+      expect(await pragmaIntegrityCheck(db.raw), 'ok');
 
-    await db.close();
-  });
+      await db.close();
+    },
+  );
 
   test('v4 to v5 rolls back when salary cleanup fails', () async {
     final path = await _v4FixturePath();
@@ -173,28 +176,31 @@ END
     await inspect.close();
   });
 
-  test('v4 without valid salary still upgrades and does not invent a salary row', () async {
-    final dir = await Directory.systemTemp.createTemp('tien_day_v5_nosalary');
-    addTearDown(() => dir.delete(recursive: true));
-    final path = p.join(dir.path, 'legacy.db');
-    final legacy = await _openV4(path);
-    await _insertPref(legacy, 'budget_month', '2026-08');
-    await _insertPref(legacy, 'budget_limit', '10000000');
-    await _insertPref(legacy, salaryAmountPrefKey, '0');
-    await legacy.close();
+  test(
+    'v4 without valid salary still upgrades and does not invent a salary row',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('tien_day_v5_nosalary');
+      addTearDown(() => dir.delete(recursive: true));
+      final path = p.join(dir.path, 'legacy.db');
+      final legacy = await _openV4(path);
+      await _insertPref(legacy, 'budget_month', '2026-08');
+      await _insertPref(legacy, 'budget_limit', '10000000');
+      await _insertPref(legacy, salaryAmountPrefKey, '0');
+      await legacy.close();
 
-    final upgraded = await AppDatabase.openPath(path);
-    final prefs = await _prefs(upgraded.raw);
-    final salary = await upgraded.raw.query(recurringTransactionsTable);
+      final upgraded = await AppDatabase.openPath(path);
+      final prefs = await _prefs(upgraded.raw);
+      final salary = await upgraded.raw.query(recurringTransactionsTable);
 
-    expect(await _userVersion(upgraded.raw), 5);
-    expect(salary, isEmpty);
-    expect(prefs[salaryAmountPrefKey], '0');
-    expect(prefs['budget_month'], '2026-08');
-    expect(prefs['budget_limit'], '10000000');
+      expect(await _userVersion(upgraded.raw), 6);
+      expect(salary, isEmpty);
+      expect(prefs[salaryAmountPrefKey], '0');
+      expect(prefs['budget_month'], '2026-08');
+      expect(prefs['budget_limit'], '10000000');
 
-    await upgraded.close();
-  });
+      await upgraded.close();
+    },
+  );
 }
 
 Future<String> _v4FixturePath() async {

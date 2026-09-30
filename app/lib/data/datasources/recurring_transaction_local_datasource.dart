@@ -1,9 +1,11 @@
 import 'package:sqflite/sqflite.dart';
 
+import '../../domain/entities/recurring_month_entry.dart';
 import '../../domain/entities/recurring_transaction.dart';
 import '../../domain/failures/app_failure.dart';
 import '../../domain/time/clock_format.dart';
 import '../db/app_database.dart';
+import '../db/migrations/recurring_month_entries.dart';
 import '../db/migrations/recurring_transactions.dart';
 import '../mappers/recurring_transaction_mapper.dart';
 
@@ -86,6 +88,58 @@ class RecurringTransactionsLocalDataSource {
     } catch (e, st) {
       Error.throwWithStackTrace(
         PersistenceFailure('Failed to delete recurring transaction', cause: e),
+        st,
+      );
+    }
+  }
+
+  Future<List<RecurringMonthEntry>> findMonthEntries(String monthKey) async {
+    try {
+      final rows = await _db.query(
+        recurringMonthEntriesTable,
+        where: 'month_key = ?',
+        whereArgs: [monthKey],
+        orderBy: 'day_of_month ASC, created_at ASC',
+      );
+      return [
+        for (final row in rows) RecurringTransactionMapper.monthFromMap(row),
+      ];
+    } catch (e, st) {
+      Error.throwWithStackTrace(
+        PersistenceFailure('Failed to list recurring month entries', cause: e),
+        st,
+      );
+    }
+  }
+
+  Future<void> saveMonthEntry(RecurringMonthEntry entry) async {
+    try {
+      await _db.insert(
+        recurringMonthEntriesTable,
+        RecurringTransactionMapper.monthToMap(entry),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e, st) {
+      Error.throwWithStackTrace(
+        PersistenceFailure('Failed to save recurring month entry', cause: e),
+        st,
+      );
+    }
+  }
+
+  Future<void> deleteMonthEntry({
+    required String templateId,
+    required String monthKey,
+  }) async {
+    try {
+      await _db.delete(
+        recurringMonthEntriesTable,
+        where: 'template_id = ? AND month_key = ?',
+        whereArgs: [templateId, monthKey],
+      );
+    } catch (e, st) {
+      Error.throwWithStackTrace(
+        PersistenceFailure('Failed to delete recurring month entry', cause: e),
         st,
       );
     }

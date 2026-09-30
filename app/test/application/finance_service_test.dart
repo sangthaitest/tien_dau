@@ -760,4 +760,38 @@ void main() {
       expect(txs.items, hasLength(1));
     },
   );
+
+  test('editing one month does not change another month snapshot', () async {
+    final recurring = MemoryRecurringTransactionRepository();
+    final finance = FinanceService(
+      MemoryFinanceRepository(),
+      TransactionService(MemoryTransactionRepository()),
+      recurring,
+      idFactory: () => 'rent',
+      clock: () => now,
+    );
+    final created = ((await finance.createRecurring(draft())) as Ok).value;
+    final september =
+        ((await finance.load(month: DateTime(2026, 9))) as Ok).value;
+    expect(september.recurringItems.single.amount, 5000000);
+
+    expect(
+      (await finance.updateRecurring(
+        created,
+        draft(amount: 7000000),
+        month: DateTime(2026, 9),
+      )).isOk,
+      isTrue,
+    );
+
+    final august = ((await finance.load(month: DateTime(2026, 8))) as Ok).value;
+    final septemberAfter =
+        ((await finance.load(month: DateTime(2026, 9))) as Ok).value;
+    expect(august.recurringItems.single.amount, 5000000);
+    expect(septemberAfter.recurringItems.single.amount, 7000000);
+    expect(((await recurring.listAll()) as Ok).value.single.amount, 7000000);
+
+    final july = ((await finance.load(month: DateTime(2026, 7))) as Ok).value;
+    expect(july.recurringItems, isEmpty);
+  });
 }

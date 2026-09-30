@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart' hide Transaction;
 
 import 'migrations/normalize_categories.dart';
+import 'migrations/recurring_month_entries.dart';
 import 'migrations/recurring_transactions.dart';
 
 class AppDatabase {
@@ -16,7 +17,7 @@ class AppDatabase {
   Database get raw => _db;
 
   static const fileName = 'tien_day.db';
-  static const schemaVersion = 5;
+  static const schemaVersion = 6;
 
   static Future<String> documentsPath() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -41,6 +42,7 @@ class AppDatabase {
         await _createTransactionIndexes(db);
         await _createFinance(db);
         await createRecurringTransactionsTable(db);
+        await createRecurringMonthEntriesTable(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -54,6 +56,9 @@ class AppDatabase {
         }
         if (oldVersion < 5) {
           await migrateV4toV5(db);
+        }
+        if (oldVersion < 6) {
+          await migrateV5toV6(db);
         }
       },
     );

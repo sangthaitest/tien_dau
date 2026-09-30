@@ -19,8 +19,14 @@ class BackupDataCodec {
     final db = database.raw;
     final transactions = await db.query('transactions', orderBy: 'id ASC');
     final goals = await db.query('savings_goals', orderBy: 'id ASC');
-    final recurring =
-        await db.query('recurring_transactions', orderBy: 'id ASC');
+    final recurring = await db.query(
+      'recurring_transactions',
+      orderBy: 'id ASC',
+    );
+    final recurringMonths = await db.query(
+      'recurring_month_entries',
+      orderBy: 'month_key ASC, template_id ASC',
+    );
     final prefRows = await db.query('app_prefs', orderBy: 'key ASC');
 
     final prefs = <String, String>{};
@@ -33,10 +39,12 @@ class BackupDataCodec {
     }
 
     final categories = _categoriesFromPrefs(prefs);
-    final incomeCount =
-        recurring.where((row) => row['kind']?.toString() == 'income').length;
-    final recurringCount =
-        recurring.where((row) => row['kind']?.toString() != 'income').length;
+    final incomeCount = recurring
+        .where((row) => row['kind']?.toString() == 'income')
+        .length;
+    final recurringCount = recurring
+        .where((row) => row['kind']?.toString() != 'income')
+        .length;
 
     return BackupDocument(
       backupVersion: BackupFormat.version,
@@ -50,16 +58,13 @@ class BackupDataCodec {
         recurringCount: recurringCount,
         includesFinance: true,
       ),
-      transactions: [
-        for (final row in transactions) _stringifyRow(row),
-      ],
+      transactions: [for (final row in transactions) _stringifyRow(row)],
       categories: categories,
-      recurring: [
-        for (final row in recurring) _stringifyRow(row),
+      recurring: [for (final row in recurring) _stringifyRow(row)],
+      recurringMonthEntries: [
+        for (final row in recurringMonths) _stringifyRow(row),
       ],
-      savingsGoals: [
-        for (final row in goals) _stringifyRow(row),
-      ],
+      savingsGoals: [for (final row in goals) _stringifyRow(row)],
       prefs: prefs,
     );
   }
@@ -72,6 +77,7 @@ class BackupDataCodec {
         await txn.delete('transactions');
         await txn.delete('savings_goals');
         await txn.delete('recurring_transactions');
+        await txn.delete('recurring_month_entries');
         await txn.delete('app_prefs');
 
         for (final row in document.transactions) {
@@ -95,28 +101,32 @@ class BackupDataCodec {
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
         }
-        for (final entry in document.prefs.entries) {
-          if (BackupFormat.excludedPrefKeys.contains(entry.key)) continue;
+        for (final row in document.recurringMonthEntries) {
           await txn.insert(
-            'app_prefs',
-            {'key': entry.key, 'value': entry.value},
+            'recurring_month_entries',
+            _monthEntryRow(row),
             conflictAlgorithm: ConflictAlgorithm.replace,
           );
         }
+        for (final entry in document.prefs.entries) {
+          if (BackupFormat.excludedPrefKeys.contains(entry.key)) continue;
+          await txn.insert('app_prefs', {
+            'key': entry.key,
+            'value': entry.value,
+          }, conflictAlgorithm: ConflictAlgorithm.replace);
+        }
         if (!document.prefs.containsKey('transaction_catalog_v1')) {
-          await txn.insert(
-            'app_prefs',
-            {
-              'key': 'transaction_catalog_v1',
-              'value': jsonEncode(document.categories),
-            },
-            conflictAlgorithm: ConflictAlgorithm.replace,
-          );
+          await txn.insert('app_prefs', {
+            'key': 'transaction_catalog_v1',
+            'value': jsonEncode(document.categories),
+          }, conflictAlgorithm: ConflictAlgorithm.replace);
         }
       });
       final integrity = await db.integrityCheck();
       if (integrity != 'ok') {
-        throw BackupFailure('Không thể chuẩn bị dữ liệu khôi phục ($integrity).');
+        throw BackupFailure(
+          'Không thể chuẩn bị dữ liệu khôi phục ($integrity).',
+        );
       }
     } finally {
       await db.close();
@@ -147,24 +157,19 @@ class BackupDataCodec {
         whereArgs: const ['pin_hash', 'pin_salt'],
       );
       for (final entry in pinPrefs.entries) {
-        await txn.insert(
-          'app_prefs',
-          {'key': entry.key, 'value': entry.value},
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        await txn.insert('app_prefs', {
+          'key': entry.key,
+          'value': entry.value,
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
       }
     });
   }
 
   Future<void> writeLastBackupAt(AppDatabase database, DateTime at) async {
-    await database.raw.insert(
-      'app_prefs',
-      {
-        'key': BackupFormat.lastBackupAtKey,
-        'value': at.toUtc().toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await database.raw.insert('app_prefs', {
+      'key': BackupFormat.lastBackupAtKey,
+      'value': at.toUtc().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<DateTime?> readLastBackupAt(AppDatabase database) async {
@@ -210,9 +215,7 @@ class BackupDataCodec {
   }
 
   Map<String, Object?> _stringifyRow(Map<String, Object?> row) {
-    return {
-      for (final entry in row.entries) entry.key: entry.value,
-    };
+    return {for (final entry in row.entries) entry.key: entry.value};
   }
 
   Map<String, Object?> _transactionRow(Map<String, Object?> row) {
@@ -228,6 +231,26 @@ class BackupDataCodec {
       'payment_source_name': row['payment_source_name']?.toString(),
       'payment_method': row['payment_method']?.toString(),
       'note': row['note']?.toString(),
+      'created_at': row['created_at']?.toString(),
+      'updated_at': row['updated_at']?.toString(),
+    };
+  }
+
+  Map<String, Object?> _monthEntryRow(Map<String, Object?> row) {
+    return {
+      'id': row['id']?.toString(),
+      'template_id': row['template_id']?.toString(),
+      'month_key': row['month_key']?.toString(),
+      'name': row['name']?.toString(),
+      'kind': row['kind']?.toString(),
+      'amount': _asInt(row['amount']) ?? 0,
+      'direction': row['direction']?.toString(),
+      'category_id': row['category_id']?.toString(),
+      'detail': row['detail']?.toString(),
+      'payment_source_id': row['payment_source_id']?.toString(),
+      'note': row['note']?.toString(),
+      'day_of_month': _asInt(row['day_of_month']) ?? 1,
+      'is_active': _asInt(row['is_active']) ?? 1,
       'created_at': row['created_at']?.toString(),
       'updated_at': row['updated_at']?.toString(),
     };
