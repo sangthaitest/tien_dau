@@ -27,11 +27,15 @@ class TransactionPage {
     required this.items,
     required this.expenseSum,
     required this.hasMore,
+    required this.totalCount,
   });
 
   final List<Transaction> items;
   final int expenseSum;
   final bool hasMore;
+
+  /// Matching rows in the whole range, not just this page.
+  final int totalCount;
 }
 
 class ExpenseSummary {

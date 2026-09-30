@@ -48,6 +48,7 @@ class TransactionListController extends ChangeNotifier {
 
   List<Transaction> _loaded = [];
   int _expenseSum = 0;
+  int _transactionCount = 0;
   int _requestGeneration = 0;
   bool _awaitingCustomRange = false;
 
@@ -68,6 +69,7 @@ class TransactionListController extends ChangeNotifier {
       error = null;
       _loaded = [];
       _expenseSum = 0;
+      _transactionCount = 0;
       snapshot = TransactionListSnapshot(
         expenseSum: 0,
         groups: const [],
@@ -91,6 +93,7 @@ class TransactionListController extends ChangeNotifier {
       case Ok(:final value):
         _loaded = value.items;
         _expenseSum = value.expenseSum;
+        _transactionCount = value.totalCount;
         hasMore = value.hasMore;
         error = null;
         if (mode == TxListMode.month &&
@@ -111,6 +114,7 @@ class TransactionListController extends ChangeNotifier {
         error = failure.message;
         _loaded = [];
         _expenseSum = 0;
+        _transactionCount = 0;
         hasMore = false;
         snapshot = TransactionListSnapshot(
           expenseSum: 0,
@@ -262,6 +266,7 @@ class TransactionListController extends ChangeNotifier {
           ? filter.copyWith(categoryId: 'all')
           : filter,
       expenseSumOverride: _expenseSum,
+      transactionCount: _transactionCount,
       chronological: mode == TxListMode.day,
     );
   }

@@ -302,6 +302,7 @@ void main() {
 
     await controller.setMode(TxListMode.month);
     expect(controller.snapshot.items, hasLength(50));
+    expect(controller.snapshot.transactionCount, 125);
     expect(controller.snapshot.expenseSum, 125000);
     expect(controller.hasMore, isTrue);
 

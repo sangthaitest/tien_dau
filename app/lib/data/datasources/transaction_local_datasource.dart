@@ -62,6 +62,7 @@ class TransactionLocalDataSource {
       final pageRows = hasMore ? rows.take(spec.limit) : rows;
 
       var expenseSum = 0;
+      var totalCount = 0;
       if (spec.includeExpenseSum) {
         final expenseFilter = _buildFilter(
           TransactionQuerySpec(
@@ -72,17 +73,19 @@ class TransactionLocalDataSource {
           ),
         );
         final sumRows = await _db.rawQuery('''
-SELECT COALESCE(SUM(amount), 0) AS total
+SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count
 FROM ${TransactionMapper.table}
 WHERE ${expenseFilter.clause}
 ''', expenseFilter.args);
         expenseSum = (sumRows.first['total'] as num?)?.toInt() ?? 0;
+        totalCount = (sumRows.first['count'] as num?)?.toInt() ?? 0;
       }
 
       return TransactionPage(
         items: pageRows.map(TransactionMapper.fromMap).toList(growable: false),
         expenseSum: expenseSum,
         hasMore: hasMore,
+        totalCount: totalCount,
       );
     } catch (e, st) {
       Error.throwWithStackTrace(

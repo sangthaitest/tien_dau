@@ -92,6 +92,7 @@ class MemoryTransactionRepository implements TransactionRepository {
         items: items,
         expenseSum: expenseSum,
         hasMore: end < filtered.length,
+        totalCount: filtered.length,
       ),
     );
   }

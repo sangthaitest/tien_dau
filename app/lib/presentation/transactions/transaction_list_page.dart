@@ -373,7 +373,7 @@ class _DaySummary extends StatelessWidget {
       child: _SpendSummaryCard(
         label: 'CHI TIÊU NGÀY ${formatDayMonth(controller.selectedDay)}',
         amount: controller.snapshot.expenseSum,
-        count: controller.snapshot.items.length,
+        count: controller.snapshot.transactionCount,
       ),
     );
   }
@@ -393,7 +393,7 @@ class _MonthSummary extends StatelessWidget {
         label:
             'CHI TIÊU THÁNG ${month.month.toString().padLeft(2, '0')}/${month.year}',
         amount: controller.snapshot.expenseSum,
-        count: controller.snapshot.items.length,
+        count: controller.snapshot.transactionCount,
       ),
     );
   }

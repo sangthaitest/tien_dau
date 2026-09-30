@@ -59,11 +59,13 @@ class TransactionListSnapshot {
     required this.expenseSum,
     required this.groups,
     required this.filter,
+    this.transactionCount = 0,
   });
 
   final int expenseSum;
   final List<TransactionDayGroup> groups;
   final TransactionListFilter filter;
+  final int transactionCount;
 
   List<Transaction> get items => [for (final group in groups) ...group.items];
 
@@ -80,6 +82,7 @@ class TransactionListQuery {
     required TransactionListFilter filter,
     DateTime? viewMonth,
     int? expenseSumOverride,
+    int? transactionCount,
     bool chronological = false,
   }) {
     final month = monthStart(viewMonth ?? now);
@@ -144,6 +147,7 @@ class TransactionListQuery {
       expenseSum: expenseSum,
       groups: withTotals,
       filter: filter,
+      transactionCount: transactionCount ?? list.length,
     );
   }
 
