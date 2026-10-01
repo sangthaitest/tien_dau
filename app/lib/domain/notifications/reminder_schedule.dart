@@ -55,6 +55,10 @@ String formatReminderClock(int hour, int minute) {
   return '$h:$m';
 }
 
+String formatDailyReminder(int hour, int minute) {
+  return '${formatReminderClock(hour, minute)} · Mỗi ngày';
+}
+
 String formatWeeklyReminder(int weekday, int hour, int minute) {
   final day =
       reminderWeekdayLabels[normalizeReminderWeekday(weekday)] ?? 'Chủ nhật';

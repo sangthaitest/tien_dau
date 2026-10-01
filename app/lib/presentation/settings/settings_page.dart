@@ -121,16 +121,13 @@ class SettingsPage extends StatelessWidget {
               _ReminderTile(
                 icon: Icons.edit_note_outlined,
                 title: 'Nhắc ghi giao dịch',
-                subtitle: 'Nhắc bạn ghi lại giao dịch trong ngày',
                 enabled: settings.transactionReminderEnabled,
                 toggleKey: const Key('toggle-transaction-reminder'),
                 scheduleKey: const Key('schedule-transaction-reminder'),
-                scheduleLabel: 'Thời gian',
-                scheduleValue: formatReminderClock(
+                scheduleValue: formatDailyReminder(
                   settings.transactionReminderHour,
                   settings.transactionReminderMinute,
                 ),
-                cadence: 'Mỗi ngày',
                 onChanged: (value) => _setReminder(
                   context,
                   controller,
@@ -141,16 +138,14 @@ class SettingsPage extends StatelessWidget {
               _ReminderTile(
                 icon: Icons.event_note_outlined,
                 title: 'Tổng kết tài chính',
-                subtitle: 'Nhắc xem lại tình hình tài chính',
                 enabled: settings.financialSummaryEnabled,
                 toggleKey: const Key('toggle-financial-summary'),
                 scheduleKey: const Key('schedule-financial-summary'),
-                scheduleLabel: formatWeeklyReminder(
+                scheduleValue: formatWeeklyReminder(
                   settings.financialSummaryWeekday,
                   settings.financialSummaryHour,
                   settings.financialSummaryMinute,
                 ),
-                cadence: 'Mỗi tuần',
                 onChanged: (value) => _setReminder(
                   context,
                   controller,
@@ -205,12 +200,6 @@ class SettingsPage extends StatelessWidget {
                   onChanged: (value) => controller?.setDarkMode(value),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          _SettingsGroup(
-            title: 'Về ứng dụng',
-            children: [
               _SettingsRow(
                 key: const Key('settings-version'),
                 icon: Icons.info_outline,
@@ -339,33 +328,30 @@ class _ReminderTile extends StatelessWidget {
   const _ReminderTile({
     required this.icon,
     required this.title,
-    required this.subtitle,
     required this.enabled,
     required this.toggleKey,
     required this.scheduleKey,
-    required this.scheduleLabel,
-    required this.cadence,
+    required this.scheduleValue,
     required this.onChanged,
     required this.onEdit,
-    this.scheduleValue,
   });
 
   final IconData icon;
   final String title;
-  final String subtitle;
   final bool enabled;
   final Key toggleKey;
   final Key scheduleKey;
-  final String scheduleLabel;
-  final String? scheduleValue;
-  final String cadence;
+  final String scheduleValue;
   final ValueChanged<bool> onChanged;
   final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
+    final scheduleColor = enabled
+        ? AppColors.textSecondary
+        : AppColors.textTertiary;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+      padding: const EdgeInsets.fromLTRB(16, 10, 12, 6),
       child: Column(
         children: [
           Row(
@@ -381,84 +367,49 @@ class _ReminderTile extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: AppColors.text,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: AppColors.text,
+                  ),
                 ),
               ),
               _Toggle(key: toggleKey, on: enabled, onChanged: onChanged),
             ],
           ),
-          if (enabled) ...[
-            const SizedBox(height: 8),
-            InkWell(
-              key: scheduleKey,
-              onTap: onEdit,
-              borderRadius: BorderRadius.circular(12),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 48),
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 54, right: 4),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              scheduleLabel,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.text,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              cadence,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
+          InkWell(
+            key: scheduleKey,
+            onTap: enabled ? onEdit : null,
+            borderRadius: BorderRadius.circular(12),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 54, right: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        scheduleValue,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: scheduleColor,
                         ),
                       ),
-                      if (scheduleValue != null)
-                        Text(
-                          scheduleValue!,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      Icon(Icons.chevron_right, color: AppColors.textTertiary),
-                    ],
-                  ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      color: enabled
+                          ? AppColors.textTertiary
+                          : AppColors.textTertiary.withValues(alpha: 0.55),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -559,15 +510,6 @@ class _ProfileCard extends StatelessWidget {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Hồ sơ',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
                       ),
                     ),
                   ],

@@ -28,6 +28,7 @@ void main() {
 
   test('labels match the settings copy', () {
     expect(formatReminderClock(21, 0), '21:00');
+    expect(formatDailyReminder(21, 0), '21:00 · Mỗi ngày');
     expect(formatWeeklyReminder(DateTime.sunday, 20, 0), 'Chủ nhật · 20:00');
     expect(NotificationIds.transactionReminder, 2101);
     expect(NotificationIds.financialSummary, 2102);

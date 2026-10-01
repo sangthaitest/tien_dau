@@ -100,12 +100,19 @@ void main() {
     await tester.pump();
 
     expect(find.text('Cài đặt'), findsWidgets);
-    expect(find.text('Hồ sơ'), findsOneWidget);
+    expect(find.text('Minh Khuê'), findsOneWidget);
+    expect(find.text('minhkhue@email.com'), findsOneWidget);
+    expect(find.text('Hồ sơ'), findsNothing);
     expect(find.text('TIỀN CỦA TÔI'), findsOneWidget);
     expect(find.text('BẢO MẬT & DỮ LIỆU'), findsOneWidget);
     expect(find.text('THÔNG BÁO'), findsOneWidget);
     expect(find.text('Nhắc ghi giao dịch'), findsOneWidget);
     expect(find.text('Tổng kết tài chính'), findsOneWidget);
+    expect(find.text('21:00 · Mỗi ngày'), findsOneWidget);
+    expect(find.text('Chủ nhật · 20:00'), findsOneWidget);
+    expect(find.text('Nhắc bạn ghi lại giao dịch trong ngày'), findsNothing);
+    expect(find.text('Nhắc xem lại tình hình tài chính'), findsNothing);
+    expect(find.text('Mỗi tuần'), findsNothing);
     expect(find.text('Tài chính'), findsOneWidget);
     expect(find.text('Tiền tệ'), findsOneWidget);
     expect(find.text('VND (₫)'), findsOneWidget);
@@ -133,7 +140,7 @@ void main() {
     expect(find.text('Xem lại cách sử dụng Tiền đâu nè'), findsOneWidget);
     expect(find.text('Hiển thị số tiền'), findsOneWidget);
     expect(find.text('Giao diện tối'), findsOneWidget);
-    expect(find.text('VỀ ỨNG DỤNG'), findsOneWidget);
+    expect(find.text('VỀ ỨNG DỤNG'), findsNothing);
     expect(find.text('Phiên bản'), findsOneWidget);
     expect(find.text('v1.0.0'), findsOneWidget);
 
@@ -144,7 +151,7 @@ void main() {
     expect(find.text('MVP dùng VND (₫).'), findsOneWidget);
   });
 
-  testWidgets('reminder schedules stay hidden until each switch is on', (
+  testWidgets('reminder schedules stay visible and locked while off', (
     tester,
   ) async {
     _phone(tester);
@@ -168,19 +175,37 @@ void main() {
     await tester.tap(find.byKey(const Key('nav-settings')));
     await tester.pump();
 
-    expect(find.text('21:00'), findsNothing);
-    expect(find.text('Mỗi ngày'), findsNothing);
-    expect(find.text('Chủ nhật · 20:00'), findsNothing);
-    expect(find.text('Mỗi tuần'), findsNothing);
+    expect(find.text('21:00 · Mỗi ngày'), findsOneWidget);
+    expect(find.text('Chủ nhật · 20:00'), findsOneWidget);
+    expect(find.text('Thời gian'), findsNothing);
+    expect(
+      tester
+          .widget<InkWell>(
+            find.byKey(const Key('schedule-transaction-reminder')),
+          )
+          .onTap,
+      isNull,
+    );
+    expect(
+      tester
+          .widget<InkWell>(find.byKey(const Key('schedule-financial-summary')))
+          .onTap,
+      isNull,
+    );
 
     await tester.tap(find.byKey(const Key('toggle-transaction-reminder')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(repo.stored.transactionReminderEnabled, isTrue);
-    expect(find.text('Thời gian'), findsOneWidget);
-    expect(find.text('21:00'), findsOneWidget);
-    expect(find.text('Mỗi ngày'), findsOneWidget);
-    expect(find.text('Chủ nhật · 20:00'), findsNothing);
+    expect(find.text('21:00 · Mỗi ngày'), findsOneWidget);
+    expect(
+      tester
+          .widget<InkWell>(
+            find.byKey(const Key('schedule-transaction-reminder')),
+          )
+          .onTap,
+      isNotNull,
+    );
 
     await _revealSettingsKey(tester, const Key('toggle-financial-summary'));
     await tester.tap(find.byKey(const Key('toggle-financial-summary')));
@@ -188,7 +213,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
     expect(repo.stored.financialSummaryEnabled, isTrue);
     expect(find.text('Chủ nhật · 20:00'), findsOneWidget);
-    expect(find.text('Mỗi tuần'), findsOneWidget);
+    expect(
+      tester
+          .widget<InkWell>(find.byKey(const Key('schedule-financial-summary')))
+          .onTap,
+      isNotNull,
+    );
 
     await tester.scrollUntilVisible(
       find.byKey(const Key('toggle-transaction-reminder')),
@@ -201,8 +231,17 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     expect(repo.stored.transactionReminderEnabled, isFalse);
-    expect(find.text('21:00'), findsNothing);
-    expect(find.text('Mỗi ngày'), findsNothing);
+    expect(repo.stored.transactionReminderHour, 21);
+    expect(repo.stored.transactionReminderMinute, 0);
+    expect(find.text('21:00 · Mỗi ngày'), findsOneWidget);
+    expect(
+      tester
+          .widget<InkWell>(
+            find.byKey(const Key('schedule-transaction-reminder')),
+          )
+          .onTap,
+      isNull,
+    );
   });
 
   testWidgets('denied notification permission keeps the reminder off', (
@@ -235,7 +274,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(repo.stored.transactionReminderEnabled, isFalse);
-    expect(find.text('21:00'), findsNothing);
+    expect(find.text('21:00 · Mỗi ngày'), findsOneWidget);
     expect(find.text('Chưa cấp quyền thông báo.'), findsOneWidget);
     expect(scheduler.requestCount, 1);
 
