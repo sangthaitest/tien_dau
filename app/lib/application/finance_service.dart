@@ -137,9 +137,7 @@ class FinanceService {
         var expenseTotal = 0;
         var extraIncome = 0;
         var salaryAmount = 0;
-        var sawSalaryEntry = false;
         for (final rule in monthRules) {
-          if (rule.isSalary) sawSalaryEntry = true;
           if (!rule.isActive) continue;
           switch (rule.kind) {
             case RecurringKind.expense:
@@ -151,11 +149,6 @@ class FinanceService {
                 extraIncome += rule.amount;
               }
           }
-        }
-        if (!sawSalaryEntry && !selected.isBefore(monthStart(_clock()))) {
-          final salary = await _finance.getSalary();
-          if (salary is Err<MonthlySalary>) return Err(salary.failure);
-          salaryAmount = (salary as Ok<MonthlySalary>).value.amount;
         }
         final incomeTotal = salaryAmount + extraIncome;
         final spendable = incomeTotal - expenseTotal;
@@ -306,18 +299,13 @@ class FinanceService {
       if (draft.kind != RecurringKind.income) {
         return const Err(ValidationFailure('Lương phải là thu nhập'));
       }
-      return _upsertSalaryFromDraft(
-        draft,
-        selected,
-        previousStart: base.startDate,
-      );
+      return _upsertSalaryFromDraft(draft, selected);
     }
     if (_isSalaryDraft(draft)) {
       return _upsertSalaryFromDraft(
         draft,
         selected,
         replaceId: existing.id,
-        previousStart: base.startDate,
       );
     }
     final updated = RecurringTransaction(
@@ -333,11 +321,11 @@ class FinanceService {
           : null,
       paymentSourceId: _optionalText(draft.paymentSourceId),
       note: _optionalText(draft.note),
-      startDate: _startDateForDay(draft.dayOfMonth, selected, base.startDate),
+      startDate: _startDateForDay(draft.dayOfMonth, selected),
       isActive: draft.isActive,
       createdAt: base.createdAt,
       updatedAt: _clock().toUtc(),
-      endDate: base.endDate,
+      endDate: _endDateCovering(base.endDate, selected),
     );
     final saved = await _recurring.update(updated);
     if (saved is Err<RecurringTransaction>) return saved;
@@ -368,36 +356,29 @@ class FinanceService {
   }
 
   Future<Result<void>> deleteRecurring(String id, {DateTime? month}) async {
-    final selected = monthStart(month ?? _clock());
-    final removed = await _recurring.deleteMonthEntry(
-      templateId: id,
-      monthKey: monthKey(selected),
-    );
+    final removed = await _recurring.deleteMonthEntries(id);
     if (removed is Err<void>) return removed;
     final deleted = await _recurring.delete(id);
     switch (deleted) {
-      case Err(:final failure):
+      case Err(:final failure) when failure is! NotFoundFailure:
         return Err(failure);
-      case Ok():
-        if (id == RecurringTransaction.salaryId) {
-          final cleared = await _finance.saveSalary(
-            const MonthlySalary(amount: 0),
-          );
-          switch (cleared) {
-            case Err(:final failure):
-              return Err(failure);
-            case Ok():
-          }
-        }
-        return deleted;
+      case Err() || Ok():
     }
+    if (id == RecurringTransaction.salaryId) {
+      final cleared = await _finance.saveSalary(const MonthlySalary(amount: 0));
+      switch (cleared) {
+        case Err(:final failure):
+          return Err(failure);
+        case Ok():
+      }
+    }
+    return const Ok(null);
   }
 
   Future<Result<RecurringTransaction>> _upsertSalaryFromDraft(
     RecurringDraft draft,
     DateTime month, {
     String? replaceId,
-    DateTime? previousStart,
   }) async {
     final found = await _recurring.findById(RecurringTransaction.salaryId);
     RecurringTransaction? previous;
@@ -418,11 +399,7 @@ class FinanceService {
       direction: RecurringDirection.add,
       paymentSourceId: _optionalText(draft.paymentSourceId),
       note: _optionalText(draft.note),
-      startDate: _startDateForDay(
-        draft.dayOfMonth,
-        month,
-        previous?.startDate ?? previousStart,
-      ),
+      startDate: _startDateForDay(draft.dayOfMonth, month),
       endDate: previous?.endDate,
       isActive: draft.isActive,
       createdAt: previous?.createdAt ?? now,
@@ -478,29 +455,50 @@ class FinanceService {
         draft.name.trim().toLowerCase() == 'lương';
   }
 
-  /// Copies templates into [month] when that month is current or future and
-  /// does not already have a snapshot. Past months keep only stored rows.
+  /// Keeps each recurring item and salary in the month it was created.
+  ///
+  /// Opening the current month removes rows carried forward from an earlier
+  /// start month. A later month stays empty until the user creates it again.
   Future<Result<void>> _ensureMonthSnapshots(DateTime month) async {
     final selected = monthStart(month);
-    if (selected.isBefore(monthStart(_clock()))) return const Ok(null);
+    final key = monthKey(selected);
     final templates = await _recurring.listAll();
     if (templates is Err<List<RecurringTransaction>>) {
       return Err(templates.failure);
     }
-    final existing = await _recurring.listMonthEntries(monthKey(selected));
+    final existing = await _recurring.listMonthEntries(key);
     if (existing is Err<List<RecurringMonthEntry>>) {
       return Err(existing.failure);
     }
+    final rules = (templates as Ok<List<RecurringTransaction>>).value;
+    final byId = {for (final rule in rules) rule.id: rule};
+    final removed = <String>{};
+    if (selected == monthStart(_clock())) {
+      for (final entry in (existing as Ok<List<RecurringMonthEntry>>).value) {
+        final rule = byId[entry.templateId];
+        if (rule == null) continue;
+        final start = DateTime(rule.startDate.year, rule.startDate.month);
+        if (!start.isBefore(selected)) continue;
+        final deleted = await _recurring.deleteMonthEntry(
+          templateId: entry.templateId,
+          monthKey: key,
+        );
+        if (deleted is Err<void>) return deleted;
+        removed.add(entry.templateId);
+      }
+    }
     final present = {
       for (final entry in (existing as Ok<List<RecurringMonthEntry>>).value)
-        entry.templateId,
+        if (!removed.contains(entry.templateId)) entry.templateId,
     };
-    for (final rule in (templates as Ok<List<RecurringTransaction>>).value) {
+    for (final rule in rules) {
       if (present.contains(rule.id)) continue;
       if (rule.frequency != RecurringFrequency.monthly) continue;
+      final start = DateTime(rule.startDate.year, rule.startDate.month);
+      if (start != selected) continue;
       if (!rule.appliesToMonth(selected)) continue;
       final saved = await _recurring.saveMonthEntry(
-        RecurringMonthEntry.fromTemplate(rule, monthKey(selected)),
+        RecurringMonthEntry.fromTemplate(rule, key),
       );
       if (saved is Err<void>) return saved;
     }
@@ -513,6 +511,8 @@ class FinanceService {
     if (found is Err<RecurringTransaction?>) return Err(found.failure);
     final now = _clock().toUtc();
     final existing = (found as Ok<RecurringTransaction?>).value;
+    final startDay = existing?.dayOfMonth ?? 1;
+    final lastDay = DateTime(selected.year, selected.month + 1, 0).day;
     final rule = existing == null
         ? RecurringTransaction(
             id: RecurringTransaction.salaryId,
@@ -527,7 +527,16 @@ class FinanceService {
             createdAt: now,
             updatedAt: now,
           )
-        : existing.copyWith(amount: amount, isActive: true, updatedAt: now);
+        : existing.copyWith(
+            amount: amount,
+            isActive: true,
+            updatedAt: now,
+            startDate: DateTime(
+              selected.year,
+              selected.month,
+              startDay.clamp(1, lastDay),
+            ),
+          );
     final replaced = await _recurring.replaceSalary(rule);
     if (replaced is Err<RecurringTransaction>) return Err(replaced.failure);
     return _saveMonthFromRule(rule, selected);
@@ -552,6 +561,15 @@ class FinanceService {
       case Ok(:final value):
         return Ok(value ?? fallback);
     }
+  }
+
+  /// Drops an end date that would hide [month]. The edited month must stay visible.
+  DateTime? _endDateCovering(DateTime? endDate, DateTime month) {
+    if (endDate == null) return null;
+    final end = DateTime(endDate.year, endDate.month);
+    final selected = DateTime(month.year, month.month);
+    if (end.isBefore(selected)) return null;
+    return endDate;
   }
 
   /// Keeps the template's start month and stores [day] on that date.

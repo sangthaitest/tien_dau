@@ -29,10 +29,12 @@ class FinanceController extends ChangeNotifier {
     goals: const [],
   );
 
-  Future<void> load() async {
-    loading = true;
-    error = null;
-    notifyListeners();
+  Future<void> load({bool silent = false}) async {
+    if (!silent) {
+      loading = true;
+      error = null;
+      notifyListeners();
+    }
     final result = await _service.load(month: _month?.call());
     switch (result) {
       case Ok(:final value):
@@ -91,7 +93,7 @@ class FinanceController extends ChangeNotifier {
 
   Future<Result<void>> createRecurring(RecurringDraft draft) async {
     final result = await _service.createRecurring(draft, month: _month?.call());
-    if (result.isOk) await load();
+    if (result.isOk) await load(silent: true);
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }
 
@@ -104,7 +106,7 @@ class FinanceController extends ChangeNotifier {
       draft,
       month: _month?.call(),
     );
-    if (result.isOk) await load();
+    if (result.isOk) await load(silent: true);
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }
 
@@ -117,13 +119,13 @@ class FinanceController extends ChangeNotifier {
       isActive,
       month: _month?.call(),
     );
-    if (result.isOk) await load();
+    if (result.isOk) await load(silent: true);
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }
 
   Future<Result<void>> deleteRecurring(String id) async {
     final result = await _service.deleteRecurring(id, month: _month?.call());
-    if (result.isOk) await load();
+    if (result.isOk) await load(silent: true);
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }
 }

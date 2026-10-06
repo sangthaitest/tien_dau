@@ -120,4 +120,14 @@ class RecurringTransactionRepositoryImpl
       return Err(e);
     }
   }
+
+  @override
+  Future<Result<void>> deleteMonthEntries(String templateId) async {
+    try {
+      await _local.deleteMonthEntries(templateId);
+      return const Ok(null);
+    } on PersistenceFailure catch (e) {
+      return Err(e);
+    }
+  }
 }

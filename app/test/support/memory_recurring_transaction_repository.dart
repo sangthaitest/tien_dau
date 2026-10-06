@@ -94,4 +94,10 @@ class MemoryRecurringTransactionRepository
     );
     return const Ok(null);
   }
+
+  @override
+  Future<Result<void>> deleteMonthEntries(String templateId) async {
+    _months.removeWhere((_, entry) => entry.templateId == templateId);
+    return const Ok(null);
+  }
 }

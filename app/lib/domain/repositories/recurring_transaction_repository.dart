@@ -26,4 +26,7 @@ abstract class RecurringTransactionRepository {
     required String templateId,
     required String monthKey,
   });
+
+  /// Removes every month snapshot for [templateId]. Does not delete the template.
+  Future<Result<void>> deleteMonthEntries(String templateId);
 }

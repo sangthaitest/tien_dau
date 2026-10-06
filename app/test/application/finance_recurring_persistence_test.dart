@@ -16,6 +16,7 @@ import 'package:tien_day/data/repositories/recurring_transaction_repository_impl
 import 'package:tien_day/data/repositories/transaction_repository_impl.dart';
 import 'package:tien_day/domain/entities/new_transaction.dart';
 import 'package:tien_day/domain/entities/payment_method_kind.dart';
+import 'package:tien_day/domain/entities/recurring_month_entry.dart';
 import 'package:tien_day/domain/entities/recurring_transaction.dart';
 import 'package:tien_day/domain/entities/transaction_type.dart';
 import 'package:tien_day/domain/failures/result.dart';
@@ -38,7 +39,9 @@ void main() {
   Future<({AppDatabase database, FinanceService finance})> openStack(
     String path, {
     String Function()? idFactory,
+    DateTime? clock,
   }) async {
+    final now = clock ?? DateTime(2026, 8, 18, 10);
     final database = await AppDatabase.openPath(path);
     final recurringDs = RecurringTransactionsLocalDataSource(database);
     var ids = 0;
@@ -52,12 +55,12 @@ void main() {
         TransactionRepositoryImpl(
           local: TransactionLocalDataSource(database),
           idFactory: () => 'tx-${ids++}',
-          clock: () => DateTime.utc(2026, 8, 18, 10),
+          clock: () => now.toUtc(),
         ),
       ),
       RecurringTransactionRepositoryImpl(recurringDs),
       idFactory: idFactory ?? () => 'rent',
-      clock: () => DateTime(2026, 8, 18, 10),
+      clock: () => now,
     );
     return (database: database, finance: finance);
   }
@@ -308,49 +311,61 @@ void main() {
     expect(((await stack.finance.load()) as Ok).value.salary, 0);
   });
 
-  test('editing September leaves the August snapshot unchanged', () async {
+  test('a new month drops carried recurring items and salary', () async {
     final dir = await Directory.systemTemp.createTemp('tien_day_month_entry');
     addTearDown(() => dir.delete(recursive: true));
     final path = p.join(dir.path, 'tien_day.db');
-    final stack = await openStack(path);
-    addTearDown(stack.database.close);
-
+    var stack = await openStack(path);
     expect((await stack.finance.createRecurring(rentDraft())).isOk, isTrue);
-    final augustRule =
+    expect((await stack.finance.saveSalary(20000000)).isOk, isTrue);
+    final augustRent =
         ((await stack.finance.load(month: DateTime(2026, 8))) as Ok)
             .value
             .recurringItems
             .single;
+    final recurring = RecurringTransactionRepositoryImpl(
+      RecurringTransactionsLocalDataSource(stack.database),
+    );
+    final salary =
+        ((await recurring.findById(RecurringTransaction.salaryId)) as Ok)
+            .value!;
     expect(
-      (await stack.finance.updateRecurring(
-        augustRule,
-        rentDraft(amount: 7000000),
-        month: DateTime(2026, 9),
+      (await recurring.saveMonthEntry(
+        RecurringMonthEntry.fromTemplate(augustRent, '2026-09'),
       )).isOk,
       isTrue,
     );
-    final october =
-        ((await stack.finance.load(month: DateTime(2026, 10))) as Ok).value;
+    expect(
+      (await recurring.saveMonthEntry(
+        RecurringMonthEntry.fromTemplate(salary, '2026-09'),
+      )).isOk,
+      isTrue,
+    );
+    await stack.database.close();
+
+    stack = await openStack(path, clock: DateTime(2026, 9, 2, 9));
+    addTearDown(stack.database.close);
+    final september = ((await stack.finance.load()) as Ok).value;
+    expect(september.recurringItems, isEmpty);
+    expect(september.salary, 0);
 
     final rows = await stack.database.raw.query(
       recurringMonthEntriesTable,
       columns: ['month_key', 'amount', 'template_id'],
-      orderBy: 'month_key ASC',
+      orderBy: 'month_key ASC, template_id ASC',
     );
     expect(rows, [
+      {
+        'month_key': '2026-08',
+        'amount': 20000000,
+        'template_id': 'recurring_salary',
+      },
       {'month_key': '2026-08', 'amount': 5000000, 'template_id': 'rent'},
-      {'month_key': '2026-09', 'amount': 7000000, 'template_id': 'rent'},
-      {'month_key': '2026-10', 'amount': 7000000, 'template_id': 'rent'},
     ]);
     expect(
-      ((await stack.finance.load(month: DateTime(2026, 8))) as Ok)
-          .value
-          .recurringItems
-          .single
-          .amount,
-      5000000,
+      ((await stack.finance.load(month: DateTime(2026, 8))) as Ok).value.salary,
+      20000000,
     );
-    expect(october.recurringItems.single.amount, 7000000);
     expect(await stack.database.raw.query('transactions'), isEmpty);
   });
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../application/finance_service.dart';
 import '../../domain/amount/amount_input.dart';
@@ -60,9 +59,14 @@ class RecurringWorkspace {
       : Key('finance-upcoming-managed-$id');
 
   Future<void> openManager(BuildContext context) {
+    // Keep edit and delete on the overlay. The first save reloads Finance
+    // and the page context under this sheet is gone after that.
+    final host = Navigator.of(context, rootNavigator: true).overlay!.context;
     return showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
+      enableDrag: false,
       backgroundColor: AppColors.card,
       clipBehavior: Clip.antiAlias,
       shape: const RoundedRectangleBorder(
@@ -70,9 +74,9 @@ class RecurringWorkspace {
       ),
       builder: (sheetContext) => _RecurringManager(
         workspace: this,
-        onAdd: () => openEditor(context),
-        onEdit: (rule) => openEditor(context, rule: rule),
-        onDelete: (rule) => delete(context, rule),
+        onAdd: () => openEditor(host),
+        onEdit: (rule) => openEditor(host, rule: rule),
+        onDelete: (rule) => delete(host, rule),
       ),
     );
   }
@@ -83,6 +87,7 @@ class RecurringWorkspace {
   }) async {
     final draft = await showModalBottomSheet<RecurringDraft>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: AppColors.card,
       clipBehavior: Clip.antiAlias,
@@ -112,6 +117,7 @@ class RecurringWorkspace {
   Future<void> delete(BuildContext context, RecurringTransaction rule) async {
     final ok = await showDialog<bool>(
       context: context,
+      useRootNavigator: true,
       builder: (context) => AlertDialog(
         title: Text(isIncome ? 'Xóa khoản thu nhập?' : 'Xóa khoản định kỳ?'),
         content: Text('Bạn có chắc muốn xóa “${rule.name}”?'),
@@ -369,7 +375,10 @@ class RecurringSection extends StatelessWidget {
                         key: Key('finance-upcoming-edit-${item.id}'),
                         onPressed: () {
                           Navigator.pop(ctx);
-                          _expenses.openEditor(context, rule: item);
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!context.mounted) return;
+                            _expenses.openEditor(context, rule: item);
+                          });
                         },
                         child: const Text('Sửa'),
                       ),
@@ -380,7 +389,10 @@ class RecurringSection extends StatelessWidget {
                         key: Key('finance-upcoming-delete-${item.id}'),
                         onPressed: () {
                           Navigator.pop(ctx);
-                          _expenses.delete(context, item);
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!context.mounted) return;
+                            _expenses.delete(context, item);
+                          });
                         },
                         child: Text(
                           'Xóa',
@@ -553,47 +565,69 @@ class _RecurringManager extends StatelessWidget {
                 listenable: controller,
                 builder: (context, _) {
                   final list = workspace.managed;
-                  if (list.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.fromLTRB(20, 24, 20, 24),
-                      child: Text(
-                        'Chưa có khoản. Nhấn + để thêm.',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                    );
-                  }
                   return ListView.builder(
                     key: workspace.manageSheetKey,
+                    primary: false,
                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-                    itemCount: list.length,
+                    itemCount: list.isEmpty ? 1 : list.length,
                     itemBuilder: (context, index) {
+                      if (list.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.fromLTRB(0, 20, 0, 24),
+                          child: Text(
+                            'Chưa có khoản. Nhấn + để thêm.',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        );
+                      }
                       final item = list[index];
-                      return ListTile(
+                      return Padding(
                         key: workspace.managedItemKey(item.id),
-                        contentPadding: EdgeInsets.zero,
-                        leading: _RecurringIcon(rule: item),
-                        title: Text(item.name),
-                        subtitle: Text(
-                          '${item.dueLabelForMonth(controller.snapshot.month)} · ${displayVnd(item.amount, hidden: hidden)}',
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Row(
                           children: [
+                            _RecurringIcon(rule: item),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${item.dueLabelForMonth(controller.snapshot.month)} · ${displayVnd(item.amount, hidden: hidden)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                             IconButton(
                               key: Key('finance-upcoming-edit-${item.id}'),
                               tooltip: 'Sửa',
-                              visualDensity: VisualDensity.compact,
                               onPressed: () => onEdit(item),
-                              icon: const Icon(Icons.edit_outlined, size: 20),
+                              icon: const Icon(Icons.edit_outlined, size: 22),
                             ),
                             IconButton(
                               key: Key('finance-upcoming-delete-${item.id}'),
                               tooltip: 'Xóa',
-                              visualDensity: VisualDensity.compact,
                               onPressed: () => onDelete(item),
                               icon: Icon(
                                 Icons.delete_outline,
-                                size: 20,
+                                size: 22,
                                 color: AppColors.expense,
                               ),
                             ),
@@ -754,7 +788,6 @@ class _RecurringEditorSheetState extends State<_RecurringEditorSheet> {
                 key: const Key('upcoming-amount-input'),
                 controller: _amount,
                 keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 onChanged: _groupAmount,
               ),
               const SizedBox(height: 12),

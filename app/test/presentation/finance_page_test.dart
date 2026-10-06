@@ -501,6 +501,95 @@ void main() {
     expect(find.byKey(const Key('finance-upcoming-section')), findsOneWidget);
   });
 
+  testWidgets('the first recurring item can be edited and deleted', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    tester.view.viewInsets = FakeViewPadding.zero;
+    tester.view.padding = const FakeViewPadding(
+      left: 0,
+      top: 59,
+      right: 0,
+      bottom: 34,
+    );
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewInsets);
+    addTearDown(tester.view.resetPadding);
+
+    final clock = DateTime(2026, 10, 6, 11);
+    final service = TransactionService(MemoryTransactionRepository());
+    final home = HomeController(HomeQuery(service, clock: () => clock));
+    final harness = buildShell(
+      transactions: service,
+      home: home,
+      clock: () => clock,
+    );
+    await harness.access.setupPin('5820');
+    await harness.access.unlock('5820');
+    await tester.pumpWidget(MaterialApp(home: harness.shell));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const Key('nav-settings')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('settings-finance')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await tester.ensureVisible(
+      find.byKey(const Key('finance-upcoming-manage')),
+    );
+    await tester.tap(find.byKey(const Key('finance-upcoming-manage')));
+    await tester.pumpAndSettle();
+    expect(find.text('Chưa có khoản. Nhấn + để thêm.'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('finance-upcoming-add')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('upcoming-name-input')),
+      'Wifi',
+    );
+    await tester.enterText(
+      find.byKey(const Key('upcoming-amount-input')),
+      '1000000',
+    );
+    await tester.tap(find.byKey(const Key('upcoming-save')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.byKey(const Key('finance-upcoming-section')), findsOneWidget);
+    await tester.pumpAndSettle();
+    expect(find.text('Wifi'), findsWidgets);
+
+    final id = (await harness.recurring.listAll()).unwrapOrThrow().single.id;
+    final edit = find.byKey(Key('finance-upcoming-edit-$id'));
+    expect(edit, findsOneWidget);
+    final editBox = tester.renderObject(edit);
+    expect(
+      tester.hitTestOnBinding(tester.getCenter(edit)).path.any(
+        (entry) => entry.target == editBox,
+      ),
+      isTrue,
+    );
+    await tester.tap(edit);
+    await tester.pumpAndSettle();
+    expect(find.text('Sửa khoản định kỳ'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const Key('upcoming-name-input')),
+      'Internet',
+    );
+    await tester.tap(find.byKey(const Key('upcoming-save')));
+    await tester.pumpAndSettle();
+    expect(find.text('Internet'), findsWidgets);
+
+    await tester.tap(find.byKey(Key('finance-upcoming-delete-$id')));
+    await tester.pumpAndSettle();
+    expect(find.text('Xóa khoản định kỳ?'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('finance-upcoming-confirm-delete')));
+    await tester.pumpAndSettle();
+    expect(find.text('Internet'), findsNothing);
+    expect((await harness.recurring.listAll()).unwrapOrThrow(), isEmpty);
+  });
+
   testWidgets(
     'Thu nhập named Lương updates recurring_salary instead of minting',
     (tester) async {

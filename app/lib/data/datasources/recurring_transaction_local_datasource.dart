@@ -145,6 +145,21 @@ class RecurringTransactionsLocalDataSource {
     }
   }
 
+  Future<void> deleteMonthEntries(String templateId) async {
+    try {
+      await _db.delete(
+        recurringMonthEntriesTable,
+        where: 'template_id = ?',
+        whereArgs: [templateId],
+      );
+    } catch (e, st) {
+      Error.throwWithStackTrace(
+        PersistenceFailure('Failed to delete recurring month entries', cause: e),
+        st,
+      );
+    }
+  }
+
   Future<void> replaceSalary(RecurringTransaction row) async {
     if (row.id != recurringSalaryId) {
       throw const PersistenceFailure('Invalid salary id.');
