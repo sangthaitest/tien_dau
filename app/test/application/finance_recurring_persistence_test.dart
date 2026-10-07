@@ -146,7 +146,13 @@ void main() {
 
       expect(salaryRows, hasLength(1));
       expect(allRecurring.where((row) => row['name'] == 'Lương'), hasLength(1));
-      expect(salaryRows.single['amount'], 23000000);
+      expect(salaryRows.single['amount'], 20000000);
+      final augustSalary = await stack.database.raw.query(
+        recurringMonthEntriesTable,
+        where: 'template_id = ? AND month_key = ?',
+        whereArgs: [recurringSalaryId, '2026-08'],
+      );
+      expect(augustSalary.single['amount'], 23000000);
       expect(salaryRows.single['kind'], 'income');
       expect(salaryRows.single['direction'], 'add');
       expect(salaryRows.single['frequency'], 'monthly');
@@ -194,7 +200,11 @@ void main() {
       recurringTransactionsTable,
     );
     final transactions = await stack.database.raw.query('transactions');
-    expect(recurring.where((row) => row['id'] == 'rent'), isEmpty);
+    expect(recurring.where((row) => row['id'] == 'rent'), isNotEmpty);
+    expect(
+      ((await stack.finance.load()) as Ok).value.recurringItems,
+      isEmpty,
+    );
     expect(transactions, hasLength(1));
     expect(transactions.single['amount'], 45000);
   });
@@ -277,7 +287,8 @@ void main() {
       recurringTransactionsTable,
     );
     final transactions = await stack.database.raw.query('transactions');
-    expect(recurring.where((row) => row['id'] == 'bonus'), isEmpty);
+    expect(recurring.where((row) => row['id'] == 'bonus'), isNotEmpty);
+    expect(((await stack.finance.load()) as Ok).value.managedIncome, isEmpty);
     expect(transactions, hasLength(1));
     expect(transactions.single['amount'], 45000);
   });
@@ -305,9 +316,13 @@ void main() {
       where: 'key = ?',
       whereArgs: [salaryAmountPrefKey],
     );
-    expect(salaryRows, isEmpty);
+    expect(salaryRows, hasLength(1));
     expect(prefs, isEmpty);
     expect(((await stack.finance.load()) as Ok).value.salary, 0);
+    expect(
+      ((await stack.finance.load(month: DateTime(2026, 9))) as Ok).value.salary,
+      0,
+    );
   });
 
   test(
@@ -332,10 +347,8 @@ void main() {
       stack = await openStack(path, clock: DateTime(2026, 9, 2, 9));
       addTearDown(stack.database.close);
       final september = ((await stack.finance.load()) as Ok).value;
-      expect(september.recurringItems.single.name, 'Tiền nhà');
-      expect(september.recurringItems.single.dayOfMonth, 27);
-      expect(september.recurringItems.single.startDate, DateTime(2026, 9, 27));
-      expect(september.salary, 20000000);
+      expect(september.recurringItems, isEmpty);
+      expect(september.salary, 0);
 
       final after = await stack.database.raw.query(
         recurringTransactionsTable,

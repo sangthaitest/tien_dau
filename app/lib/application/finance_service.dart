@@ -117,13 +117,7 @@ class FinanceService {
         final pct = limit > 0
             ? ((used / limit) * 100).round().clamp(0, 100)
             : 0;
-        final templates = await _recurring.listAll();
-        if (templates is Err<List<RecurringTransaction>>) {
-          return Err(templates.failure);
-        }
         final monthRules = _rulesForView(
-          selected,
-          (templates as Ok<List<RecurringTransaction>>).value,
           (recurring as Ok<List<RecurringMonthEntry>>).value,
         );
         final managedExpense = _sorted([
@@ -308,30 +302,16 @@ class FinanceService {
     if (_isSalaryDraft(draft)) {
       return _upsertSalaryFromDraft(draft, selected, replaceId: existing.id);
     }
-    final updated = RecurringTransaction(
+    final updated = _monthRule(
       id: existing.id,
-      name: draft.name.trim(),
-      kind: draft.kind,
-      amount: draft.amount,
-      frequency: RecurringFrequency.monthly,
-      intervalCount: 1,
-      direction: draft.kind.derivedDirection,
-      categoryId: draft.kind == RecurringKind.expense
-          ? _optionalText(draft.categoryId)
-          : null,
-      paymentSourceId: _optionalText(draft.paymentSourceId),
-      note: _optionalText(draft.note),
-      startDate: _startDateForDay(draft.dayOfMonth, selected),
-      isActive: draft.isActive,
+      draft: draft,
+      month: selected,
       createdAt: base.createdAt,
-      updatedAt: _clock().toUtc(),
-      endDate: _endDateCovering(base.endDate, selected),
+      endDate: base.endDate,
     );
-    final saved = await _recurring.update(updated);
-    if (saved is Err<RecurringTransaction>) return saved;
     final entry = await _saveMonthFromRule(updated, selected);
     if (entry is Err<void>) return Err(entry.failure);
-    return saved;
+    return Ok(updated);
   }
 
   Future<Result<RecurringTransaction>> setRecurringActive(
@@ -340,39 +320,24 @@ class FinanceService {
     DateTime? month,
   }) async {
     final selected = monthStart(month ?? _clock());
-    final template = await _templateOr(existing);
-    if (template is Err<RecurringTransaction>) return template;
-    final updated = (template as Ok<RecurringTransaction>).value.copyWith(
+    final updated = existing.copyWith(
       isActive: isActive,
       updatedAt: _clock().toUtc(),
     );
-    final saved = existing.isSalary
-        ? await _recurring.replaceSalary(updated)
-        : await _recurring.update(updated);
-    if (saved is Err<RecurringTransaction>) return saved;
     final entry = await _saveMonthFromRule(updated, selected);
     if (entry is Err<void>) return Err(entry.failure);
-    return saved;
+    return Ok(updated);
   }
 
   Future<Result<void>> deleteRecurring(String id, {DateTime? month}) async {
-    final removed = await _recurring.deleteMonthEntries(id);
-    if (removed is Err<void>) return removed;
-    final deleted = await _recurring.delete(id);
-    switch (deleted) {
-      case Err(:final failure) when failure is! NotFoundFailure:
-        return Err(failure);
-      case Err() || Ok():
-    }
-    if (id == RecurringTransaction.salaryId) {
-      final cleared = await _finance.saveSalary(const MonthlySalary(amount: 0));
-      switch (cleared) {
-        case Err(:final failure):
-          return Err(failure);
-        case Ok():
-      }
-    }
-    return const Ok(null);
+    final selected = monthStart(month ?? _clock());
+    return _recurring.saveMonthEntry(
+      RecurringMonthEntry.omitted(
+        templateId: id,
+        monthKey: monthKey(selected),
+        at: _clock().toUtc(),
+      ),
+    );
   }
 
   Future<Result<RecurringTransaction>> _upsertSalaryFromDraft(
@@ -389,37 +354,34 @@ class FinanceService {
         previous = value;
     }
     final now = _clock().toUtc();
-    final rule = RecurringTransaction(
+    final rule = _monthRule(
       id: RecurringTransaction.salaryId,
-      name: draft.name.trim(),
-      kind: RecurringKind.income,
-      amount: draft.amount,
-      frequency: RecurringFrequency.monthly,
-      intervalCount: 1,
-      direction: RecurringDirection.add,
-      paymentSourceId: _optionalText(draft.paymentSourceId),
-      note: _optionalText(draft.note),
-      startDate: _startDateForDay(draft.dayOfMonth, month),
-      endDate: previous?.endDate,
-      isActive: draft.isActive,
+      draft: draft,
+      month: month,
       createdAt: previous?.createdAt ?? now,
-      updatedAt: now,
+      endDate: previous?.endDate,
+      salary: true,
     );
-    final replaced = await _recurring.replaceSalary(rule);
-    switch (replaced) {
-      case Err(:final failure):
-        return Err(failure);
-      case Ok():
+    final stored = previous == null
+        ? rule.copyWith(startDate: _startDateForDay(draft.dayOfMonth, month))
+        : rule;
+    if (previous == null) {
+      final replaced = await _recurring.replaceSalary(stored);
+      switch (replaced) {
+        case Err(:final failure):
+          return Err(failure);
+        case Ok():
+      }
+      final salarySaved = await _finance.saveSalary(
+        MonthlySalary(amount: draft.amount),
+      );
+      switch (salarySaved) {
+        case Err(:final failure):
+          return Err(failure);
+        case Ok():
+      }
     }
-    final salarySaved = await _finance.saveSalary(
-      MonthlySalary(amount: draft.amount),
-    );
-    switch (salarySaved) {
-      case Err(:final failure):
-        return Err(failure);
-      case Ok():
-    }
-    final entry = await _saveMonthFromRule(rule, month);
+    final entry = await _saveMonthFromRule(stored, month);
     if (entry is Err<void>) return Err(entry.failure);
     if (replaceId != null && replaceId != RecurringTransaction.salaryId) {
       final dropped = await _recurring.deleteMonthEntry(
@@ -434,7 +396,45 @@ class FinanceService {
         case Ok():
       }
     }
-    return Ok(rule);
+    return Ok(stored);
+  }
+
+  /// Values for one month. Does not rewrite the shared template, so another
+  /// month keeps the values it already shows.
+  RecurringTransaction _monthRule({
+    required String id,
+    required RecurringDraft draft,
+    required DateTime month,
+    required DateTime createdAt,
+    DateTime? endDate,
+    bool salary = false,
+  }) {
+    final selected = monthStart(month);
+    final lastDay = DateTime(selected.year, selected.month + 1, 0).day;
+    final kind = salary ? RecurringKind.income : draft.kind;
+    return RecurringTransaction(
+      id: id,
+      name: draft.name.trim(),
+      kind: kind,
+      amount: draft.amount,
+      frequency: RecurringFrequency.monthly,
+      intervalCount: 1,
+      direction: kind.derivedDirection,
+      categoryId: kind == RecurringKind.expense
+          ? _optionalText(draft.categoryId)
+          : null,
+      paymentSourceId: _optionalText(draft.paymentSourceId),
+      note: _optionalText(draft.note),
+      startDate: DateTime(
+        selected.year,
+        selected.month,
+        draft.dayOfMonth.clamp(1, lastDay),
+      ),
+      endDate: endDate,
+      isActive: draft.isActive,
+      createdAt: createdAt,
+      updatedAt: _clock().toUtc(),
+    );
   }
 
   ValidationFailure? _validateDraft(RecurringDraft draft) {
@@ -489,40 +489,13 @@ class FinanceService {
     return const Ok(null);
   }
 
-  /// Month view of recurring rules.
-  ///
-  /// A stored snapshot for [month] wins. Otherwise a monthly template that
-  /// applies to [month] is shown as that month's occurrence. Nothing here is
-  /// written back to the template.
-  List<RecurringTransaction> _rulesForView(
-    DateTime month,
-    List<RecurringTransaction> templates,
-    List<RecurringMonthEntry> entries,
-  ) {
-    final selected = monthStart(month);
-    final entryByTemplate = {
-      for (final entry in entries) entry.templateId: entry,
-    };
-    final seen = <String>{};
-    final rules = <RecurringTransaction>[];
-    for (final rule in templates) {
-      if (rule.frequency != RecurringFrequency.monthly) continue;
-      if (!rule.appliesToMonth(selected)) continue;
-      seen.add(rule.id);
-      final entry = entryByTemplate[rule.id];
-      rules.add(entry?.toRule() ?? _occurrence(rule, selected));
-    }
-    for (final entry in entries) {
-      if (seen.contains(entry.templateId)) continue;
-      rules.add(entry.toRule());
-    }
-    return rules;
-  }
-
-  RecurringTransaction _occurrence(RecurringTransaction rule, DateTime month) {
-    final lastDay = DateTime(month.year, month.month + 1, 0).day;
-    final day = rule.dayOfMonth.clamp(1, lastDay);
-    return rule.copyWith(startDate: DateTime(month.year, month.month, day));
+  /// A month shows only rows stored for that month. A template does not
+  /// appear in later months until that month has its own row.
+  List<RecurringTransaction> _rulesForView(List<RecurringMonthEntry> entries) {
+    return [
+      for (final entry in entries)
+        if (!entry.omitsMonth) entry.toRule(),
+    ];
   }
 
   Future<Result<void>> _writeSalarySnapshot(int amount, DateTime month) async {
@@ -581,15 +554,6 @@ class FinanceService {
       case Ok(:final value):
         return Ok(value ?? fallback);
     }
-  }
-
-  /// Drops an end date that would hide [month]. The edited month must stay visible.
-  DateTime? _endDateCovering(DateTime? endDate, DateTime month) {
-    if (endDate == null) return null;
-    final end = DateTime(endDate.year, endDate.month);
-    final selected = DateTime(month.year, month.month);
-    if (end.isBefore(selected)) return null;
-    return endDate;
   }
 
   /// Keeps the template's start month and stores [day] on that date.

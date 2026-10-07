@@ -41,8 +41,32 @@ class RecurringMonthEntry {
 
   bool get isSalary => templateId == RecurringTransaction.salaryId;
 
+  /// Empty name marks a month that must not show this template.
+  /// Other months keep their own rows and the shared template.
+  bool get omitsMonth => name.isEmpty;
+
   static String idFor(String templateId, String monthKey) =>
       '$templateId@$monthKey';
+
+  factory RecurringMonthEntry.omitted({
+    required String templateId,
+    required String monthKey,
+    required DateTime at,
+  }) {
+    return RecurringMonthEntry(
+      id: idFor(templateId, monthKey),
+      templateId: templateId,
+      monthKey: monthKey,
+      name: '',
+      kind: RecurringKind.expense,
+      amount: 0,
+      direction: RecurringDirection.subtract,
+      dayOfMonth: 1,
+      isActive: false,
+      createdAt: at,
+      updatedAt: at,
+    );
+  }
 
   factory RecurringMonthEntry.fromTemplate(
     RecurringTransaction rule,

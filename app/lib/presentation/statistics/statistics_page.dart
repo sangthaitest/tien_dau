@@ -205,7 +205,7 @@ class _InsightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 18),
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         gradient: const LinearGradient(
@@ -225,18 +225,23 @@ class _InsightCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _MonthStep(
                 stepKey: const Key('stats-month-prev'),
                 icon: Icons.chevron_left_rounded,
                 onTap: onPrevious,
               ),
-              Expanded(
+              Flexible(
+                fit: FlexFit.loose,
                 child: InkWell(
                   onTap: onOpenPicker,
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
+                    ),
                     child: Text(
                       'Chi tiêu ${monthLabel(snapshot.month)}',
                       key: const Key('stats-month-label'),
@@ -259,9 +264,8 @@ class _InsightCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 2),
-          Padding(
-            padding: const EdgeInsets.only(left: 14),
+          Align(
+            alignment: Alignment.center,
             child: AnimatedSwitcher(
               key: const Key('stats-expense-total'),
               duration: const Duration(milliseconds: 180),
@@ -272,6 +276,7 @@ class _InsightCard extends StatelessWidget {
                 key: ValueKey(
                   '${snapshot.month.year}-${snapshot.month.month}-${snapshot.totalExpense}',
                 ),
+                textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: moneyStyle(size: 28),
@@ -303,7 +308,7 @@ class _MonthStep extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       child: SizedBox(
         width: 40,
-        height: 40,
+        height: 36,
         child: Icon(icon, color: Colors.white, size: 22),
       ),
     );
@@ -319,7 +324,7 @@ class _CategoryChart extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(24),
@@ -333,7 +338,7 @@ class _CategoryChart extends StatelessWidget {
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
           ),
           if (snapshot.isEmpty) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               'Chưa có chi tiêu tháng này.',
               key: const Key('stats-empty'),
@@ -344,16 +349,16 @@ class _CategoryChart extends StatelessWidget {
               ),
             ),
           ] else ...[
-            const SizedBox(height: 14),
+            const SizedBox(height: 8),
             LayoutBuilder(
               builder: (context, constraints) {
-                final side = math.min(176.0, constraints.maxWidth);
+                final side = math.min(152.0, constraints.maxWidth);
                 return Center(
                   child: _Pie(snapshot: snapshot, size: side),
                 );
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             _CategoryGrid(categories: snapshot.categories),
           ],
         ],
@@ -376,13 +381,13 @@ class _CategoryGrid extends StatelessWidget {
           for (var i = 0; i < categories.length; i += 2)
             Padding(
               padding: EdgeInsets.only(
-                bottom: i + 2 < categories.length ? 12 : 0,
+                bottom: i + 2 < categories.length ? 8 : 0,
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(child: _LegendRow(row: categories[i])),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: i + 1 < categories.length
                         ? _LegendRow(row: categories[i + 1])

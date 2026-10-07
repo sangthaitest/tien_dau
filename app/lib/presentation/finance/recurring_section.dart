@@ -121,7 +121,7 @@ class RecurringWorkspace {
       useRootNavigator: true,
       builder: (context) => AlertDialog(
         title: Text(isIncome ? 'Xóa khoản thu nhập?' : 'Xóa khoản định kỳ?'),
-        content: Text('Bạn có chắc muốn xóa “${rule.name}”?'),
+        content: Text('Xóa “${rule.name}” khỏi tháng này?'),
         actions: [
           AppDialog.cancel(onPressed: () => Navigator.pop(context, false)),
           AppDialog.confirm(

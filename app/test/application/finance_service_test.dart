@@ -498,9 +498,10 @@ void main() {
       );
       expect(
         listed.singleWhere((RecurringTransaction item) => item.isSalary).amount,
-        22000000,
+        20000000,
       );
-      expect(financeRepo.salary.amount, 22000000);
+      expect(financeRepo.salary.amount, 20000000);
+      expect(((await finance.load()) as Ok).value.salary, 22000000);
       expect(txs.items, hasLength(1));
       expect(txs.items.single.amount, 45000);
     },
@@ -660,7 +661,12 @@ void main() {
       final listed =
           ((await recurring.listAll()) as Ok<List<RecurringTransaction>>).value;
       expect(listed, hasLength(1));
-      expect(listed.single.amount, 21000000);
+      expect(listed.single.amount, 20000000);
+      expect(((await finance.load()) as Ok).value.salary, 21000000);
+      expect(
+        ((await finance.load(month: DateTime(2026, 9))) as Ok).value.salary,
+        0,
+      );
       expect(
         ((await finance.load()) as Ok).value.managedIncome.single.id,
         RecurringTransaction.salaryId,
@@ -753,9 +759,13 @@ void main() {
         (await finance.deleteRecurring(RecurringTransaction.salaryId)).isOk,
         isTrue,
       );
-      expect(((await recurring.listAll()) as Ok).value, isEmpty);
-      expect(financeRepo.salary.amount, 0);
+      expect(((await recurring.listAll()) as Ok).value, hasLength(1));
+      expect(financeRepo.salary.amount, 20000000);
       expect(((await finance.load()) as Ok).value.salary, 0);
+      expect(
+        ((await finance.load(month: DateTime(2026, 9))) as Ok).value.salary,
+        0,
+      );
       expect(((await finance.load()) as Ok).value.managedIncome, isEmpty);
       expect(txs.items, hasLength(1));
     },
@@ -791,7 +801,13 @@ void main() {
       final after = ((await finance.load()) as Ok).value;
       expect(after.recurringItems, isEmpty);
       expect(after.managedRecurring, isEmpty);
-      expect(((await recurring.listAll()) as Ok).value, isEmpty);
+      expect(((await recurring.listAll()) as Ok).value, hasLength(1));
+      expect(
+        ((await finance.load(month: DateTime(2026, 11))) as Ok)
+            .value
+            .recurringItems,
+        isEmpty,
+      );
     },
   );
 
@@ -824,11 +840,8 @@ void main() {
           ((await at(DateTime(2026, 9, 2)).load(month: DateTime(2026, 9)))
                   as Ok)
               .value;
-      expect(september.recurringItems.single.name, 'Tiền nhà');
-      expect(september.recurringItems.single.amount, 5000000);
-      expect(september.recurringItems.single.dayOfMonth, 27);
-      expect(september.recurringItems.single.startDate, DateTime(2026, 9, 27));
-      expect(september.salary, 20000000);
+      expect(september.recurringItems, isEmpty);
+      expect(september.salary, 0);
       expect(
         ((await recurring.listMonthEntries('2026-09')) as Ok).value,
         isEmpty,
@@ -864,4 +877,116 @@ void main() {
       expect(july.salary, 0);
     },
   );
+
+  test('editing September does not change October', () async {
+    final recurring = MemoryRecurringTransactionRepository();
+    final finance = FinanceService(
+      MemoryFinanceRepository(),
+      TransactionService(MemoryTransactionRepository()),
+      recurring,
+      idFactory: () => 'rent',
+      clock: () => now,
+    );
+    final created =
+        ((await finance.createRecurring(draft(amount: 5000000, dayOfMonth: 27)))
+                as Ok)
+            .value;
+
+    expect(
+      (await finance.updateRecurring(
+        created,
+        draft(name: 'Tiền nhà trọ', amount: 7000000, dayOfMonth: 5),
+        month: DateTime(2026, 9),
+      )).isOk,
+      isTrue,
+    );
+
+    final september =
+        ((await finance.load(month: DateTime(2026, 9))) as Ok).value;
+    final october =
+        ((await finance.load(month: DateTime(2026, 10))) as Ok).value;
+    final august =
+        ((await finance.load(month: DateTime(2026, 8))) as Ok).value;
+    final template = ((await recurring.findById(created.id)) as Ok).value!;
+
+    expect(september.recurringItems.single.name, 'Tiền nhà trọ');
+    expect(september.recurringItems.single.amount, 7000000);
+    expect(september.recurringItems.single.dayOfMonth, 5);
+    expect(october.recurringItems, isEmpty);
+    expect(october.managedRecurring, isEmpty);
+    expect(august.recurringItems.single.amount, 5000000);
+    expect(august.recurringItems.single.dayOfMonth, 27);
+    expect(template.amount, 5000000);
+    expect(template.name, 'Tiền nhà');
+    expect(template.startDate, DateTime(2026, 8, 27));
+  });
+
+  test('adding a recurring item in September does not add it to October', () async {
+    final finance = FinanceService(
+      MemoryFinanceRepository(),
+      TransactionService(MemoryTransactionRepository()),
+      MemoryRecurringTransactionRepository(),
+      idFactory: () => 'rent',
+      clock: () => now,
+    );
+    expect(
+      (await finance.createRecurring(
+        draft(name: 'Internet', amount: 300000),
+        month: DateTime(2026, 9),
+      )).isOk,
+      isTrue,
+    );
+
+    final september =
+        ((await finance.load(month: DateTime(2026, 9))) as Ok).value;
+    final october =
+        ((await finance.load(month: DateTime(2026, 10))) as Ok).value;
+    expect(september.recurringItems.single.name, 'Internet');
+    expect(september.recurringItems.single.amount, 300000);
+    expect(october.recurringItems, isEmpty);
+    expect(october.managedRecurring, isEmpty);
+  });
+
+  test('deleting October keeps September', () async {
+    final recurring = MemoryRecurringTransactionRepository();
+    final finance = FinanceService(
+      MemoryFinanceRepository(),
+      TransactionService(MemoryTransactionRepository()),
+      recurring,
+      idFactory: () => 'rent',
+      clock: () => now,
+    );
+    final created =
+        ((await finance.createRecurring(draft(amount: 5000000, dayOfMonth: 27)))
+                as Ok)
+            .value;
+    expect(
+      (await finance.updateRecurring(
+        created,
+        draft(amount: 7000000, dayOfMonth: 5),
+        month: DateTime(2026, 9),
+      )).isOk,
+      isTrue,
+    );
+
+    expect(
+      (await finance.deleteRecurring(created.id, month: DateTime(2026, 10)))
+          .isOk,
+      isTrue,
+    );
+
+    final september =
+        ((await finance.load(month: DateTime(2026, 9))) as Ok).value;
+    final october =
+        ((await finance.load(month: DateTime(2026, 10))) as Ok).value;
+    final august =
+        ((await finance.load(month: DateTime(2026, 8))) as Ok).value;
+
+    expect(september.recurringItems.single.amount, 7000000);
+    expect(september.managedRecurring, hasLength(1));
+    expect(october.recurringItems, isEmpty);
+    expect(october.managedRecurring, isEmpty);
+    expect(august.recurringItems.single.amount, 5000000);
+    expect(((await recurring.findById(created.id)) as Ok).value, isNotNull);
+  });
 }

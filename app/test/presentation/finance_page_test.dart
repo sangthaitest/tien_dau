@@ -511,7 +511,7 @@ void main() {
     await tester.tap(find.byKey(const Key('finance-upcoming-confirm-delete')));
     await tester.pumpAndSettle();
     expect(find.text('Internet'), findsNothing);
-    expect((await harness.recurring.listAll()).unwrapOrThrow(), isEmpty);
+    expect((await harness.recurring.listAll()).unwrapOrThrow(), hasLength(1));
 
     await tester.tap(find.byTooltip('Đóng'));
     await tester.pumpAndSettle();
@@ -606,7 +606,7 @@ void main() {
     await tester.tap(find.byKey(const Key('finance-upcoming-confirm-delete')));
     await tester.pumpAndSettle();
     expect(find.text('Internet'), findsNothing);
-    expect((await harness.recurring.listAll()).unwrapOrThrow(), isEmpty);
+    expect((await harness.recurring.listAll()).unwrapOrThrow(), hasLength(1));
   });
 
   testWidgets(
@@ -686,8 +686,9 @@ void main() {
       final listed = (await harness.recurring.listAll()).unwrapOrThrow();
       expect(listed.where((item) => item.isSalary), hasLength(1));
       expect(listed.single.id, RecurringTransaction.salaryId);
-      expect(listed.single.amount, 22000000);
-      expect(harness.finance.salary.amount, 22000000);
+      expect(listed.single.amount, 20000000);
+      expect(harness.finance.salary.amount, 20000000);
+      expect(find.textContaining('22.000.000'), findsWidgets);
       expect(find.text('Thẻ tín dụng'), findsNothing);
     },
   );
@@ -977,8 +978,8 @@ void main() {
       find.byKey(const Key('finance-income-managed-recurring_salary')),
       findsNothing,
     );
-    expect((await harness.recurring.listAll()).unwrapOrThrow(), isEmpty);
-    expect(harness.finance.salary.amount, 0);
+    expect((await harness.recurring.listAll()).unwrapOrThrow(), hasLength(1));
+    expect(harness.finance.salary.amount, 20000000);
     await tester.tap(find.byTooltip('Đóng'));
     await tester.pumpAndSettle();
     final financeScroll = find.descendant(
@@ -1094,8 +1095,12 @@ void main() {
 
       await tester.tap(find.byKey(const Key('finance-upcoming-summary')));
       await tester.pumpAndSettle();
-      expect(find.text('27/09/2026'), findsOneWidget);
-      expect(find.text('15/09/2026'), findsOneWidget);
+      expect(find.text('27/09/2026'), findsNothing);
+      expect(find.text('15/09/2026'), findsNothing);
+      expect(
+        find.text('Chưa có khoản định kỳ. Quản lý để thêm.'),
+        findsOneWidget,
+      );
 
       final rules = (await harness.recurring.listAll()).unwrapOrThrow();
       expect(
@@ -1121,8 +1126,8 @@ void main() {
       expect(find.text('Tháng 09/2026'), findsOneWidget);
       await tester.tap(find.byKey(const Key('finance-upcoming-summary')));
       await tester.pumpAndSettle();
-      expect(find.text('27/09/2026'), findsOneWidget);
-      expect(find.text('15/09/2026'), findsOneWidget);
+      expect(find.text('27/09/2026'), findsNothing);
+      expect(find.text('15/09/2026'), findsNothing);
     },
   );
 }
