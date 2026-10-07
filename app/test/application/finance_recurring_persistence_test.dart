@@ -16,7 +16,6 @@ import 'package:tien_day/data/repositories/recurring_transaction_repository_impl
 import 'package:tien_day/data/repositories/transaction_repository_impl.dart';
 import 'package:tien_day/domain/entities/new_transaction.dart';
 import 'package:tien_day/domain/entities/payment_method_kind.dart';
-import 'package:tien_day/domain/entities/recurring_month_entry.dart';
 import 'package:tien_day/domain/entities/recurring_transaction.dart';
 import 'package:tien_day/domain/entities/transaction_type.dart';
 import 'package:tien_day/domain/failures/result.dart';
@@ -311,61 +310,57 @@ void main() {
     expect(((await stack.finance.load()) as Ok).value.salary, 0);
   });
 
-  test('a new month drops carried recurring items and salary', () async {
-    final dir = await Directory.systemTemp.createTemp('tien_day_month_entry');
-    addTearDown(() => dir.delete(recursive: true));
-    final path = p.join(dir.path, 'tien_day.db');
-    var stack = await openStack(path);
-    expect((await stack.finance.createRecurring(rentDraft())).isOk, isTrue);
-    expect((await stack.finance.saveSalary(20000000)).isOk, isTrue);
-    final augustRent =
-        ((await stack.finance.load(month: DateTime(2026, 8))) as Ok)
-            .value
-            .recurringItems
-            .single;
-    final recurring = RecurringTransactionRepositoryImpl(
-      RecurringTransactionsLocalDataSource(stack.database),
-    );
-    final salary =
-        ((await recurring.findById(RecurringTransaction.salaryId)) as Ok)
-            .value!;
-    expect(
-      (await recurring.saveMonthEntry(
-        RecurringMonthEntry.fromTemplate(augustRent, '2026-09'),
-      )).isOk,
-      isTrue,
-    );
-    expect(
-      (await recurring.saveMonthEntry(
-        RecurringMonthEntry.fromTemplate(salary, '2026-09'),
-      )).isOk,
-      isTrue,
-    );
-    await stack.database.close();
+  test(
+    'viewing another month keeps the template and shows that month',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('tien_day_month_entry');
+      addTearDown(() => dir.delete(recursive: true));
+      final path = p.join(dir.path, 'tien_day.db');
+      var stack = await openStack(path);
+      expect(
+        (await stack.finance.createRecurring(rentDraft(day: 27))).isOk,
+        isTrue,
+      );
+      expect((await stack.finance.saveSalary(20000000)).isOk, isTrue);
+      final before = await stack.database.raw.query(
+        recurringTransactionsTable,
+        columns: ['id', 'start_date', 'amount'],
+        orderBy: 'id ASC',
+      );
+      await stack.database.close();
 
-    stack = await openStack(path, clock: DateTime(2026, 9, 2, 9));
-    addTearDown(stack.database.close);
-    final september = ((await stack.finance.load()) as Ok).value;
-    expect(september.recurringItems, isEmpty);
-    expect(september.salary, 0);
+      stack = await openStack(path, clock: DateTime(2026, 9, 2, 9));
+      addTearDown(stack.database.close);
+      final september = ((await stack.finance.load()) as Ok).value;
+      expect(september.recurringItems.single.name, 'Tiền nhà');
+      expect(september.recurringItems.single.dayOfMonth, 27);
+      expect(september.recurringItems.single.startDate, DateTime(2026, 9, 27));
+      expect(september.salary, 20000000);
 
-    final rows = await stack.database.raw.query(
-      recurringMonthEntriesTable,
-      columns: ['month_key', 'amount', 'template_id'],
-      orderBy: 'month_key ASC, template_id ASC',
-    );
-    expect(rows, [
-      {
-        'month_key': '2026-08',
-        'amount': 20000000,
-        'template_id': 'recurring_salary',
-      },
-      {'month_key': '2026-08', 'amount': 5000000, 'template_id': 'rent'},
-    ]);
-    expect(
-      ((await stack.finance.load(month: DateTime(2026, 8))) as Ok).value.salary,
-      20000000,
-    );
-    expect(await stack.database.raw.query('transactions'), isEmpty);
-  });
+      final after = await stack.database.raw.query(
+        recurringTransactionsTable,
+        columns: ['id', 'start_date', 'amount'],
+        orderBy: 'id ASC',
+      );
+      expect(after, before);
+      final rows = await stack.database.raw.query(
+        recurringMonthEntriesTable,
+        columns: ['month_key', 'template_id'],
+        orderBy: 'month_key ASC, template_id ASC',
+      );
+      expect(rows, [
+        {'month_key': '2026-08', 'template_id': 'recurring_salary'},
+        {'month_key': '2026-08', 'template_id': 'rent'},
+      ]);
+      final august =
+          ((await stack.finance.load(month: DateTime(2026, 8))) as Ok).value;
+      expect(august.recurringItems.single.startDate, DateTime(2026, 8, 27));
+      expect(august.salary, 20000000);
+      final july =
+          ((await stack.finance.load(month: DateTime(2026, 7))) as Ok).value;
+      expect(july.recurringItems, isEmpty);
+      expect(july.salary, 0);
+      expect(await stack.database.raw.query('transactions'), isEmpty);
+    },
+  );
 }

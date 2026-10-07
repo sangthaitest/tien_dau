@@ -354,7 +354,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 50));
     await _submitPin(tester, '5820');
-    expect(find.text('Tháng 8/2026'), findsOneWidget);
+    expect(find.text('Tháng 08/2026'), findsOneWidget);
     expect(find.text(kHiddenMoney), findsWidgets);
     expect(find.text('18.500.000 ₫'), findsNothing);
   });

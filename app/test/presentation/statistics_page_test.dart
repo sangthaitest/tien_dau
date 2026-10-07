@@ -39,8 +39,13 @@ Transaction _tx({
   );
 }
 
-Future<void> _pumpShell(WidgetTester tester, {required TransactionService service}) async {
-  final home = HomeController(HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)));
+Future<void> _pumpShell(
+  WidgetTester tester, {
+  required TransactionService service,
+}) async {
+  final home = HomeController(
+    HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+  );
   await tester.pumpWidget(
     MaterialApp(
       home: buildShell(
@@ -61,12 +66,14 @@ Future<void> _openStats(WidgetTester tester) async {
 }
 
 void main() {
-  setUpAll(() {
-  });
+  setUpAll(() {});
 
   testWidgets('navigation opens Statistics with active tab', (tester) async {
     _phone(tester);
-    await _pumpShell(tester, service: TransactionService(MemoryTransactionRepository()));
+    await _pumpShell(
+      tester,
+      service: TransactionService(MemoryTransactionRepository()),
+    );
     await _openStats(tester);
     expect(find.text('Thống kê'), findsWidgets);
     expect(find.byKey(const Key('nav-statistics')), findsOneWidget);
@@ -79,7 +86,10 @@ void main() {
 
   testWidgets('empty statistics copy', (tester) async {
     _phone(tester);
-    await _pumpShell(tester, service: TransactionService(MemoryTransactionRepository()));
+    await _pumpShell(
+      tester,
+      service: TransactionService(MemoryTransactionRepository()),
+    );
     await _openStats(tester);
     expect(find.byKey(const Key('stats-empty')), findsOneWidget);
     expect(find.text('Chưa có chi tiêu tháng này.'), findsOneWidget);
@@ -96,10 +106,30 @@ void main() {
       service: TransactionService(
         MemoryTransactionRepository(
           seed: [
-            _tx(id: '1', amount: 50000, date: DateTime(2026, 8, 7), category: 'cafe'),
-            _tx(id: '2', amount: 150000, date: DateTime(2026, 8, 8), category: 'market'),
-            _tx(id: '3', amount: 99999, date: DateTime(2026, 7, 1), category: 'cafe'),
-            _tx(id: '4', amount: 800000, date: DateTime(2026, 8, 9), type: TransactionType.income),
+            _tx(
+              id: '1',
+              amount: 50000,
+              date: DateTime(2026, 8, 7),
+              category: 'cafe',
+            ),
+            _tx(
+              id: '2',
+              amount: 150000,
+              date: DateTime(2026, 8, 8),
+              category: 'market',
+            ),
+            _tx(
+              id: '3',
+              amount: 99999,
+              date: DateTime(2026, 7, 1),
+              category: 'cafe',
+            ),
+            _tx(
+              id: '4',
+              amount: 800000,
+              date: DateTime(2026, 8, 9),
+              type: TransactionType.income,
+            ),
           ],
         ),
       ),
@@ -120,7 +150,14 @@ void main() {
       tester,
       service: TransactionService(
         MemoryTransactionRepository(
-          seed: [_tx(id: '1', amount: 12000, date: DateTime(2026, 8, 4), category: 'xyz-unknown')],
+          seed: [
+            _tx(
+              id: '1',
+              amount: 12000,
+              date: DateTime(2026, 8, 4),
+              category: 'xyz-unknown',
+            ),
+          ],
         ),
       ),
     );
@@ -129,7 +166,9 @@ void main() {
     expect(find.text('12.000 ₫'), findsWidgets);
   });
 
-  testWidgets('list error is shown instead of a fake zero total', (tester) async {
+  testWidgets('list error is shown instead of a fake zero total', (
+    tester,
+  ) async {
     _phone(tester);
     await _pumpShell(
       tester,
@@ -151,15 +190,60 @@ void main() {
       service: TransactionService(
         MemoryTransactionRepository(
           seed: [
-            _tx(id: 'b', amount: 1529157, date: DateTime(2026, 8, 1), category: 'bills'),
-            _tx(id: 't', amount: 672000, date: DateTime(2026, 8, 2), category: 'transport'),
-            _tx(id: 'o', amount: 460000, date: DateTime(2026, 8, 3), category: 'other'),
-            _tx(id: 'bf', amount: 432000, date: DateTime(2026, 8, 4), category: 'breakfast'),
-            _tx(id: 'd', amount: 383000, date: DateTime(2026, 8, 5), category: 'dinner'),
-            _tx(id: 'l', amount: 377000, date: DateTime(2026, 8, 6), category: 'lunch'),
-            _tx(id: 'c', amount: 342000, date: DateTime(2026, 8, 7), category: 'cafe'),
-            _tx(id: 's', amount: 284000, date: DateTime(2026, 8, 8), category: 'snacks'),
-            _tx(id: 'm', amount: 147000, date: DateTime(2026, 8, 9), category: 'market'),
+            _tx(
+              id: 'b',
+              amount: 1529157,
+              date: DateTime(2026, 8, 1),
+              category: 'bills',
+            ),
+            _tx(
+              id: 't',
+              amount: 672000,
+              date: DateTime(2026, 8, 2),
+              category: 'transport',
+            ),
+            _tx(
+              id: 'o',
+              amount: 460000,
+              date: DateTime(2026, 8, 3),
+              category: 'other',
+            ),
+            _tx(
+              id: 'bf',
+              amount: 432000,
+              date: DateTime(2026, 8, 4),
+              category: 'breakfast',
+            ),
+            _tx(
+              id: 'd',
+              amount: 383000,
+              date: DateTime(2026, 8, 5),
+              category: 'dinner',
+            ),
+            _tx(
+              id: 'l',
+              amount: 377000,
+              date: DateTime(2026, 8, 6),
+              category: 'lunch',
+            ),
+            _tx(
+              id: 'c',
+              amount: 342000,
+              date: DateTime(2026, 8, 7),
+              category: 'cafe',
+            ),
+            _tx(
+              id: 's',
+              amount: 284000,
+              date: DateTime(2026, 8, 8),
+              category: 'snacks',
+            ),
+            _tx(
+              id: 'm',
+              amount: 147000,
+              date: DateTime(2026, 8, 9),
+              category: 'market',
+            ),
           ],
         ),
       ),
@@ -167,10 +251,22 @@ void main() {
     await _openStats(tester);
     final grid = find.byKey(const Key('stats-category-grid'));
     expect(grid, findsOneWidget);
-    expect(find.descendant(of: grid, matching: find.text('Hóa đơn')), findsOneWidget);
-    expect(find.descendant(of: grid, matching: find.text('Di chuyển')), findsOneWidget);
-    expect(find.descendant(of: grid, matching: find.text('Ăn sáng')), findsOneWidget);
-    expect(find.descendant(of: grid, matching: find.text('Đi chợ')), findsOneWidget);
+    expect(
+      find.descendant(of: grid, matching: find.text('Hóa đơn')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: grid, matching: find.text('Di chuyển')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: grid, matching: find.text('Ăn sáng')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: grid, matching: find.text('Đi chợ')),
+      findsOneWidget,
+    );
     expect(find.text('1.5tr'), findsWidgets);
     expect(find.byKey(const Key('stats-see-all-categories')), findsNothing);
     expect(find.textContaining('Xem tất cả'), findsNothing);
@@ -186,18 +282,42 @@ void main() {
       service: TransactionService(
         MemoryTransactionRepository(
           seed: [
-            _tx(id: '1', amount: 50000, date: DateTime(2026, 8, 1), category: 'cafe'),
-            _tx(id: '2', amount: 40000, date: DateTime(2026, 8, 2), category: 'market'),
-            _tx(id: '3', amount: 30000, date: DateTime(2026, 8, 3), category: 'transport'),
+            _tx(
+              id: '1',
+              amount: 50000,
+              date: DateTime(2026, 8, 1),
+              category: 'cafe',
+            ),
+            _tx(
+              id: '2',
+              amount: 40000,
+              date: DateTime(2026, 8, 2),
+              category: 'market',
+            ),
+            _tx(
+              id: '3',
+              amount: 30000,
+              date: DateTime(2026, 8, 3),
+              category: 'transport',
+            ),
           ],
         ),
       ),
     );
     await _openStats(tester);
     final grid = find.byKey(const Key('stats-category-grid'));
-    expect(find.descendant(of: grid, matching: find.text('Cafe')), findsOneWidget);
-    expect(find.descendant(of: grid, matching: find.text('Đi chợ')), findsOneWidget);
-    expect(find.descendant(of: grid, matching: find.text('Di chuyển')), findsOneWidget);
+    expect(
+      find.descendant(of: grid, matching: find.text('Cafe')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: grid, matching: find.text('Đi chợ')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: grid, matching: find.text('Di chuyển')),
+      findsOneWidget,
+    );
     expect(find.byKey(const Key('stats-see-all-categories')), findsNothing);
   });
 
@@ -210,7 +330,12 @@ void main() {
       service: TransactionService(
         MemoryTransactionRepository(
           seed: [
-            _tx(id: '1', amount: 999999999, date: DateTime(2026, 8, 1), category: 'cafe'),
+            _tx(
+              id: '1',
+              amount: 999999999,
+              date: DateTime(2026, 8, 1),
+              category: 'cafe',
+            ),
           ],
         ),
       ),
@@ -229,8 +354,18 @@ void main() {
       service: TransactionService(
         MemoryTransactionRepository(
           seed: [
-            _tx(id: 'aug', amount: 200000, date: DateTime(2026, 8, 8), category: 'bills'),
-            _tx(id: 'jul', amount: 150000, date: DateTime(2026, 7, 8), category: 'cafe'),
+            _tx(
+              id: 'aug',
+              amount: 200000,
+              date: DateTime(2026, 8, 8),
+              category: 'bills',
+            ),
+            _tx(
+              id: 'jul',
+              amount: 150000,
+              date: DateTime(2026, 7, 8),
+              category: 'cafe',
+            ),
           ],
         ),
       ),
@@ -266,4 +401,85 @@ void main() {
       findsNothing,
     );
   });
+
+  testWidgets(
+    'statistics month controls the query and stays after leaving the tab',
+    (tester) async {
+      _phone(tester);
+      await _pumpShell(
+        tester,
+        service: TransactionService(
+          MemoryTransactionRepository(
+            seed: [
+              _tx(
+                id: '1',
+                amount: 50000,
+                date: DateTime(2026, 8, 7),
+                category: 'cafe',
+              ),
+              _tx(
+                id: '2',
+                amount: 150000,
+                date: DateTime(2026, 8, 8),
+                category: 'market',
+              ),
+              _tx(
+                id: '3',
+                amount: 99999,
+                date: DateTime(2026, 7, 1),
+                category: 'cafe',
+              ),
+            ],
+          ),
+        ),
+      );
+      await _openStats(tester);
+      expect(find.text('Chi tiêu Tháng 8 · 2026'), findsOneWidget);
+      expect(find.text('200.000 ₫'), findsWidgets);
+      expect(find.text('Đi chợ'), findsWidgets);
+
+      await tester.tap(find.byKey(const Key('stats-month-label')));
+      await tester.pumpAndSettle();
+      expect(find.text('Chọn tháng'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('finance-month-cell-2026-7')));
+      await tester.pump();
+      expect(find.text('Chi tiêu Tháng 8 · 2026'), findsOneWidget);
+      expect(find.text('200.000 ₫'), findsWidgets);
+      await tester.tap(find.byKey(const Key('finance-month-close')));
+      await tester.pumpAndSettle();
+      expect(find.text('Chi tiêu Tháng 8 · 2026'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('stats-month-prev')));
+      await tester.pumpAndSettle();
+      expect(find.text('Chi tiêu Tháng 7 · 2026'), findsOneWidget);
+      expect(find.text('99.999 ₫'), findsWidgets);
+      expect(find.text('Đi chợ'), findsNothing);
+      expect(find.text('Cafe'), findsWidgets);
+
+      await tester.tap(find.byKey(const Key('nav-home')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Tháng 8 · 2026'), findsOneWidget);
+
+      await _openStats(tester);
+      expect(find.text('Chi tiêu Tháng 7 · 2026'), findsOneWidget);
+      expect(find.text('99.999 ₫'), findsWidgets);
+      expect(find.text('Đi chợ'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('stats-month-next')));
+      await tester.pumpAndSettle();
+      expect(find.text('Chi tiêu Tháng 8 · 2026'), findsOneWidget);
+      expect(find.text('200.000 ₫'), findsWidgets);
+      expect(find.text('Đi chợ'), findsWidgets);
+
+      await tester.tap(find.byKey(const Key('stats-month-label')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('finance-month-cell-2026-7')));
+      await tester.tap(find.byKey(const Key('finance-month-confirm')));
+      await tester.pumpAndSettle();
+      expect(find.text('Chi tiêu Tháng 7 · 2026'), findsOneWidget);
+      expect(find.text('99.999 ₫'), findsWidgets);
+      expect(find.text('Đi chợ'), findsNothing);
+    },
+  );
 }

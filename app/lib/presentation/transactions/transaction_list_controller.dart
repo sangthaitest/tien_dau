@@ -27,6 +27,8 @@ class TransactionListController extends ChangeNotifier {
   final TransactionService _service;
   final DateTime Function() _clock;
   final DateTime Function()? _viewMonth;
+
+  DateTime Function() get clock => _clock;
   final TransactionListQuery _query;
 
   static const pageSize = 50;
@@ -168,8 +170,13 @@ class TransactionListController extends ChangeNotifier {
     await selectDay(addCalendarDays(selectedDay, days));
   }
 
-  Future<void> shiftMonth(int months) async {
-    selectedMonth = addCalendarMonths(selectedMonth, months);
+  Future<void> shiftMonth(int months) =>
+      selectMonth(addCalendarMonths(selectedMonth, months));
+
+  Future<void> selectMonth(DateTime value) async {
+    final next = monthStart(value);
+    if (mode == TxListMode.month && next == selectedMonth) return;
+    selectedMonth = next;
     mode = TxListMode.month;
     _awaitingCustomRange = false;
     _syncFilterRange();

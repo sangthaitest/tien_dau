@@ -11,6 +11,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_dialog.dart';
 import '../theme/app_typography.dart';
 import '../theme/category_look.dart';
+import 'finance_collapsible_card.dart';
 import 'finance_controller.dart';
 
 Future<void> showRecurringManager({
@@ -150,160 +151,38 @@ class RecurringSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final snap = controller.snapshot;
     final items = snap.recurringItems;
-    return Column(
-      key: const Key('finance-upcoming-section'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.cardShadow,
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    return FinanceCollapsibleCard(
+      sectionKey: const Key('finance-upcoming-section'),
+      summaryKey: const Key('finance-upcoming-summary'),
+      icon: Icons.calendar_month_outlined,
+      iconColor: AppColors.warning,
+      iconBackground: AppColors.warningContainer,
+      title: 'Khoản định kỳ',
+      amount: snap.recurringExpenseTotal,
+      amountColor: AppColors.text,
+      amountKey: const Key('finance-upcoming-total'),
+      viewMonth: controller.selectedMonth,
+      lines: [
+        for (final rule in items)
+          FinanceLine(
+            id: rule.id,
+            name: rule.name,
+            dateLabel: financeOccurrenceDate(rule, snap.month),
+            amount: rule.amount,
+            onTap: () => _openDetail(context, rule),
           ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.warningContainer,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.calendar_month_outlined,
-                        size: 22,
-                        color: AppColors.warning,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text(
-                        'Khoản định kỳ',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                    TextButton(
-                      key: const Key('finance-upcoming-manage'),
-                      onPressed: () => RecurringWorkspace(
-                        controller: controller,
-                        kind: RecurringKind.expense,
-                      ).openManager(context),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        minimumSize: const Size(0, 32),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(
-                        'Quản lý →',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (snap.managedRecurring.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
-                  child: Text(
-                    'Chưa có khoản định kỳ. Quản lý để thêm.',
-                    key: const Key('finance-upcoming-empty'),
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                )
-              else if (items.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
-                  child: Text(
-                    'Không có khoản định kỳ trong tháng này.',
-                    key: const Key('finance-upcoming-empty'),
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                )
-              else
-                for (var i = 0; i < items.length; i++) ...[
-                  if (i > 0) Divider(height: 1, color: AppColors.divider),
-                  _RecurringRow(
-                    rule: items[i],
-                    month: snap.month,
-                    onTap: () => _openDetail(context, items[i]),
-                  ),
-                ],
-              if (items.isNotEmpty) ...[
-                Divider(height: 1, color: AppColors.divider),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Expanded(
-                            child: Text(
-                              'Tổng định kỳ',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            displayVnd(
-                              snap.recurringExpenseTotal,
-                              hidden: SettingsScope.hideMoney(context),
-                            ),
-                            key: const Key('finance-upcoming-total'),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.right,
-                            style: moneyStyle(size: 16, color: AppColors.text),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${items.where((item) => item.kind == RecurringKind.expense).length} khoản',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
       ],
+      managedCount: snap.managedRecurring.length,
+      emptyMessage: 'Chưa có khoản định kỳ. Quản lý để thêm.',
+      monthEmptyMessage: 'Không có khoản định kỳ trong tháng này.',
+      emptyKey: const Key('finance-upcoming-empty'),
+      manageLabel: 'Quản lý khoản định kỳ →',
+      manageKey: const Key('finance-upcoming-manage'),
+      rowKeyPrefix: 'finance-upcoming-row',
+      onManage: () => RecurringWorkspace(
+        controller: controller,
+        kind: RecurringKind.expense,
+      ).openManager(context),
     );
   }
 
@@ -407,69 +286,6 @@ class RecurringSection extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _RecurringRow extends StatelessWidget {
-  const _RecurringRow({
-    required this.rule,
-    required this.month,
-    required this.onTap,
-  });
-
-  final RecurringTransaction rule;
-  final DateTime month;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final hidden = SettingsScope.hideMoney(context);
-    return InkWell(
-      key: Key('finance-upcoming-row-${rule.id}'),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        child: Row(
-          children: [
-            _RecurringIcon(rule: rule),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    rule.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    rule.dueLabelForMonth(month),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              displayVnd(rule.amount, hidden: hidden),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.right,
-              style: moneyStyle(size: 15, color: AppColors.text),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

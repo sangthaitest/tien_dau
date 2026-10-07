@@ -4,18 +4,20 @@ import '../../application/finance_service.dart';
 import '../../domain/entities/finance.dart';
 import '../../domain/entities/recurring_transaction.dart';
 import '../../domain/failures/result.dart';
+import '../../domain/time/clock_format.dart';
 
 class FinanceController extends ChangeNotifier {
   FinanceController(
     this._service, {
     DateTime Function()? month,
     DateTime Function()? clock,
-  }) : _month = month,
-       clock = clock ?? DateTime.now;
+  }) : clock = clock ?? DateTime.now,
+       selectedMonth = monthStart((month ?? clock ?? DateTime.now).call());
 
   final FinanceService _service;
-  final DateTime Function()? _month;
   final DateTime Function() clock;
+  DateTime selectedMonth;
+  int _loadGeneration = 0;
 
   bool loading = false;
   String? error;
@@ -30,12 +32,15 @@ class FinanceController extends ChangeNotifier {
   );
 
   Future<void> load({bool silent = false}) async {
+    final generation = ++_loadGeneration;
+    final month = selectedMonth;
     if (!silent) {
       loading = true;
       error = null;
       notifyListeners();
     }
-    final result = await _service.load(month: _month?.call());
+    final result = await _service.load(month: month);
+    if (generation != _loadGeneration) return;
     switch (result) {
       case Ok(:final value):
         snapshot = value;
@@ -47,14 +52,28 @@ class FinanceController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> selectMonth(DateTime value) async {
+    final next = monthStart(value);
+    if (next == selectedMonth) return;
+    selectedMonth = next;
+    notifyListeners();
+    await load(silent: true);
+  }
+
+  Future<void> shiftMonth(int delta) {
+    return selectMonth(
+      DateTime(selectedMonth.year, selectedMonth.month + delta),
+    );
+  }
+
   Future<Result<void>> saveSalary(int amount) async {
-    final result = await _service.saveSalary(amount, month: _month?.call());
+    final result = await _service.saveSalary(amount, month: selectedMonth);
     if (result.isOk) await load();
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }
 
   Future<Result<void>> saveBudget(int limit) async {
-    final result = await _service.saveBudget(limit, month: _month?.call());
+    final result = await _service.saveBudget(limit, month: selectedMonth);
     if (result.isOk) await load();
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }
@@ -92,7 +111,7 @@ class FinanceController extends ChangeNotifier {
   }
 
   Future<Result<void>> createRecurring(RecurringDraft draft) async {
-    final result = await _service.createRecurring(draft, month: _month?.call());
+    final result = await _service.createRecurring(draft, month: selectedMonth);
     if (result.isOk) await load(silent: true);
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }
@@ -104,7 +123,7 @@ class FinanceController extends ChangeNotifier {
     final result = await _service.updateRecurring(
       existing,
       draft,
-      month: _month?.call(),
+      month: selectedMonth,
     );
     if (result.isOk) await load(silent: true);
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
@@ -117,14 +136,14 @@ class FinanceController extends ChangeNotifier {
     final result = await _service.setRecurringActive(
       existing,
       isActive,
-      month: _month?.call(),
+      month: selectedMonth,
     );
     if (result.isOk) await load(silent: true);
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }
 
   Future<Result<void>> deleteRecurring(String id) async {
-    final result = await _service.deleteRecurring(id, month: _month?.call());
+    final result = await _service.deleteRecurring(id, month: selectedMonth);
     if (result.isOk) await load(silent: true);
     return result.isOk ? const Ok(null) : Err((result as Err).failure);
   }

@@ -108,6 +108,7 @@ class _MainShellState extends State<MainShell> {
         clock: () => widget.viewMonthController.month,
       ),
       clock: () => widget.viewMonthController.month,
+      now: widget.clock,
     );
     _addController = AddTransactionController(
       service: widget.transactionService,

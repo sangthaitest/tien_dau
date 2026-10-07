@@ -6,6 +6,7 @@ import '../../domain/entities/transaction.dart';
 import '../../domain/time/clock_format.dart';
 import '../catalog/transaction_catalog_scope.dart';
 import '../format/money_format.dart';
+import '../finance/finance_month_picker.dart';
 import '../home/widgets/home_bottom_nav.dart';
 import '../home/widgets/home_transaction_tile.dart';
 import '../settings/settings_scope.dart';
@@ -123,6 +124,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
                             month: c.selectedMonth,
                             onPrevious: () => c.shiftMonth(-1),
                             onNext: () => c.shiftMonth(1),
+                            onOpenPicker: () => _openMonthPicker(context, c),
                           ),
                   ),
                   if (!isDay) ...[
@@ -306,17 +308,31 @@ class _ModeTab extends StatelessWidget {
   }
 }
 
+Future<void> _openMonthPicker(
+  BuildContext context,
+  TransactionListController controller,
+) async {
+  final picked = await showFinanceMonthPicker(
+    context: context,
+    selectedMonth: controller.selectedMonth,
+    now: controller.clock(),
+  );
+  if (picked != null) await controller.selectMonth(picked);
+}
+
 class _MonthSelector extends StatelessWidget {
   const _MonthSelector({
     super.key,
     required this.month,
     required this.onPrevious,
     required this.onNext,
+    required this.onOpenPicker,
   });
 
   final DateTime month;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+  final VoidCallback onOpenPicker;
 
   @override
   Widget build(BuildContext context) {
@@ -337,16 +353,19 @@ class _MonthSelector extends StatelessWidget {
                   icon: Icons.chevron_left_rounded,
                   onTap: onPrevious,
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    formatMonthYear(month),
-                    key: const Key('month-label'),
-                    style: TextStyle(
-                      fontFamily: AppTypography.fontFamily,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                InkWell(
+                  key: const Key('month-label'),
+                  onTap: onOpenPicker,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      formatMonthYear(month),
+                      style: TextStyle(
+                        fontFamily: AppTypography.fontFamily,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                 ),

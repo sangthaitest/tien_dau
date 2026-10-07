@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../application/statistics_query.dart';
+import '../finance/finance_month_picker.dart';
 import '../format/money_format.dart';
 import '../catalog/transaction_catalog_scope.dart';
 import '../theme/app_colors.dart';
@@ -61,7 +62,12 @@ class StatisticsPage extends StatelessWidget {
                 else ...[
                   tutorialAnchor(
                     key: insightTargetKey,
-                    child: _InsightCard(snapshot: snap),
+                    child: _InsightCard(
+                      snapshot: snap,
+                      onPrevious: () => controller.shiftMonth(-1),
+                      onNext: () => controller.shiftMonth(1),
+                      onOpenPicker: () => _openMonthPicker(context),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   tutorialAnchor(
@@ -82,6 +88,15 @@ class StatisticsPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openMonthPicker(BuildContext context) async {
+    final picked = await showFinanceMonthPicker(
+      context: context,
+      selectedMonth: controller.selectedMonth,
+      now: controller.now(),
+    );
+    if (picked != null) await controller.selectMonth(picked);
   }
 }
 
@@ -174,15 +189,23 @@ class _Header extends StatelessWidget {
 }
 
 class _InsightCard extends StatelessWidget {
-  const _InsightCard({required this.snapshot});
+  const _InsightCard({
+    required this.snapshot,
+    required this.onPrevious,
+    required this.onNext,
+    required this.onOpenPicker,
+  });
 
   final StatisticsSnapshot snapshot;
+  final VoidCallback onPrevious;
+  final VoidCallback onNext;
+  final VoidCallback onOpenPicker;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         gradient: const LinearGradient(
@@ -201,24 +224,87 @@ class _InsightCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Chi tiêu ${monthLabel(snapshot.month)}',
-            key: const Key('stats-month-label'),
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+          Row(
+            children: [
+              _MonthStep(
+                stepKey: const Key('stats-month-prev'),
+                icon: Icons.chevron_left_rounded,
+                onTap: onPrevious,
+              ),
+              Expanded(
+                child: InkWell(
+                  onTap: onOpenPicker,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Text(
+                      'Chi tiêu ${monthLabel(snapshot.month)}',
+                      key: const Key('stats-month-label'),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              _MonthStep(
+                stepKey: const Key('stats-month-next'),
+                icon: Icons.chevron_right_rounded,
+                onTap: onNext,
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Padding(
+            padding: const EdgeInsets.only(left: 14),
+            child: AnimatedSwitcher(
+              key: const Key('stats-expense-total'),
+              duration: const Duration(milliseconds: 180),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              child: Text(
+                formatVnd(snapshot.totalExpense),
+                key: ValueKey(
+                  '${snapshot.month.year}-${snapshot.month.month}-${snapshot.totalExpense}',
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: moneyStyle(size: 28),
+              ),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            formatVnd(snapshot.totalExpense),
-            key: const Key('stats-expense-total'),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: moneyStyle(size: 28),
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class _MonthStep extends StatelessWidget {
+  const _MonthStep({
+    required this.stepKey,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final Key stepKey;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      key: stepKey,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: SizedBox(
+        width: 40,
+        height: 40,
+        child: Icon(icon, color: Colors.white, size: 22),
       ),
     );
   }
