@@ -321,41 +321,69 @@ class _MonthSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-      child: Row(
-        children: [
-          IconButton(
-            key: const Key('month-prev'),
-            onPressed: onPrevious,
-            icon: Icon(
-              Icons.chevron_left_rounded,
-              color: AppColors.textSecondary,
-              size: 28,
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+      child: Center(
+        child: Material(
+          color: AppColors.primaryContainer,
+          borderRadius: BorderRadius.circular(999),
+          clipBehavior: Clip.antiAlias,
+          child: SizedBox(
+            height: 42,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _MonthStep(
+                  stepKey: const Key('month-prev'),
+                  icon: Icons.chevron_left_rounded,
+                  onTap: onPrevious,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    formatMonthYear(month),
+                    key: const Key('month-label'),
+                    style: TextStyle(
+                      fontFamily: AppTypography.fontFamily,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+                _MonthStep(
+                  stepKey: const Key('month-next'),
+                  icon: Icons.chevron_right_rounded,
+                  onTap: onNext,
+                ),
+              ],
             ),
           ),
-          Expanded(
-            child: Text(
-              formatMonthYear(month),
-              key: const Key('month-label'),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: 16,
-                fontWeight: AppTypography.strongWeight,
-                color: AppColors.text,
-              ),
-            ),
-          ),
-          IconButton(
-            key: const Key('month-next'),
-            onPressed: onNext,
-            icon: Icon(
-              Icons.chevron_right_rounded,
-              color: AppColors.textSecondary,
-              size: 28,
-            ),
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MonthStep extends StatelessWidget {
+  const _MonthStep({
+    required this.stepKey,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final Key stepKey;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      key: stepKey,
+      onTap: onTap,
+      child: SizedBox(
+        width: 40,
+        height: 42,
+        child: Icon(icon, color: AppColors.primary, size: 22),
       ),
     );
   }
