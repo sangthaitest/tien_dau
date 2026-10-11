@@ -4,6 +4,7 @@ class FakeNotificationScheduler implements NotificationScheduler {
   FakeNotificationScheduler({this.permission = true});
 
   bool permission;
+  var throwOnHasPermission = false;
   var requestCount = 0;
   var openedSettings = false;
   final ops = <String>[];
@@ -12,7 +13,10 @@ class FakeNotificationScheduler implements NotificationScheduler {
   Future<void> initialize() async {}
 
   @override
-  Future<bool> hasPermission() async => permission;
+  Future<bool> hasPermission() async {
+    if (throwOnHasPermission) throw StateError('invalid_icon');
+    return permission;
+  }
 
   @override
   Future<bool> requestPermission() async {

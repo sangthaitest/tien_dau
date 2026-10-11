@@ -9,6 +9,19 @@ import '../support/fake_notification_scheduler.dart';
 import '../support/memory_app_settings_repository.dart';
 
 void main() {
+  test('load finishes when checking notification permission fails', () async {
+    final scheduler = FakeNotificationScheduler()..throwOnHasPermission = true;
+    final controller = AppSettingsController(
+      AppSettingsService(MemoryAppSettingsRepository()),
+      notifications: NotificationService(scheduler),
+    );
+    addTearDown(controller.dispose);
+
+    await controller.load();
+
+    expect(controller.error, isNull);
+  });
+
   test('sync replaces the same ids and cancels disabled reminders', () async {
     final scheduler = FakeNotificationScheduler();
     final service = NotificationService(scheduler);

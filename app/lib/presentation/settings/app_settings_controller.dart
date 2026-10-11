@@ -202,10 +202,14 @@ class AppSettingsController extends ChangeNotifier {
   }
 
   Future<void> _refreshPermission() async {
-    final granted = await _notifications?.hasPermission() ?? true;
-    if (granted == notificationPermissionGranted) return;
-    notificationPermissionGranted = granted;
-    notifyListeners();
+    try {
+      final granted = await _notifications?.hasPermission() ?? true;
+      if (granted == notificationPermissionGranted) return;
+      notificationPermissionGranted = granted;
+      notifyListeners();
+    } catch (error, stackTrace) {
+      debugPrint('Notification permission check failed: $error\n$stackTrace');
+    }
   }
 
   Future<T> _enqueue<T>(Future<T> Function() action) {

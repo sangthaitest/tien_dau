@@ -55,7 +55,12 @@ class FlutterLocalNotificationScheduler implements NotificationScheduler {
 
   @override
   Future<bool> hasPermission() async {
-    await initialize();
+    try {
+      await initialize();
+    } catch (error, stackTrace) {
+      debugPrint('Notification permission check skipped: $error\n$stackTrace');
+      return false;
+    }
     if (defaultTargetPlatform == TargetPlatform.android) {
       final android = _android;
       return await android?.areNotificationsEnabled() ?? false;
