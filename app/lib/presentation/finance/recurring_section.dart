@@ -291,6 +291,12 @@ class RecurringSection extends StatelessWidget {
   }
 }
 
+String _managedItemTitle(RecurringTransaction item) {
+  final note = item.note?.trim();
+  if (note == null || note.isEmpty) return item.name;
+  return note;
+}
+
 String _managedItemMeta(
   RecurringTransaction item,
   DateTime month, {
@@ -298,9 +304,10 @@ String _managedItemMeta(
 }) {
   final due = item.dueLabelForMonth(month);
   final amount = displayVnd(item.amount, hidden: hidden);
+  final tail = '$due · $amount';
   final note = item.note?.trim();
-  if (note == null || note.isEmpty) return '$due · $amount';
-  return '$note · $due · $amount';
+  if (note == null || note.isEmpty || note == item.name) return tail;
+  return '${item.name} · $tail';
 }
 
 class _RecurringIcon extends StatelessWidget {
@@ -422,7 +429,7 @@ class _RecurringManager extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    item.name,
+                                    _managedItemTitle(item),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(

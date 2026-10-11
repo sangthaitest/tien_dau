@@ -30,10 +30,16 @@ class FinanceLine {
   final String? note;
   final VoidCallback? onTap;
 
+  String get displayTitle {
+    final extra = note?.trim();
+    if (extra == null || extra.isEmpty) return name;
+    return extra;
+  }
+
   String get metaLabel {
     final extra = note?.trim();
-    if (extra == null || extra.isEmpty) return dateLabel;
-    return '$dateLabel · $extra';
+    if (extra == null || extra.isEmpty || extra == name) return dateLabel;
+    return '$name · $dateLabel';
   }
 }
 
@@ -350,7 +356,7 @@ class _LineRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  line.name,
+                  line.displayTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(

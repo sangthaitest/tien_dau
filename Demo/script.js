@@ -652,11 +652,21 @@ function refreshScreen(name) {
 /* ============================================================
    RENDER HELPERS
    ============================================================ */
+function txDisplayTitle(tx, cat) {
+  const note = (tx.note || '').trim();
+  if (note) return note;
+  const detail = (tx.detail || '').trim();
+  if (detail) return detail;
+  const title = (tx.title || '').trim();
+  if (title) return title;
+  return (cat && cat.name) || 'Giao dịch';
+}
+
 function txListMeta(tx, cat) {
   const parts = [];
-  const note = (tx.note || '').trim();
-  const title = (tx.title || '').trim();
-  if (note && note !== title) parts.push(note);
+  const detail = (tx.detail || '').trim();
+  const title = txDisplayTitle(tx, cat);
+  if (detail && detail !== title) parts.push(detail);
   if (cat && cat.name) parts.push(cat.name);
   if (tx.account) parts.push(tx.account);
   return parts.join(' · ');
@@ -676,7 +686,7 @@ function renderTxItem(tx, { swipeable = false, compact = false } = {}) {
     <div class="tx-item ${swipeable ? 'swipeable' : ''}" data-id="${tx.id}" role="button" tabindex="0">
       <div class="tx-icon" style="background:${cat.bg}">${iconHtml}</div>
       <div class="tx-info">
-        <div class="title">${tx.title}</div>
+        <div class="title">${txDisplayTitle(tx, cat)}</div>
         <div class="meta">${txListMeta(tx, cat)}</div>
       </div>
       <div class="tx-amount ${tx.type}">${amountHtml}</div>
@@ -1524,7 +1534,7 @@ function saveTransaction() {
   const cat = getCat(state.selectedCategory);
   const pay = currentPay();
   const detail = state.selectedDetail || '';
-  const title = detail || note || cat.name || 'Giao dịch';
+  const title = note || detail || cat.name || 'Giao dịch';
   const payload = {
     title,
     category: state.selectedCategory,
@@ -1561,7 +1571,7 @@ function openDetail(id) {
   const sign = tx.type === 'income' ? '+' : '−';
   $('#detail-body').innerHTML = `
     <div class="detail-amount ${tx.type}">${sign}${formatVND(tx.amount)}</div>
-    <div class="detail-title">${tx.title}</div>
+    <div class="detail-title">${txDisplayTitle(tx, getCat(tx.category))}</div>
     <div class="detail-rows">
       <div class="detail-row"><span>Chi cho</span><strong>${cat.name}</strong></div>
       <div class="detail-row"><span>Chi tiết</span><strong>${tx.detail || '—'}</strong></div>

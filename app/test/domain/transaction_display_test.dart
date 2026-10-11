@@ -23,24 +23,41 @@ Transaction _tx({String? detail, String? note}) {
 }
 
 void main() {
-  test('list meta keeps category and payment when there is no note', () {
+  test('title is the note when one is set', () {
+    expect(
+      transactionTitle(
+        _tx(detail: 'Highlands', note: 'đi làm'),
+        categoryName: 'Cafe',
+      ),
+      'đi làm',
+    );
+  });
+
+  test('title falls back to detail when there is no note', () {
+    expect(
+      transactionTitle(_tx(detail: 'Highlands'), categoryName: 'Cafe'),
+      'Highlands',
+    );
+  });
+
+  test('list meta keeps category and payment when detail is the title', () {
     expect(
       transactionListMeta(_tx(detail: 'Highlands'), categoryName: 'Cafe'),
       'Cafe · MoMo',
     );
   });
 
-  test('list meta shows a note that is not already the title', () {
+  test('list meta shows detail when the note is the title', () {
     expect(
       transactionListMeta(
         _tx(detail: 'Highlands', note: 'đi làm'),
         categoryName: 'Cafe',
       ),
-      'đi làm · Cafe · MoMo',
+      'Highlands · Cafe · MoMo',
     );
   });
 
-  test('list meta does not repeat a note used as the title', () {
+  test('list meta does not invent a detail when the note is the title', () {
     expect(
       transactionListMeta(_tx(note: 'Flash sale'), categoryName: 'Mua sắm'),
       'Mua sắm · MoMo',
