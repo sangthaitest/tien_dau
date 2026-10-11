@@ -652,6 +652,16 @@ function refreshScreen(name) {
 /* ============================================================
    RENDER HELPERS
    ============================================================ */
+function txListMeta(tx, cat) {
+  const parts = [];
+  const note = (tx.note || '').trim();
+  const title = (tx.title || '').trim();
+  if (note && note !== title) parts.push(note);
+  if (cat && cat.name) parts.push(cat.name);
+  if (tx.account) parts.push(tx.account);
+  return parts.join(' · ');
+}
+
 function renderTxItem(tx, { swipeable = false, compact = false } = {}) {
   const cat = getCat(tx.category);
   const sign = tx.type === 'income' ? '+' : '−';
@@ -667,7 +677,7 @@ function renderTxItem(tx, { swipeable = false, compact = false } = {}) {
       <div class="tx-icon" style="background:${cat.bg}">${iconHtml}</div>
       <div class="tx-info">
         <div class="title">${tx.title}</div>
-        <div class="meta">${cat.name}${tx.account ? ' · ' + tx.account : ''}</div>
+        <div class="meta">${txListMeta(tx, cat)}</div>
       </div>
       <div class="tx-amount ${tx.type}">${amountHtml}</div>
     </div>

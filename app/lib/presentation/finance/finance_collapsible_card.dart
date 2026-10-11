@@ -19,6 +19,7 @@ class FinanceLine {
     required this.name,
     required this.dateLabel,
     required this.amount,
+    this.note,
     this.onTap,
   });
 
@@ -26,7 +27,14 @@ class FinanceLine {
   final String name;
   final String dateLabel;
   final int amount;
+  final String? note;
   final VoidCallback? onTap;
+
+  String get metaLabel {
+    final extra = note?.trim();
+    if (extra == null || extra.isEmpty) return dateLabel;
+    return '$dateLabel · $extra';
+  }
 }
 
 class FinanceCollapsibleCard extends StatefulWidget {
@@ -352,7 +360,7 @@ class _LineRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  line.dateLabel,
+                  line.metaLabel,
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,

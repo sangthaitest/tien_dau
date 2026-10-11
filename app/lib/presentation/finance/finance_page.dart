@@ -118,6 +118,7 @@ class FinancePage extends StatelessWidget {
                                         snap.month,
                                       ),
                                       amount: rule.amount,
+                                      note: rule.note,
                                     ),
                               ],
                               managedCount: snap.managedIncome.length,

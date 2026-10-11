@@ -169,6 +169,7 @@ class RecurringSection extends StatelessWidget {
             name: rule.name,
             dateLabel: financeOccurrenceDate(rule, snap.month),
             amount: rule.amount,
+            note: rule.note,
             onTap: () => _openDetail(context, rule),
           ),
       ],
@@ -288,6 +289,18 @@ class RecurringSection extends StatelessWidget {
       },
     );
   }
+}
+
+String _managedItemMeta(
+  RecurringTransaction item,
+  DateTime month, {
+  required bool hidden,
+}) {
+  final due = item.dueLabelForMonth(month);
+  final amount = displayVnd(item.amount, hidden: hidden);
+  final note = item.note?.trim();
+  if (note == null || note.isEmpty) return '$due · $amount';
+  return '$note · $due · $amount';
 }
 
 class _RecurringIcon extends StatelessWidget {
@@ -419,7 +432,11 @@ class _RecurringManager extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${item.dueLabelForMonth(controller.snapshot.month)} · ${displayVnd(item.amount, hidden: hidden)}',
+                                    _managedItemMeta(
+                                      item,
+                                      controller.snapshot.month,
+                                      hidden: hidden,
+                                    ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(

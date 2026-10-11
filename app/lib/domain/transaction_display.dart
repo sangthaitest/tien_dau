@@ -9,3 +9,14 @@ String transactionTitle(Transaction tx, {String? categoryName}) {
   if (note != null && note.isNotEmpty) return note;
   return categoryName ?? ChiChoCatalog.byId(tx.categoryId).name;
 }
+
+/// List subtitle. Keeps category and payment, and adds the note when it is
+/// not already used as the title.
+String transactionListMeta(Transaction tx, {String? categoryName}) {
+  final category = categoryName ?? ChiChoCatalog.byId(tx.categoryId).name;
+  final base = '$category · ${tx.paymentSourceName}';
+  final note = tx.note?.trim();
+  if (note == null || note.isEmpty) return base;
+  if (note == transactionTitle(tx, categoryName: category)) return base;
+  return '$note · $base';
+}

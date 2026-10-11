@@ -33,6 +33,7 @@ class HomeTransactionTile extends StatelessWidget {
       visualKey: category?.visualKey,
     );
     final title = transactionTitle(transaction, categoryName: category?.name);
+    final meta = transactionListMeta(transaction, categoryName: look.name);
     final hidden = SettingsScope.hideMoney(context);
     final amountText = hidden
         ? kHiddenMoneyShort
@@ -106,7 +107,7 @@ class HomeTransactionTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${look.name} · ${transaction.paymentSourceName}',
+                      meta,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
