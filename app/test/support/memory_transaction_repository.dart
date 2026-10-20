@@ -12,11 +12,13 @@ class MemoryTransactionRepository implements TransactionRepository {
     List<Transaction>? seed,
     this.failCreate = false,
     this.failList = false,
+    this.failQuery = false,
   }) : _items = [...?seed];
 
   final List<Transaction> _items;
   bool failCreate;
   bool failList;
+  bool failQuery;
   final List<TransactionQuerySpec> querySpecs = [];
 
   List<Transaction> get items => List.unmodifiable(_items);
@@ -61,7 +63,7 @@ class MemoryTransactionRepository implements TransactionRepository {
   @override
   Future<Result<TransactionPage>> query(TransactionQuerySpec spec) async {
     querySpecs.add(spec);
-    if (failList) {
+    if (failList || failQuery) {
       return const Err(PersistenceFailure('read failed'));
     }
     final filtered = _items.where((tx) => _matches(tx, spec)).toList()
@@ -157,6 +159,8 @@ class MemoryTransactionRepository implements TransactionRepository {
   int _byRecency(Transaction a, Transaction b) {
     final date = b.occurredOn.compareTo(a.occurredOn);
     if (date != 0) return date;
-    return (b.occurredTime ?? '').compareTo(a.occurredTime ?? '');
+    final time = (b.occurredTime ?? '').compareTo(a.occurredTime ?? '');
+    if (time != 0) return time;
+    return b.createdAt.compareTo(a.createdAt);
   }
 }

@@ -398,6 +398,16 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
+  Future<void> _openCategoryTransactions(String categoryId) async {
+    if (_tutorialActive) return;
+    await _listController.showCategoryMonth(
+      categoryId: categoryId,
+      month: _statsController.selectedMonth,
+    );
+    if (!mounted) return;
+    _selectTab(AppTab.transactions);
+  }
+
   void _selectTab(AppTab tab) {
     if (_tutorialActive) return;
     if (_tab == tab && !_showFinance && !_showProfile && !_showBackupRestore) {
@@ -644,6 +654,7 @@ class _MainShellState extends State<MainShell> {
         controller: _statsController,
         insightTargetKey: _tutorialTargets.statsMonth,
         chartTargetKey: _tutorialTargets.statsCategories,
+        onSeeAllCategory: _openCategoryTransactions,
       ),
       AppTab.settings => SettingsPage(
         onOpenFinance: _openFinance,

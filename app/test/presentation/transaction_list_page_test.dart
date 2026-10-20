@@ -6,6 +6,7 @@ import 'package:tien_day/domain/entities/payment_method_kind.dart';
 import 'package:tien_day/domain/entities/transaction.dart';
 import 'package:tien_day/domain/entities/transaction_type.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
+import 'package:tien_day/presentation/theme/app_colors.dart';
 import 'package:tien_day/presentation/transactions/transaction_detail_controller.dart';
 import 'package:tien_day/presentation/transactions/transaction_detail_sheet.dart';
 
@@ -42,6 +43,18 @@ Transaction _tx({
     createdAt: now,
     updatedAt: now,
   );
+}
+
+Color _dayHeaderFill(WidgetTester tester, String isoDate) {
+  final container = tester.widget<AnimatedContainer>(
+    find
+        .ancestor(
+          of: find.byKey(Key('month-day-$isoDate')),
+          matching: find.byType(AnimatedContainer),
+        )
+        .first,
+  );
+  return (container.decoration! as BoxDecoration).color!;
 }
 
 Future<void> _pumpShell(
@@ -326,8 +339,75 @@ void main() {
     expect(repo.items, isEmpty);
   });
 
+  testWidgets('month mode shows category filters and collapses older days', (
+    tester,
+  ) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(
+          seed: [
+            _tx(
+              id: '1',
+              amount: 12000,
+              date: DateTime(2026, 8, 7),
+              detail: 'Shopee',
+            ),
+            _tx(
+              id: '2',
+              amount: 15000,
+              date: DateTime(2026, 8, 18),
+              detail: 'Cơm',
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('nav-transactions')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Cơm'), findsOneWidget);
+    expect(find.text('Shopee'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('mode-month')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+    expect(find.byKey(const Key('cat-all')), findsOneWidget);
+    expect(find.textContaining('CHI TIÊU THÁNG'), findsOneWidget);
+    expect(find.text('Cơm'), findsOneWidget);
+    expect(find.text('Shopee'), findsOneWidget);
+    expect(find.textContaining('07/08'), findsOneWidget);
+    expect(
+      tester
+          .widget<Icon>(find.byKey(const Key('month-toggle-2026-08-18')))
+          .icon,
+      Icons.expand_less_rounded,
+    );
+
+    await tester.tap(find.byKey(const Key('month-day-2026-08-07')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Shopee'), findsNothing);
+    expect(find.text('Cơm'), findsOneWidget);
+    expect(find.textContaining('07/08'), findsOneWidget);
+    expect(find.byKey(const Key('cat-all')), findsOneWidget);
+    expect(
+      tester
+          .widget<Icon>(find.byKey(const Key('month-toggle-2026-08-07')))
+          .icon,
+      Icons.expand_more_rounded,
+    );
+
+    await tester.tap(find.byKey(const Key('month-toggle-2026-08-07')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('Shopee'), findsOneWidget);
+    expect(find.text('Cơm'), findsOneWidget);
+  });
+
   testWidgets(
-    'month mode shows category filters and opens a day on header tap',
+    'month mode opens the two newest days and resets on month change',
     (tester) async {
       _phone(tester);
       await _pumpShell(
@@ -336,16 +416,40 @@ void main() {
           MemoryTransactionRepository(
             seed: [
               _tx(
-                id: '1',
-                amount: 12000,
-                date: DateTime(2026, 8, 7),
-                detail: 'Shopee',
+                id: 'a10',
+                amount: 2000,
+                date: DateTime(2026, 8, 10),
+                detail: 'Ngày 10',
               ),
               _tx(
-                id: '2',
-                amount: 15000,
-                date: DateTime(2026, 8, 18),
-                detail: 'Cơm',
+                id: 'a9',
+                amount: 2500,
+                date: DateTime(2026, 8, 9),
+                detail: 'Ngày 9',
+              ),
+              _tx(
+                id: 'a2',
+                amount: 3000,
+                date: DateTime(2026, 8, 2),
+                detail: 'Ngày 2',
+              ),
+              _tx(
+                id: 'j20',
+                amount: 4000,
+                date: DateTime(2026, 7, 20),
+                detail: 'Tháng 7 mới',
+              ),
+              _tx(
+                id: 'j9',
+                amount: 5000,
+                date: DateTime(2026, 7, 9),
+                detail: 'Tháng 7 giữa',
+              ),
+              _tx(
+                id: 'j1',
+                amount: 6000,
+                date: DateTime(2026, 7, 1),
+                detail: 'Tháng 7 cũ',
               ),
             ],
           ),
@@ -354,35 +458,46 @@ void main() {
       await tester.tap(find.byKey(const Key('nav-transactions')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
-      expect(find.text('Cơm'), findsOneWidget);
-      expect(find.text('Shopee'), findsNothing);
-
       await tester.tap(find.byKey(const Key('mode-month')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 250));
-      expect(find.byKey(const Key('cat-all')), findsOneWidget);
-      expect(find.textContaining('CHI TIÊU THÁNG'), findsOneWidget);
-      expect(find.text('Shopee'), findsOneWidget);
-      expect(find.text('Cơm'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('month-toggle-2026-08-07')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(find.text('Shopee'), findsNothing);
-      expect(find.text('Cơm'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('month-toggle-2026-08-07')));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 200));
-      expect(find.text('Shopee'), findsOneWidget);
+      expect(find.text('Ngày 10'), findsOneWidget);
+      expect(find.text('Ngày 9'), findsOneWidget);
+      expect(find.text('Ngày 2'), findsNothing);
+      expect(find.textContaining('02/08'), findsOneWidget);
+      expect(find.textContaining('18/08'), findsNothing);
+      expect(_dayHeaderFill(tester, '2026-08-10'), AppColors.card);
+      expect(_dayHeaderFill(tester, '2026-08-02'), Colors.transparent);
+      expect(
+        tester.getTopLeft(find.textContaining('10/08')).dx,
+        tester.getTopLeft(find.textContaining('02/08')).dx,
+      );
+      final openHeader = tester.getRect(
+        find.byKey(const Key('month-day-2026-08-10')),
+      );
+      final openTile = tester.getRect(find.byKey(const Key('tx-tile-a10')));
+      final closedHeader = tester.getRect(
+        find.byKey(const Key('month-day-2026-08-02')),
+      );
+      expect(openHeader.left, openTile.left);
+      expect(openHeader.right, openTile.right);
+      expect(closedHeader.left, openHeader.left);
+      expect(closedHeader.right, openHeader.right);
 
-      await tester.tap(find.byKey(const Key('month-day-2026-08-07')));
+      await tester.tap(find.byKey(const Key('month-day-2026-08-02')));
+      await tester.pump();
+      expect(_dayHeaderFill(tester, '2026-08-02'), AppColors.card);
+
+      await tester.tap(find.byKey(const Key('month-prev')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 250));
-      expect(find.text('Theo ngày'), findsOneWidget);
-      expect(find.text('Shopee'), findsOneWidget);
-      expect(find.text('Cơm'), findsNothing);
-      expect(find.byKey(const Key('cat-all')), findsNothing);
-      expect(find.text('CHI TIÊU NGÀY 07/08'), findsOneWidget);
+      expect(find.text('Tháng 07/2026'), findsOneWidget);
+      expect(find.text('Tháng 7 mới'), findsOneWidget);
+      expect(find.text('Tháng 7 giữa'), findsOneWidget);
+      expect(find.text('Tháng 7 cũ'), findsNothing);
+      expect(find.textContaining('01/07'), findsOneWidget);
+      expect(find.text('Ngày 18'), findsNothing);
     },
   );
 

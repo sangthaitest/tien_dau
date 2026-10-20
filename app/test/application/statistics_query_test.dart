@@ -17,14 +17,19 @@ Transaction _tx({
   required DateTime date,
   TransactionType type = TransactionType.expense,
   String category = 'cafe',
+  String? note,
+  String? occurredTime,
+  DateTime? createdAt,
 }) {
-  final now = DateTime.utc(2026, 8, 1);
+  final now = createdAt ?? DateTime.utc(2026, 8, 1);
   return Transaction(
     id: id,
     amount: amount,
     type: type,
     categoryId: category,
     occurredOn: date,
+    occurredTime: occurredTime,
+    note: note,
     paymentSourceId: 'momo',
     paymentSourceName: 'MoMo',
     paymentMethod: PaymentMethodKind.eWallet,
@@ -128,6 +133,68 @@ void main() {
     expect(formatVnd(1500000), '1.500.000 ₫');
     expect(formatVndShort(45000), '45k');
     expect(formatVndShort(1500000), '1.5tr');
+  });
+
+  test('latest category expenses are the five newest expenses in that month', () async {
+    final repo = MemoryTransactionRepository(
+      seed: [
+        _tx(id: 'old', amount: 1, date: DateTime(2026, 8, 1), note: 'oldest'),
+        _tx(id: 'd2', amount: 2, date: DateTime(2026, 8, 2)),
+        _tx(id: 'd3', amount: 3, date: DateTime(2026, 8, 3)),
+        _tx(id: 'd4', amount: 4, date: DateTime(2026, 8, 4)),
+        _tx(
+          id: 'same-early',
+          amount: 5,
+          date: DateTime(2026, 8, 5),
+          occurredTime: '08:00',
+          createdAt: DateTime.utc(2026, 8, 5, 8),
+        ),
+        _tx(
+          id: 'same-late',
+          amount: 6,
+          date: DateTime(2026, 8, 5),
+          occurredTime: '08:00',
+          createdAt: DateTime.utc(2026, 8, 5, 18),
+        ),
+        _tx(
+          id: 'later-time',
+          amount: 7,
+          date: DateTime(2026, 8, 5),
+          occurredTime: '19:00',
+        ),
+        _tx(id: 'newest', amount: 8, date: DateTime(2026, 8, 6)),
+        _tx(id: 'july', amount: 9, date: DateTime(2026, 7, 20)),
+        _tx(
+          id: 'income',
+          amount: 10,
+          date: DateTime(2026, 8, 6),
+          type: TransactionType.income,
+        ),
+        _tx(id: 'market', amount: 11, date: DateTime(2026, 8, 6), category: 'market'),
+      ],
+    );
+    final result = await StatisticsQuery(
+      TransactionService(repo),
+      clock: () => august,
+    ).latestCategoryExpenses(
+      month: DateTime(2026, 8, 18),
+      categoryId: 'cafe',
+    );
+    final items = (result as Ok<List<Transaction>>).value;
+    expect(items.map((tx) => tx.id).toList(), [
+      'newest',
+      'later-time',
+      'same-late',
+      'same-early',
+      'd4',
+    ]);
+    final spec = repo.querySpecs.single;
+    expect(spec.type, TransactionType.expense);
+    expect(spec.categoryId, 'cafe');
+    expect(spec.limit, StatisticsSnapshot.previewLimit);
+    expect(spec.includeExpenseSum, isFalse);
+    expect(spec.fromInclusive, DateTime(2026, 8));
+    expect(spec.toExclusive, DateTime(2026, 9));
   });
 
   test('repository persistence error is returned', () async {

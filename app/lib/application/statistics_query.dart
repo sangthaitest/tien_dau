@@ -33,6 +33,7 @@ class StatisticsSnapshot {
   final List<CategorySpend> categories;
 
   static const topLimit = 5;
+  static const previewLimit = 5;
 
   List<CategorySpend> get topCategories =>
       categories.take(topLimit).toList(growable: false);
@@ -71,6 +72,29 @@ class StatisticsQuery {
         previous: (previous as Ok<ExpenseSummary>).value,
       ),
     );
+  }
+
+  /// Newest expenses in [month] for one category. Same expense rules as the
+  /// category total: type expense, occurred inside the month, limit 5.
+  Future<Result<List<Transaction>>> latestCategoryExpenses({
+    required DateTime month,
+    required String categoryId,
+  }) async {
+    final start = monthStart(month);
+    final result = await _service.query(
+      TransactionQuerySpec(
+        fromInclusive: start,
+        toExclusive: DateTime(start.year, start.month + 1),
+        type: TransactionType.expense,
+        categoryId: categoryId,
+        limit: StatisticsSnapshot.previewLimit,
+        includeExpenseSum: false,
+      ),
+    );
+    return switch (result) {
+      Ok(:final value) => Ok(value.items),
+      Err(:final failure) => Err(failure),
+    };
   }
 
   StatisticsSnapshot build(List<Transaction> all, DateTime now) {

@@ -3,6 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../application/statistics_query.dart';
+import '../../domain/entities/transaction.dart';
+import '../../domain/failures/result.dart';
+import '../../domain/time/clock_format.dart';
+import '../../domain/transaction_display.dart';
 import '../finance/finance_month_picker.dart';
 import '../format/money_format.dart';
 import '../catalog/transaction_catalog_scope.dart';
@@ -16,11 +20,13 @@ class StatisticsPage extends StatelessWidget {
   const StatisticsPage({
     super.key,
     required this.controller,
+    required this.onSeeAllCategory,
     this.insightTargetKey,
     this.chartTargetKey,
   });
 
   final StatisticsController controller;
+  final ValueChanged<String> onSeeAllCategory;
   final GlobalKey? insightTargetKey;
   final GlobalKey? chartTargetKey;
 
@@ -80,7 +86,11 @@ class StatisticsPage extends StatelessWidget {
                     style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                   ),
                   const SizedBox(height: 8),
-                  _TopSpending(snapshot: snap),
+                  _TopSpending(
+                    snapshot: snap,
+                    loadExpenses: controller.latestCategoryExpenses,
+                    onSeeAll: onSeeAllCategory,
+                  ),
                 ],
               ],
             );
@@ -575,13 +585,76 @@ class _LegendRow extends StatelessWidget {
   }
 }
 
-class _TopSpending extends StatelessWidget {
-  const _TopSpending({required this.snapshot});
+class _TopSpending extends StatefulWidget {
+  const _TopSpending({
+    required this.snapshot,
+    required this.loadExpenses,
+    required this.onSeeAll,
+  });
 
   final StatisticsSnapshot snapshot;
+  final Future<Result<List<Transaction>>> Function(String categoryId)
+  loadExpenses;
+  final ValueChanged<String> onSeeAll;
+
+  @override
+  State<_TopSpending> createState() => _TopSpendingState();
+}
+
+class _TopSpendingState extends State<_TopSpending> {
+  String? _expandedId;
+  final Map<String, List<Transaction>> _cache = {};
+  final Map<String, String> _errors = {};
+  String? _loadingId;
+  int _request = 0;
+
+  @override
+  void didUpdateWidget(covariant _TopSpending oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.snapshot.month != widget.snapshot.month) {
+      _request++;
+      _expandedId = null;
+      _loadingId = null;
+      _cache.clear();
+      _errors.clear();
+    }
+  }
+
+  Future<void> _toggle(String categoryId) async {
+    if (_expandedId == categoryId) {
+      setState(() => _expandedId = null);
+      return;
+    }
+    if (_cache.containsKey(categoryId)) {
+      setState(() => _expandedId = categoryId);
+      return;
+    }
+    final token = ++_request;
+    final month = widget.snapshot.month;
+    setState(() {
+      _expandedId = categoryId;
+      _loadingId = categoryId;
+      _errors.remove(categoryId);
+    });
+    final result = await widget.loadExpenses(categoryId);
+    if (!mounted || token != _request || widget.snapshot.month != month) {
+      return;
+    }
+    setState(() {
+      if (_loadingId == categoryId) _loadingId = null;
+      switch (result) {
+        case Ok(:final value):
+          _cache[categoryId] = value;
+          _errors.remove(categoryId);
+        case Err(:final failure):
+          _errors[categoryId] = failure.message;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final snapshot = widget.snapshot;
     if (snapshot.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(12),
@@ -606,7 +679,18 @@ class _TopSpending extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < snapshot.topCategories.length; i++)
-            _RankRow(index: i, row: snapshot.topCategories[i]),
+            _RankRow(
+              index: i,
+              row: snapshot.topCategories[i],
+              expanded: _expandedId == snapshot.topCategories[i].categoryId,
+              loading: _loadingId == snapshot.topCategories[i].categoryId,
+              error: _errors[snapshot.topCategories[i].categoryId],
+              transactions:
+                  _cache[snapshot.topCategories[i].categoryId] ?? const [],
+              onToggle: () => _toggle(snapshot.topCategories[i].categoryId),
+              onSeeAll: () =>
+                  widget.onSeeAll(snapshot.topCategories[i].categoryId),
+            ),
         ],
       ),
     );
@@ -614,10 +698,25 @@ class _TopSpending extends StatelessWidget {
 }
 
 class _RankRow extends StatelessWidget {
-  const _RankRow({required this.index, required this.row});
+  const _RankRow({
+    required this.index,
+    required this.row,
+    required this.expanded,
+    required this.loading,
+    required this.error,
+    required this.transactions,
+    required this.onToggle,
+    required this.onSeeAll,
+  });
 
   final int index;
   final CategorySpend row;
+  final bool expanded;
+  final bool loading;
+  final String? error;
+  final List<Transaction> transactions;
+  final VoidCallback onToggle;
+  final VoidCallback onSeeAll;
 
   @override
   Widget build(BuildContext context) {
@@ -634,69 +733,347 @@ class _RankRow extends StatelessWidget {
       2 => const Color(0xFFD84315),
       _ => AppColors.textSecondary,
     };
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 26,
-            height: 26,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: rankBg,
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Text(
-              '${index + 1}',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: rankColor,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: look.background,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(look.icon, color: look.color, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      key: Key('stats-top-cluster-${row.categoryId}'),
+      children: [
+        InkWell(
+          key: Key('stats-top-${row.categoryId}'),
+          onTap: onToggle,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
               children: [
-                Text(
-                  look.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                ),
-                Text(
-                  '${row.percent}% chi tiêu',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
+                Container(
+                  width: 26,
+                  height: 26,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: rankBg,
+                    borderRadius: BorderRadius.circular(9),
                   ),
+                  child: Text(
+                    '${index + 1}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: rankColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: look.background,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(look.icon, color: look.color, size: 18),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        look.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        '${row.percent}% chi tiêu',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _RankAmount(categoryId: row.categoryId, amount: row.amount),
+                Icon(
+                  expanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  key: Key('stats-top-chevron-${row.categoryId}'),
+                  size: 22,
+                  color: AppColors.textSecondary,
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          alignment: Alignment.topCenter,
+          child: expanded
+              ? _CategoryPreview(
+                  categoryId: row.categoryId,
+                  look: look,
+                  loading: loading,
+                  error: error,
+                  transactions: transactions,
+                  onSeeAll: onSeeAll,
+                )
+              : const SizedBox(width: double.infinity),
+        ),
+      ],
+    );
+  }
+}
+
+class _RankAmount extends StatelessWidget {
+  const _RankAmount({required this.categoryId, required this.amount});
+
+  final String categoryId;
+  final int amount;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = moneyStyle(
+      size: 14,
+      color: AppColors.expense,
+    ).copyWith(letterSpacing: 0);
+    final digitWidth = _widestDigitWidth(style);
+    return Row(
+      key: Key('stats-top-amount-$categoryId'),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (final rune in formatVnd(amount).runes)
+          _AmountGlyph(
+            char: String.fromCharCode(rune),
+            style: style,
+            digitWidth: digitWidth,
+          ),
+      ],
+    );
+  }
+}
+
+class _AmountGlyph extends StatelessWidget {
+  const _AmountGlyph({
+    required this.char,
+    required this.style,
+    required this.digitWidth,
+  });
+
+  final String char;
+  final TextStyle style;
+  final double digitWidth;
+
+  bool get _isDigit {
+    final unit = char.codeUnitAt(0);
+    return unit >= 48 && unit <= 57;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Text(char, maxLines: 1, style: style);
+    if (!_isDigit) return text;
+    return SizedBox(
+      width: digitWidth,
+      child: Align(alignment: Alignment.center, child: text),
+    );
+  }
+}
+
+double _widestDigitWidth(TextStyle style) {
+  var width = 0.0;
+  for (var digit = 0; digit <= 9; digit++) {
+    final painter = TextPainter(
+      text: TextSpan(text: '$digit', style: style),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout();
+    if (painter.width > width) width = painter.width;
+    painter.dispose();
+  }
+  return width;
+}
+
+class _CategoryPreview extends StatelessWidget {
+  const _CategoryPreview({
+    required this.categoryId,
+    required this.look,
+    required this.loading,
+    required this.error,
+    required this.transactions,
+    required this.onSeeAll,
+  });
+
+  final String categoryId;
+  final CategoryLook look;
+  final bool loading;
+  final String? error;
+  final List<Transaction> transactions;
+  final VoidCallback onSeeAll;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      key: Key('stats-top-preview-$categoryId'),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  '5 giao dịch gần nhất',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ),
+              TextButton(
+                key: Key('stats-top-see-all-$categoryId'),
+                onPressed: onSeeAll,
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  minimumSize: const Size(0, 32),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Xem tất cả',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, size: 18),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(child: AppCircularProgress()),
+            )
+          else if (error != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                error!,
+                key: Key('stats-top-error-$categoryId'),
+                style: TextStyle(
+                  color: AppColors.expense,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            )
+          else if (transactions.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Chưa có giao dịch trong tháng này.',
+                key: Key('stats-top-empty-$categoryId'),
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            )
+          else
+            for (var i = 0; i < transactions.length; i++) ...[
+              if (i > 0) Divider(height: 1, color: AppColors.divider),
+              _PreviewTransaction(transaction: transactions[i], look: look),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PreviewTransaction extends StatelessWidget {
+  const _PreviewTransaction({required this.transaction, required this.look});
+
+  final Transaction transaction;
+  final CategoryLook look;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = transactionTitle(transaction, categoryName: look.name);
+    return Padding(
+      key: Key('stats-top-tx-${transaction.id}'),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
           Text(
-            formatVnd(row.amount),
+            formatDayMonth(transaction.occurredOn),
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.right,
+            softWrap: false,
             style: TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              color: AppColors.expense,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textTertiary,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              color: look.background,
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Icon(look.icon, color: look.color, size: 13),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: math.max(0, constraints.maxWidth - 32),
+                      ),
+                      child: Text(
+                        formatVnd(transaction.amount),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: AppColors.expense,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],

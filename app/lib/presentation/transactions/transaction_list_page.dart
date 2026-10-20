@@ -195,11 +195,11 @@ class _TransactionListPageState extends State<TransactionListPage> {
                               ),
                             )
                         else
-                          for (final group in c.snapshot.groups)
+                          for (var i = 0; i < c.snapshot.groups.length; i++)
                             _MonthDayGroup(
-                              key: ValueKey(group.date),
-                              group: group,
-                              onOpenDay: () => c.selectDay(group.date),
+                              key: ValueKey(c.snapshot.groups[i].date),
+                              group: c.snapshot.groups[i],
+                              initiallyExpanded: i < 2,
                               onTap: widget.onTransactionTap,
                             ),
                         if (c.loadingMore)
@@ -655,12 +655,12 @@ class _MonthDayGroup extends StatefulWidget {
   const _MonthDayGroup({
     super.key,
     required this.group,
-    required this.onOpenDay,
+    required this.initiallyExpanded,
     this.onTap,
   });
 
   final TransactionDayGroup group;
-  final VoidCallback onOpenDay;
+  final bool initiallyExpanded;
   final ValueChanged<Transaction>? onTap;
 
   @override
@@ -668,7 +668,15 @@ class _MonthDayGroup extends StatefulWidget {
 }
 
 class _MonthDayGroupState extends State<_MonthDayGroup> {
-  bool _expanded = true;
+  late bool _expanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _expanded = widget.initiallyExpanded;
+  }
+
+  void _toggle() => setState(() => _expanded = !_expanded);
 
   @override
   Widget build(BuildContext context) {
@@ -676,70 +684,66 @@ class _MonthDayGroupState extends State<_MonthDayGroup> {
     final group = widget.group;
     final label =
         '${formatWeekdayShort(group.date)}, ${formatDayMonth(group.date)}';
+    final dayKey = formatIsoDate(group.date);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 6),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    key: Key('month-day-${formatIsoDate(group.date)}'),
-                    onTap: widget.onOpenDay,
-                    borderRadius: BorderRadius.circular(10),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Text(
-                        label,
-                        style: TextStyle(
-                          fontFamily: AppTypography.fontFamily,
-                          fontSize: 13,
-                          fontWeight: AppTypography.strongWeight,
-                          color: AppColors.text,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  key: Key('month-toggle-${formatIsoDate(group.date)}'),
-                  onTap: () => setState(() => _expanded = !_expanded),
-                  borderRadius: BorderRadius.circular(10),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 4,
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          hidden
-                              ? kHiddenMoneyShort
-                              : '−${formatVnd(group.dayExpense)}',
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: _expanded ? AppColors.card : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                key: Key('month-day-$dayKey'),
+                onTap: _toggle,
+                borderRadius: BorderRadius.circular(12),
+                splashColor: AppColors.text.withValues(alpha: 0.05),
+                highlightColor: AppColors.text.withValues(alpha: 0.04),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          label,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.right,
-                          style: moneyStyle(size: 13, color: AppColors.expense),
+                          style: TextStyle(
+                            fontFamily: AppTypography.fontFamily,
+                            fontSize: 13,
+                            fontWeight: AppTypography.strongWeight,
+                            color: AppColors.text,
+                          ),
                         ),
-                        const SizedBox(width: 2),
-                        Icon(
-                          _expanded
-                              ? Icons.expand_less_rounded
-                              : Icons.expand_more_rounded,
-                          size: 20,
-                          color: AppColors.textTertiary,
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        hidden
+                            ? kHiddenMoneyShort
+                            : '−${formatVnd(group.dayExpense)}',
+                        maxLines: 1,
+                        softWrap: false,
+                        style: moneyStyle(size: 13, color: AppColors.expense),
+                      ),
+                      Icon(
+                        _expanded
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        key: Key('month-toggle-$dayKey'),
+                        size: 20,
+                        color: AppColors.textTertiary,
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
           AnimatedSize(
             duration: const Duration(milliseconds: 180),
