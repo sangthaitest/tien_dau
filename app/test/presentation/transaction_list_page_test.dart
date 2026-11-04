@@ -147,6 +147,10 @@ void main() {
     expect(find.text('1 giao dịch'), findsOneWidget);
     expect(find.textContaining('CHI TIÊU NGÀY'), findsNothing);
     expect(find.byKey(const Key('tx-sum-expense')), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.byKey(const Key('date-carousel'))).dy,
+      lessThan(tester.getTopLeft(find.byKey(const Key('tx-sum-expense'))).dy),
+    );
     expect(find.text('Tháng này'), findsNothing);
     expect(find.byKey(const Key('cat-all')), findsNothing);
   });
@@ -377,6 +381,10 @@ void main() {
     expect(find.byKey(const Key('cat-all')), findsOneWidget);
     expect(find.textContaining('CHI TIÊU THÁNG'), findsNothing);
     expect(find.byKey(const Key('tx-sum-expense')), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.byKey(const Key('cat-all'))).dy,
+      lessThan(tester.getTopLeft(find.byKey(const Key('tx-sum-expense'))).dy),
+    );
     expect(find.text('Cơm'), findsOneWidget);
     expect(find.text('Shopee'), findsOneWidget);
     expect(find.textContaining('07/08'), findsOneWidget);

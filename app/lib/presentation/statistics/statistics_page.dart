@@ -76,7 +76,7 @@ class StatisticsPage extends StatelessWidget {
                       onOpenPicker: () => _openMonthPicker(context),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
                   _StatisticsBody(
                     snapshot: snap,
                     chartTargetKey: chartTargetKey,
@@ -416,69 +416,29 @@ class _SegmentedControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selected = AppColors.dark ? AppColors.primary : AppColors.primaryDark;
-    return Material(
-      color: Colors.transparent,
-      child: Container(
-        key: const Key('stats-segmented'),
-        height: 40,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.cardBorder),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.cardShadow,
-              blurRadius: 14,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    return Row(
+      key: const Key('stats-segmented'),
+      children: [
+        Expanded(
+          child: _Segment(
+            tabKey: const Key('stats-tab-categories'),
+            label: 'Danh mục',
+            icon: Icons.pie_chart_outline,
+            selected: tab == _StatsTab.categories,
+            onTap: () => onChanged(_StatsTab.categories),
+          ),
         ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final width = constraints.maxWidth / 2;
-            final index = tab == _StatsTab.categories ? 0 : 1;
-            return Stack(
-              children: [
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 220),
-                  curve: Curves.easeOutCubic,
-                  left: width * index,
-                  top: 0,
-                  bottom: 0,
-                  width: width,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryContainer,
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    _Segment(
-                      tabKey: const Key('stats-tab-categories'),
-                      label: 'Danh mục',
-                      icon: Icons.pie_chart_outline,
-                      selected: tab == _StatsTab.categories,
-                      selectedColor: selected,
-                      onTap: () => onChanged(_StatsTab.categories),
-                    ),
-                    _Segment(
-                      tabKey: const Key('stats-tab-payments'),
-                      label: 'Thanh toán bằng',
-                      icon: Icons.account_balance_wallet_outlined,
-                      selected: tab == _StatsTab.payments,
-                      selectedColor: selected,
-                      onTap: () => onChanged(_StatsTab.payments),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          },
+        const SizedBox(width: 8),
+        Expanded(
+          child: _Segment(
+            tabKey: const Key('stats-tab-payments'),
+            label: 'Thanh toán bằng',
+            icon: Icons.account_balance_wallet_outlined,
+            selected: tab == _StatsTab.payments,
+            onTap: () => onChanged(_StatsTab.payments),
+          ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -489,7 +449,6 @@ class _Segment extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.selected,
-    required this.selectedColor,
     required this.onTap,
   });
 
@@ -497,48 +456,50 @@ class _Segment extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool selected;
-  final Color selectedColor;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? selectedColor : AppColors.textSecondary;
-    return Expanded(
+    final color = selected ? AppColors.onPrimary : AppColors.textSecondary;
+    return Material(
+      color: selected ? AppColors.primary : AppColors.card,
+      borderRadius: BorderRadius.circular(999),
       child: InkWell(
         key: tabKey,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TweenAnimationBuilder<Color?>(
-                  tween: ColorTween(end: color),
-                  duration: const Duration(milliseconds: 220),
-                  builder: (context, value, _) {
-                    return Icon(icon, size: 18, color: value ?? color);
-                  },
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      softWrap: false,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: color,
-                      ),
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected ? AppColors.primary : AppColors.cardBorder,
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 18, color: color),
+              const SizedBox(width: 6),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: color,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

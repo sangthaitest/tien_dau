@@ -138,15 +138,15 @@ class _TransactionListPageState extends State<TransactionListPage> {
                           ),
                   ),
                   if (isDay)
-                    tutorialAnchor(
-                      key: widget.summaryTargetKey,
-                      child: _DaySummary(controller: c),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, bottom: 4),
+                      child: TransactionDateCarousel(
+                        key: const ValueKey('day-carousel'),
+                        selectedDay: c.selectedDay,
+                        onSelected: c.selectDay,
+                      ),
                     )
-                  else ...[
-                    tutorialAnchor(
-                      key: widget.summaryTargetKey,
-                      child: _MonthSummary(controller: c),
-                    ),
+                  else
                     _ChipRow(
                       children: [
                         _FilterChip(
@@ -168,15 +168,15 @@ class _TransactionListPageState extends State<TransactionListPage> {
                           ),
                       ],
                     ),
-                  ],
                   if (isDay)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: TransactionDateCarousel(
-                        key: const ValueKey('day-carousel'),
-                        selectedDay: c.selectedDay,
-                        onSelected: c.selectDay,
-                      ),
+                    tutorialAnchor(
+                      key: widget.summaryTargetKey,
+                      child: _DaySummary(controller: c),
+                    )
+                  else
+                    tutorialAnchor(
+                      key: widget.summaryTargetKey,
+                      child: _MonthSummary(controller: c),
                     ),
                   Expanded(
                     child: ListView(
@@ -455,11 +455,11 @@ class _DaySummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 2, 20, 2),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
       child: _SpendSummaryCard(
+        label: 'Tổng chi 1 ngày',
         amount: controller.snapshot.expenseSum,
         count: controller.snapshot.transactionCount,
-        verticalPadding: 10,
       ),
     );
   }
@@ -473,8 +473,9 @@ class _MonthSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 2, 20, 4),
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
       child: _SpendSummaryCard(
+        label: 'Tổng chi 1 tháng',
         amount: controller.snapshot.expenseSum,
         count: controller.snapshot.transactionCount,
       ),
@@ -484,50 +485,70 @@ class _MonthSummary extends StatelessWidget {
 
 class _SpendSummaryCard extends StatelessWidget {
   const _SpendSummaryCard({
+    required this.label,
     required this.amount,
     required this.count,
-    this.verticalPadding = 14,
   });
 
+  final String label;
   final int amount;
   final int count;
-  final double verticalPadding;
 
   @override
   Widget build(BuildContext context) {
     final hidden = SettingsScope.hideMoney(context);
+    final tint = Color.alphaBlend(
+      AppColors.expense.withValues(alpha: 0.07),
+      AppColors.card,
+    );
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(16, verticalPadding, 16, verticalPadding),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: tint,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.cardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.cardShadow,
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: AppTypography.fontFamily,
+                  fontSize: 12,
+                  fontWeight: AppTypography.metadataWeight,
+                  color: AppColors.textTertiary,
+                  height: 1.2,
+                ),
+              ),
+              const SizedBox(height: 4),
+              _TxCountBadge(count: count),
+            ],
+          ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(
                   hidden ? kHiddenMoney : '−${formatVnd(amount)}',
                   key: const Key('tx-sum-expense'),
-                  style: moneyStyle(size: 24, color: AppColors.expense),
+                  maxLines: 1,
+                  style: moneyStyle(
+                    size: 28,
+                    color: AppColors.expense,
+                    weight: AppTypography.extraWeight,
+                  ),
                 ),
-              ],
+              ),
             ),
           ),
-          const SizedBox(width: 8),
-          _TxCountBadge(count: count),
         ],
       ),
     );
@@ -582,7 +603,7 @@ class _ChipRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+      padding: const EdgeInsets.fromLTRB(20, 6, 20, 4),
       child: Row(
         children: [
           for (var i = 0; i < children.length; i++) ...[
