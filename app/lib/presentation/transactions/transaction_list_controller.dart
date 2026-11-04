@@ -192,6 +192,19 @@ class TransactionListController extends ChangeNotifier {
     await _loadFirstPage();
   }
 
+  /// Opens the month list already filtered to one category.
+  Future<void> showCategoryMonth({
+    required String categoryId,
+    required DateTime month,
+  }) async {
+    selectedMonth = monthStart(month);
+    mode = TxListMode.month;
+    _awaitingCustomRange = false;
+    filter = filter.copyWith(categoryId: categoryId);
+    _syncFilterRange();
+    await _loadFirstPage();
+  }
+
   Future<void> setDateFilter(TxDateFilter date) async {
     if (date == TxDateFilter.custom) {
       _awaitingCustomRange = true;

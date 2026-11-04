@@ -21,11 +21,13 @@ class StatisticsPage extends StatelessWidget {
   const StatisticsPage({
     super.key,
     required this.controller,
+    required this.onSeeAllCategory,
     this.insightTargetKey,
     this.chartTargetKey,
   });
 
   final StatisticsController controller;
+  final ValueChanged<String> onSeeAllCategory;
   final GlobalKey? insightTargetKey;
   final GlobalKey? chartTargetKey;
 
@@ -78,6 +80,7 @@ class StatisticsPage extends StatelessWidget {
                   _StatisticsBody(
                     snapshot: snap,
                     chartTargetKey: chartTargetKey,
+                    onSeeAllCategory: onSeeAllCategory,
                   ),
                 ],
               ],
@@ -316,10 +319,15 @@ class _MonthStep extends StatelessWidget {
 enum _StatsTab { categories, payments }
 
 class _StatisticsBody extends StatefulWidget {
-  const _StatisticsBody({required this.snapshot, required this.chartTargetKey});
+  const _StatisticsBody({
+    required this.snapshot,
+    required this.chartTargetKey,
+    required this.onSeeAllCategory,
+  });
 
   final StatisticsSnapshot snapshot;
   final GlobalKey? chartTargetKey;
+  final ValueChanged<String> onSeeAllCategory;
 
   @override
   State<_StatisticsBody> createState() => _StatisticsBodyState();
@@ -386,6 +394,7 @@ class _StatisticsBodyState extends State<_StatisticsBody> {
                   chartTargetKey: widget.chartTargetKey,
                   expandedKeys: _expandedCategories,
                   onToggle: _toggleCategory,
+                  onSeeAllCategory: widget.onSeeAllCategory,
                 )
               : StatisticsPaymentSection(
                   key: const ValueKey('stats-payments'),
@@ -544,12 +553,14 @@ class _CategorySection extends StatelessWidget {
     required this.chartTargetKey,
     required this.expandedKeys,
     required this.onToggle,
+    required this.onSeeAllCategory,
   });
 
   final StatisticsSnapshot snapshot;
   final GlobalKey? chartTargetKey;
   final Set<String> expandedKeys;
   final ValueChanged<String> onToggle;
+  final ValueChanged<String> onSeeAllCategory;
 
   @override
   Widget build(BuildContext context) {
@@ -570,6 +581,7 @@ class _CategorySection extends StatelessWidget {
           snapshot: snapshot,
           expandedKeys: expandedKeys,
           onToggle: onToggle,
+          onSeeAll: onSeeAllCategory,
         ),
       ],
     );
@@ -841,11 +853,13 @@ class _TopSpending extends StatelessWidget {
     required this.snapshot,
     required this.expandedKeys,
     required this.onToggle,
+    required this.onSeeAll,
   });
 
   final StatisticsSnapshot snapshot;
   final Set<String> expandedKeys;
   final ValueChanged<String> onToggle;
+  final ValueChanged<String> onSeeAll;
 
   @override
   Widget build(BuildContext context) {
@@ -880,6 +894,7 @@ class _TopSpending extends StatelessWidget {
                 snapshot.topCategories[i].categoryId,
               ),
               onToggle: () => onToggle(snapshot.topCategories[i].categoryId),
+              onSeeAll: () => onSeeAll(snapshot.topCategories[i].categoryId),
             ),
         ],
       ),
@@ -893,12 +908,14 @@ class _RankRow extends StatelessWidget {
     required this.row,
     required this.expanded,
     required this.onToggle,
+    required this.onSeeAll,
   });
 
   final int index;
   final CategorySpend row;
   final bool expanded;
   final VoidCallback onToggle;
+  final VoidCallback onSeeAll;
 
   @override
   Widget build(BuildContext context) {
@@ -1046,6 +1063,26 @@ class _RankRow extends StatelessWidget {
                   children: [
                     for (final tx in row.transactions)
                       _CategoryTransactionRow(transaction: tx),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        key: Key('stats-top-see-all-${row.categoryId}'),
+                        onPressed: onSeeAll,
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          minimumSize: const Size(0, 32),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          'Xem tất cả',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

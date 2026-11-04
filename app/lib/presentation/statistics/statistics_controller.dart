@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../application/statistics_query.dart';
+import '../../domain/entities/transaction.dart';
 import '../../domain/failures/result.dart';
 import '../../domain/time/clock_format.dart';
 
@@ -68,6 +69,13 @@ class StatisticsController extends ChangeNotifier {
   Future<void> shiftMonth(int delta) {
     return selectMonth(
       DateTime(selectedMonth.year, selectedMonth.month + delta),
+    );
+  }
+
+  Future<Result<List<Transaction>>> latestCategoryExpenses(String categoryId) {
+    return _query.latestCategoryExpenses(
+      month: selectedMonth,
+      categoryId: categoryId,
     );
   }
 }
