@@ -84,9 +84,9 @@ class _TransactionListPageState extends State<TransactionListPage> {
                   Padding(
                     padding: EdgeInsets.fromLTRB(
                       20,
-                      MediaQuery.paddingOf(context).top + 12,
+                      MediaQuery.paddingOf(context).top + 8,
                       20,
-                      12,
+                      4,
                     ),
                     child: Row(
                       children: [
@@ -114,10 +114,20 @@ class _TransactionListPageState extends State<TransactionListPage> {
                     switchInCurve: Curves.easeOutCubic,
                     switchOutCurve: Curves.easeInCubic,
                     child: isDay
-                        ? TransactionDateCarousel(
-                            key: const ValueKey('day-carousel'),
-                            selectedDay: c.selectedDay,
-                            onSelected: c.selectDay,
+                        ? _MonthSelector(
+                            key: const ValueKey('day-month-selector'),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            month: monthStart(c.selectedDay),
+                            previousKey: const Key('day-month-prev'),
+                            labelKey: const Key('day-month-label'),
+                            nextKey: const Key('day-month-next'),
+                            onPrevious: () => c.selectDayInMonth(
+                              addCalendarMonths(c.selectedDay, -1),
+                            ),
+                            onNext: () => c.selectDayInMonth(
+                              addCalendarMonths(c.selectedDay, 1),
+                            ),
+                            onOpenPicker: () => _openDayMonthPicker(context, c),
                           )
                         : _MonthSelector(
                             key: const ValueKey('month-selector'),
@@ -127,7 +137,12 @@ class _TransactionListPageState extends State<TransactionListPage> {
                             onOpenPicker: () => _openMonthPicker(context, c),
                           ),
                   ),
-                  if (!isDay) ...[
+                  if (isDay)
+                    tutorialAnchor(
+                      key: widget.summaryTargetKey,
+                      child: _DaySummary(controller: c),
+                    )
+                  else ...[
                     tutorialAnchor(
                       key: widget.summaryTargetKey,
                       child: _MonthSummary(controller: c),
@@ -154,16 +169,20 @@ class _TransactionListPageState extends State<TransactionListPage> {
                       ],
                     ),
                   ],
+                  if (isDay)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: TransactionDateCarousel(
+                        key: const ValueKey('day-carousel'),
+                        selectedDay: c.selectedDay,
+                        onSelected: c.selectDay,
+                      ),
+                    ),
                   Expanded(
                     child: ListView(
                       controller: _scrollController,
                       padding: const EdgeInsets.only(bottom: 24),
                       children: [
-                        if (isDay)
-                          tutorialAnchor(
-                            key: widget.summaryTargetKey,
-                            child: _DaySummary(controller: c),
-                          ),
                         if (c.error != null)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -320,6 +339,18 @@ Future<void> _openMonthPicker(
   if (picked != null) await controller.selectMonth(picked);
 }
 
+Future<void> _openDayMonthPicker(
+  BuildContext context,
+  TransactionListController controller,
+) async {
+  final picked = await showFinanceMonthPicker(
+    context: context,
+    selectedMonth: monthStart(controller.selectedDay),
+    now: controller.clock(),
+  );
+  if (picked != null) await controller.selectDayInMonth(picked);
+}
+
 class _MonthSelector extends StatelessWidget {
   const _MonthSelector({
     super.key,
@@ -327,17 +358,25 @@ class _MonthSelector extends StatelessWidget {
     required this.onPrevious,
     required this.onNext,
     required this.onOpenPicker,
+    this.padding = const EdgeInsets.fromLTRB(20, 0, 20, 2),
+    this.previousKey = const Key('month-prev'),
+    this.labelKey = const Key('month-label'),
+    this.nextKey = const Key('month-next'),
   });
 
   final DateTime month;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onOpenPicker;
+  final EdgeInsets padding;
+  final Key previousKey;
+  final Key labelKey;
+  final Key nextKey;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+      padding: padding,
       child: Center(
         child: Material(
           color: AppColors.primaryContainer,
@@ -349,12 +388,12 @@ class _MonthSelector extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _MonthStep(
-                  stepKey: const Key('month-prev'),
+                  stepKey: previousKey,
                   icon: Icons.chevron_left_rounded,
                   onTap: onPrevious,
                 ),
                 InkWell(
-                  key: const Key('month-label'),
+                  key: labelKey,
                   onTap: onOpenPicker,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -370,7 +409,7 @@ class _MonthSelector extends StatelessWidget {
                   ),
                 ),
                 _MonthStep(
-                  stepKey: const Key('month-next'),
+                  stepKey: nextKey,
                   icon: Icons.chevron_right_rounded,
                   onTap: onNext,
                 ),
@@ -416,11 +455,11 @@ class _DaySummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+      padding: const EdgeInsets.fromLTRB(20, 2, 20, 2),
       child: _SpendSummaryCard(
-        label: 'CHI TIÊU NGÀY ${formatDayMonth(controller.selectedDay)}',
         amount: controller.snapshot.expenseSum,
         count: controller.snapshot.transactionCount,
+        verticalPadding: 10,
       ),
     );
   }
@@ -433,12 +472,9 @@ class _MonthSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final month = controller.selectedMonth;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+      padding: const EdgeInsets.fromLTRB(20, 2, 20, 4),
       child: _SpendSummaryCard(
-        label:
-            'CHI TIÊU THÁNG ${month.month.toString().padLeft(2, '0')}/${month.year}',
         amount: controller.snapshot.expenseSum,
         count: controller.snapshot.transactionCount,
       ),
@@ -448,21 +484,21 @@ class _MonthSummary extends StatelessWidget {
 
 class _SpendSummaryCard extends StatelessWidget {
   const _SpendSummaryCard({
-    required this.label,
     required this.amount,
     required this.count,
+    this.verticalPadding = 14,
   });
 
-  final String label;
   final int amount;
   final int count;
+  final double verticalPadding;
 
   @override
   Widget build(BuildContext context) {
     final hidden = SettingsScope.hideMoney(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      padding: EdgeInsets.fromLTRB(16, verticalPadding, 16, verticalPadding),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(18),
@@ -482,18 +518,6 @@ class _SpendSummaryCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textTertiary,
-                    letterSpacing: 0.4,
-                  ),
-                ),
-                const SizedBox(height: 6),
                 Text(
                   hidden ? kHiddenMoney : '−${formatVnd(amount)}',
                   key: const Key('tx-sum-expense'),
@@ -558,7 +582,7 @@ class _ChipRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
       child: Row(
         children: [
           for (var i = 0; i < children.length; i++) ...[

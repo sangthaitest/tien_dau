@@ -561,19 +561,19 @@ class _MainShellState extends State<MainShell> {
                         )
                       : _tabHost(),
                 ),
-                HomeBottomNav(
-                  tab: _tutorialActive
-                      ? _tutorialNavTab
-                      : _tab == AppTab.settings ||
-                            _showFinance ||
-                            _showProfile ||
-                            _showBackupRestore
-                      ? AppTab.settings
-                      : _tab,
-                  onAddPressed: _openAdd,
-                  onTabSelected: _selectTab,
-                  addTargetKey: _tutorialTargets.addButton,
-                ),
+                if (!_showFinance)
+                  HomeBottomNav(
+                    tab: _tutorialActive
+                        ? _tutorialNavTab
+                        : _tab == AppTab.settings ||
+                              _showProfile ||
+                              _showBackupRestore
+                        ? AppTab.settings
+                        : _tab,
+                    onAddPressed: _openAdd,
+                    onTabSelected: _selectTab,
+                    addTargetKey: _tutorialTargets.addButton,
+                  ),
               ],
             ),
             _PaintWarmSlot(

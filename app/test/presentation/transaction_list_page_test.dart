@@ -132,7 +132,8 @@ void main() {
     expect(find.text('Grab'), findsOneWidget);
     expect(find.text('Theo ngày'), findsOneWidget);
     expect(find.text('1 giao dịch'), findsOneWidget);
-    expect(find.textContaining('CHI TIÊU NGÀY'), findsOneWidget);
+    expect(find.textContaining('CHI TIÊU NGÀY'), findsNothing);
+    expect(find.byKey(const Key('tx-sum-expense')), findsOneWidget);
     expect(find.text('Tháng này'), findsNothing);
     expect(find.byKey(const Key('cat-all')), findsNothing);
   });
@@ -361,7 +362,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 250));
       expect(find.byKey(const Key('cat-all')), findsOneWidget);
-      expect(find.textContaining('CHI TIÊU THÁNG'), findsOneWidget);
+      expect(find.textContaining('CHI TIÊU THÁNG'), findsNothing);
+      expect(find.byKey(const Key('tx-sum-expense')), findsOneWidget);
       expect(find.text('Shopee'), findsOneWidget);
       expect(find.text('Cơm'), findsOneWidget);
 
@@ -382,7 +384,8 @@ void main() {
       expect(find.text('Shopee'), findsOneWidget);
       expect(find.text('Cơm'), findsNothing);
       expect(find.byKey(const Key('cat-all')), findsNothing);
-      expect(find.text('CHI TIÊU NGÀY 07/08'), findsOneWidget);
+      expect(find.textContaining('CHI TIÊU NGÀY'), findsNothing);
+      expect(find.byKey(const Key('tx-sum-expense')), findsOneWidget);
     },
   );
 
@@ -419,12 +422,78 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 250));
     expect(find.text('Hôm qua'), findsWidgets);
-    expect(find.textContaining('17/08'), findsWidgets);
+    expect(find.byKey(const Key('date-cell-2026-08-17')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('date-next')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 250));
     expect(find.text('Hôm nay'), findsWidgets);
+  });
+
+  testWidgets('day mode month chip jumps months and stays on the day view', (
+    tester,
+  ) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(
+          seed: [
+            _tx(
+              id: 'aug',
+              amount: 45000,
+              date: DateTime(2026, 8, 18),
+              detail: 'Cafe hôm nay',
+            ),
+            _tx(
+              id: 'sep',
+              amount: 12000,
+              date: DateTime(2026, 9, 1),
+              detail: 'Cafe tháng 9',
+            ),
+            _tx(
+              id: 'jul',
+              amount: 8000,
+              date: DateTime(2026, 7, 9),
+              detail: 'Cafe tháng 7',
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const Key('nav-transactions')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.text('Theo ngày'), findsOneWidget);
+    expect(find.text('Tháng 08/2026'), findsOneWidget);
+    expect(find.text('Cafe hôm nay'), findsOneWidget);
+    expect(find.byKey(const Key('date-cell-2026-08-18')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('day-month-next')));
+    await tester.pumpAndSettle();
+    expect(find.text('Theo ngày'), findsOneWidget);
+    expect(find.text('Tháng 09/2026'), findsOneWidget);
+    expect(find.byKey(const Key('date-cell-2026-09-01')), findsOneWidget);
+    expect(find.text('Cafe tháng 9'), findsOneWidget);
+    expect(find.text('Cafe hôm nay'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('day-month-prev')));
+    await tester.pumpAndSettle();
+    expect(find.text('Tháng 08/2026'), findsOneWidget);
+    expect(find.byKey(const Key('date-cell-2026-08-18')), findsOneWidget);
+    expect(find.text('Cafe hôm nay'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('day-month-label')));
+    await tester.pumpAndSettle();
+    expect(find.text('Chọn tháng'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('finance-month-cell-2026-7')));
+    await tester.tap(find.byKey(const Key('finance-month-confirm')));
+    await tester.pumpAndSettle();
+    expect(find.text('Theo ngày'), findsOneWidget);
+    expect(find.text('Tháng 07/2026'), findsOneWidget);
+    expect(find.byKey(const Key('date-cell-2026-07-01')), findsOneWidget);
+    expect(find.text('Cafe tháng 7'), findsNothing);
+    expect(find.text('Cafe hôm nay'), findsNothing);
   });
 
   testWidgets('month label opens the finance picker and reloads that month', (
@@ -480,7 +549,8 @@ void main() {
     await tester.tap(find.byKey(const Key('finance-month-confirm')));
     await tester.pumpAndSettle();
     expect(find.text('Tháng 07/2026'), findsOneWidget);
-    expect(find.textContaining('CHI TIÊU THÁNG 07/2026'), findsOneWidget);
+    expect(find.textContaining('CHI TIÊU THÁNG'), findsNothing);
+    expect(find.byKey(const Key('tx-sum-expense')), findsOneWidget);
     expect(find.text('Cafe tháng 7'), findsOneWidget);
     expect(find.text('Cafe tháng 8'), findsNothing);
 

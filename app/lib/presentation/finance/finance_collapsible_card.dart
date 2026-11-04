@@ -144,7 +144,7 @@ class _FinanceCollapsibleCardState extends State<FinanceCollapsibleCard> {
               key: widget.summaryKey,
               onTap: _canToggle ? _toggle : null,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -170,7 +170,7 @@ class _FinanceCollapsibleCardState extends State<FinanceCollapsibleCard> {
                       ],
                     ),
                     if (showFigures) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       Padding(
                         padding: const EdgeInsets.only(left: 56),
                         child: Row(
@@ -347,7 +347,7 @@ class _LineRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final row = Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

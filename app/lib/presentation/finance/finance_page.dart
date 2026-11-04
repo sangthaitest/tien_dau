@@ -49,9 +49,9 @@ class FinancePage extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   8,
-                  MediaQuery.paddingOf(context).top + 4,
+                  MediaQuery.paddingOf(context).top,
                   8,
-                  8,
+                  0,
                 ),
                 child: Row(
                   children: [
@@ -59,6 +59,11 @@ class FinancePage extends StatelessWidget {
                       key: const Key('finance-back'),
                       onPressed: onBack,
                       icon: const Icon(Icons.arrow_back),
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(40, 40),
+                        padding: EdgeInsets.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                     ),
                     const Expanded(
                       child: Text(
@@ -70,7 +75,7 @@ class FinancePage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 48),
+                    const SizedBox(width: 40),
                   ],
                 ),
               ),
@@ -84,7 +89,7 @@ class FinancePage extends StatelessWidget {
                 child: controller.loading
                     ? const Center(child: AppCircularProgress())
                     : ListView(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 88),
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                         children: [
                           if (controller.error != null)
                             Padding(
@@ -160,7 +165,7 @@ class FinancePage extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 28),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               const Expanded(
@@ -174,6 +179,15 @@ class FinancePage extends StatelessWidget {
                               ),
                               TextButton(
                                 key: const Key('btn-create-goal'),
+                                style: TextButton.styleFrom(
+                                  visualDensity: VisualDensity.compact,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
+                                  minimumSize: const Size(0, 32),
+                                ),
                                 onPressed: () =>
                                     _goalSheet(context, mode: _GoalMode.create),
                                 child: Text(
@@ -304,7 +318,7 @@ class _FinanceMonthSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      padding: const EdgeInsets.fromLTRB(20, 2, 20, 4),
       child: Center(
         child: Material(
           color: AppColors.primaryContainer,
@@ -396,58 +410,55 @@ class _FlowConnector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          const SizedBox(width: 22),
-          Column(
-            children: [
-              Container(width: 2, height: 10, color: AppColors.divider),
-              Container(
-                width: 28,
-                height: 28,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.card,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.divider),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.cardShadow,
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  symbol,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary,
-                    height: 1,
+    return Row(
+      children: [
+        const SizedBox(width: 22),
+        Column(
+          children: [
+            Container(width: 2, height: 6, color: AppColors.divider),
+            Container(
+              width: 28,
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.divider),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.cardShadow,
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
                   ),
-                ),
+                ],
               ),
-              Container(width: 2, height: 10, color: AppColors.divider),
-            ],
-          ),
-          if (label != null) ...[
-            const SizedBox(width: 12),
-            Expanded(
               child: Text(
-                label!,
+                symbol,
                 style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.textSecondary,
+                  height: 1,
                 ),
               ),
             ),
+            Container(width: 2, height: 6, color: AppColors.divider),
           ],
+        ),
+        if (label != null) ...[
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label!,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
         ],
-      ),
+      ],
     );
   }
 }
@@ -493,7 +504,7 @@ class _SpendableCard extends StatelessWidget {
     return Container(
       key: const Key('finance-spendable-card'),
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       decoration: BoxDecoration(
         color: AppColors.primaryContainer,
         borderRadius: BorderRadius.circular(24),
@@ -537,7 +548,7 @@ class _SpendableCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.only(left: 56),
             child: Text(
@@ -577,7 +588,7 @@ class _SpentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
+          padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
           decoration: BoxDecoration(
             color: AppColors.card,
             borderRadius: BorderRadius.circular(24),
@@ -657,7 +668,7 @@ class _RemainingCard extends StatelessWidget {
     return Container(
       key: const Key('finance-remaining-card'),
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(24),
@@ -701,7 +712,7 @@ class _RemainingCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.only(left: 56),
             child: Text(
@@ -901,8 +912,8 @@ class _GoalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hidden = SettingsScope.hideMoney(context);
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(18),

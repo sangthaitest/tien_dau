@@ -170,6 +170,15 @@ class TransactionListController extends ChangeNotifier {
     await selectDay(addCalendarDays(selectedDay, days));
   }
 
+  /// Stays on the day view and opens [value]'s month.
+  /// The current month lands on today. Any other month lands on day 1.
+  Future<void> selectDayInMonth(DateTime value) async {
+    final month = monthStart(value);
+    final today = dateOnly(_clock());
+    final day = monthStart(today) == month ? today : month;
+    await selectDay(day);
+  }
+
   Future<void> shiftMonth(int months) =>
       selectMonth(addCalendarMonths(selectedMonth, months));
 

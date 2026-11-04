@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tien_day/application/home_query.dart';
+import 'package:tien_day/application/statistics_query.dart';
 import 'package:tien_day/application/transaction_service.dart';
 import 'package:tien_day/domain/entities/payment_method_kind.dart';
 import 'package:tien_day/domain/entities/transaction.dart';
 import 'package:tien_day/domain/entities/transaction_type.dart';
+import 'package:tien_day/domain/failures/result.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
+import 'package:tien_day/presentation/statistics/statistics_payment_section.dart';
 
 import '../support/memory_transaction_repository.dart';
 import '../support/shell_harness.dart';
@@ -23,6 +26,10 @@ Transaction _tx({
   required DateTime date,
   String category = 'cafe',
   TransactionType type = TransactionType.expense,
+  String paymentSourceId = 'momo',
+  String paymentSourceName = 'MoMo',
+  PaymentMethodKind paymentMethod = PaymentMethodKind.eWallet,
+  String? note,
 }) {
   final now = DateTime.utc(2026, 8, 1);
   return Transaction(
@@ -31,9 +38,10 @@ Transaction _tx({
     type: type,
     categoryId: category,
     occurredOn: date,
-    paymentSourceId: 'momo',
-    paymentSourceName: 'MoMo',
-    paymentMethod: PaymentMethodKind.eWallet,
+    paymentSourceId: paymentSourceId,
+    paymentSourceName: paymentSourceName,
+    paymentMethod: paymentMethod,
+    note: note,
     createdAt: now,
     updatedAt: now,
   );
@@ -482,4 +490,304 @@ void main() {
       expect(find.text('Đi chợ'), findsNothing);
     },
   );
+
+  testWidgets('payment tab shows a lollipop chart from stored methods', (
+    tester,
+  ) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(seed: _paymentMonth()),
+      ),
+    );
+    await _openStats(tester);
+    expect(find.byKey(const Key('pie-total')), findsOneWidget);
+    expect(find.text('Chi tiêu theo danh mục'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('stats-tab-payments')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('pie-total')), findsNothing);
+    expect(find.text('Chi tiêu theo danh mục'), findsNothing);
+    expect(find.text('Chi tiêu theo phương thức thanh toán'), findsOneWidget);
+    expect(find.text('Phương thức chi nhiều nhất'), findsOneWidget);
+    expect(find.text('55% tổng chi tiêu'), findsOneWidget);
+    expect(find.text('30% tổng chi tiêu'), findsOneWidget);
+    expect(find.text('15% tổng chi tiêu'), findsOneWidget);
+    expect(find.text('675.400 ₫'), findsWidgets);
+    expect(find.text('368.400 ₫'), findsWidgets);
+    expect(find.text('184.200 ₫'), findsWidgets);
+    expect(find.text('1.228.000 ₫'), findsWidgets);
+    expect(find.text('Lương'), findsNothing);
+    expect(tester.takeException(), isNull);
+
+    final cash = _markerCenter(tester, 'cash|Tiền mặt|cash');
+    final card = _markerCenter(tester, 'card|Thẻ ngân hàng|creditCard');
+    final momo = _markerCenter(tester, 'momo|MoMo|eWallet');
+    expect(cash, greaterThan(card));
+    expect(card, greaterThan(momo));
+    final track = tester.getRect(
+      find.byKey(const Key('lollipop-cash|Tiền mặt|cash')),
+    );
+    final marker = tester.getRect(
+      find.byKey(const Key('lollipop-marker-cash|Tiền mặt|cash')),
+    );
+    expect(marker.right, closeTo(track.right, 1.5));
+
+    await tester.tap(find.byKey(const Key('stats-tab-categories')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('pie-total')), findsOneWidget);
+    expect(find.text('Chi tiêu theo danh mục'), findsOneWidget);
+    expect(find.text('Cafe'), findsWidgets);
+  });
+
+  testWidgets('category ranks expand to the expenses in that category', (
+    tester,
+  ) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(seed: _paymentMonth()),
+      ),
+    );
+    await _openStats(tester);
+
+    expect(find.byKey(const Key('stats-category-tx-cash')), findsNothing);
+    await tester.ensureVisible(
+      find.byKey(const Key('stats-category-rank-breakfast')),
+    );
+    await tester.tap(find.byKey(const Key('stats-category-rank-breakfast')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('stats-category-tx-cash')), findsOneWidget);
+    expect(find.byKey(const Key('stats-category-tx-card')), findsNothing);
+    expect(find.byKey(const Key('stats-category-tx-income')), findsNothing);
+
+    await tester.ensureVisible(
+      find.byKey(const Key('stats-category-rank-market')),
+    );
+    await tester.tap(find.byKey(const Key('stats-category-rank-market')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('stats-category-tx-cash')), findsOneWidget);
+    expect(find.byKey(const Key('stats-category-tx-card')), findsOneWidget);
+
+    await tester.ensureVisible(
+      find.byKey(const Key('stats-category-rank-breakfast')),
+    );
+    await tester.tap(find.byKey(const Key('stats-category-rank-breakfast')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('stats-category-tx-cash')), findsNothing);
+    expect(find.byKey(const Key('stats-category-tx-card')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('payment rows expand independently and follow the month', (
+    tester,
+  ) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(seed: _paymentMonth()),
+      ),
+    );
+    await _openStats(tester);
+    await tester.tap(find.byKey(const Key('stats-tab-payments')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('stats-payment-tx-cash')), findsNothing);
+    await tester.ensureVisible(
+      find.byKey(const Key('stats-payment-rank-cash|Tiền mặt|cash')),
+    );
+    await tester.tap(
+      find.byKey(const Key('stats-payment-rank-cash|Tiền mặt|cash')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('stats-payment-tx-cash')), findsOneWidget);
+    expect(find.byKey(const Key('stats-payment-tx-card')), findsNothing);
+
+    await tester.ensureVisible(
+      find.byKey(const Key('stats-payment-rank-card|Thẻ ngân hàng|creditCard')),
+    );
+    await tester.tap(
+      find.byKey(const Key('stats-payment-rank-card|Thẻ ngân hàng|creditCard')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('stats-payment-tx-cash')), findsOneWidget);
+    expect(find.byKey(const Key('stats-payment-tx-card')), findsOneWidget);
+
+    await tester.ensureVisible(
+      find.byKey(const Key('stats-payment-rank-cash|Tiền mặt|cash')),
+    );
+    await tester.tap(
+      find.byKey(const Key('stats-payment-rank-cash|Tiền mặt|cash')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('stats-payment-tx-cash')), findsNothing);
+    expect(find.byKey(const Key('stats-payment-tx-card')), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('stats-month-prev')));
+    await tester.tap(find.byKey(const Key('stats-month-prev')));
+    await tester.pumpAndSettle();
+    expect(find.text('ZaloPay'), findsWidgets);
+    expect(find.text('Tiền mặt'), findsNothing);
+    expect(find.text('Quẹt thẻ'), findsNothing);
+
+    await tester.ensureVisible(find.byKey(const Key('stats-month-next')));
+    await tester.tap(find.byKey(const Key('stats-month-next')));
+    await tester.pumpAndSettle();
+    expect(find.text('Tiền mặt'), findsWidgets);
+    expect(find.byKey(const Key('stats-payment-tx-card')), findsOneWidget);
+    expect(find.byKey(const Key('stats-payment-tx-cash')), findsNothing);
+  });
+
+  testWidgets('blank and zero payment methods stay out of cash', (
+    tester,
+  ) async {
+    _phone(tester);
+    await _pumpShell(
+      tester,
+      service: TransactionService(
+        MemoryTransactionRepository(
+          seed: [
+            _tx(
+              id: 'blank',
+              amount: 12000,
+              date: DateTime(2026, 8, 2),
+              paymentSourceId: ' ',
+              paymentSourceName: ' ',
+              paymentMethod: PaymentMethodKind.cash,
+            ),
+            _tx(
+              id: 'zero',
+              amount: 0,
+              date: DateTime(2026, 8, 3),
+              paymentSourceId: 'empty',
+              paymentSourceName: 'Ví trống',
+              paymentMethod: PaymentMethodKind.eWallet,
+            ),
+            _tx(
+              id: 'cash',
+              amount: 8000,
+              date: DateTime(2026, 8, 4),
+              paymentSourceId: 'cash',
+              paymentSourceName: 'Tiền mặt',
+              paymentMethod: PaymentMethodKind.cash,
+            ),
+          ],
+        ),
+      ),
+    );
+    await _openStats(tester);
+    await tester.tap(find.byKey(const Key('stats-tab-payments')));
+    await tester.pumpAndSettle();
+    expect(find.text('Chưa có phương thức'), findsWidgets);
+    expect(find.text('Ví trống'), findsWidgets);
+    expect(find.text('Tiền mặt'), findsWidgets);
+    expect(find.text('0% tổng chi tiêu'), findsOneWidget);
+    expect(find.text('0 ₫'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('payment chart fits a narrow phone width', (tester) async {
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final loaded = await StatisticsQuery(
+      TransactionService(
+        MemoryTransactionRepository(
+          seed: [
+            _tx(
+              id: 'long',
+              amount: 150000,
+              date: DateTime(2026, 8, 2),
+              paymentSourceId: 'long',
+              paymentSourceName: 'Thẻ tín dụng quốc tế dùng cho công tác',
+              paymentMethod: PaymentMethodKind.creditCard,
+            ),
+          ],
+        ),
+      ),
+      clock: () => DateTime(2026, 8, 18),
+    ).load();
+    final snapshot = (loaded as Ok<StatisticsSnapshot>).value;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              StatisticsPaymentSection(
+                snapshot: snapshot,
+                expandedKeys: const {},
+                onToggle: (_) {},
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Thẻ tín dụng quốc tế'), findsWidgets);
+    expect(find.text('150.000 ₫'), findsWidgets);
+    expect(tester.takeException(), isNull);
+    final chart = tester.getRect(find.byKey(const Key('stats-payment-chart')));
+    expect(chart.left, greaterThanOrEqualTo(0));
+    expect(chart.right, lessThanOrEqualTo(320));
+  });
+}
+
+List<Transaction> _paymentMonth() {
+  return [
+    _tx(
+      id: 'cash',
+      amount: 675400,
+      date: DateTime(2026, 8, 2),
+      category: 'breakfast',
+      paymentSourceId: 'cash',
+      paymentSourceName: 'Tiền mặt',
+      paymentMethod: PaymentMethodKind.cash,
+      note: 'Ăn sáng',
+    ),
+    _tx(
+      id: 'card',
+      amount: 368400,
+      date: DateTime(2026, 8, 3),
+      category: 'market',
+      paymentSourceId: 'card',
+      paymentSourceName: 'Thẻ ngân hàng',
+      paymentMethod: PaymentMethodKind.creditCard,
+      note: 'Quẹt thẻ',
+    ),
+    _tx(
+      id: 'momo',
+      amount: 184200,
+      date: DateTime(2026, 8, 4),
+      category: 'cafe',
+      note: 'Trà sữa',
+    ),
+    _tx(
+      id: 'income',
+      amount: 900000,
+      date: DateTime(2026, 8, 5),
+      type: TransactionType.income,
+      paymentSourceId: 'salary',
+      paymentSourceName: 'Lương',
+      paymentMethod: PaymentMethodKind.bankAccount,
+    ),
+    _tx(
+      id: 'july',
+      amount: 50000,
+      date: DateTime(2026, 7, 8),
+      paymentSourceId: 'zalo',
+      paymentSourceName: 'ZaloPay',
+      paymentMethod: PaymentMethodKind.eWallet,
+    ),
+  ];
+}
+
+double _markerCenter(WidgetTester tester, String token) {
+  return tester.getRect(find.byKey(Key('lollipop-marker-$token'))).center.dx;
 }

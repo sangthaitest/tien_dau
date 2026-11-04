@@ -1,0 +1,599 @@
+import 'package:flutter/material.dart';
+
+import '../../application/statistics_query.dart';
+import '../../domain/entities/transaction.dart';
+import '../../domain/time/clock_format.dart';
+import '../../domain/transaction_display.dart';
+import '../catalog/transaction_catalog_scope.dart';
+import '../format/money_format.dart';
+import '../theme/app_colors.dart';
+import '../theme/category_look.dart';
+import '../theme/payment_look.dart';
+
+class StatisticsPaymentSection extends StatelessWidget {
+  const StatisticsPaymentSection({
+    super.key,
+    required this.snapshot,
+    required this.expandedKeys,
+    required this.onToggle,
+  });
+
+  final StatisticsSnapshot snapshot;
+  final Set<String> expandedKeys;
+  final ValueChanged<String> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _PaymentChart(snapshot: snapshot, onToggle: onToggle),
+        const SizedBox(height: 10),
+        const Text(
+          'Phương thức chi nhiều nhất',
+          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+        ),
+        const SizedBox(height: 4),
+        _PaymentRanking(
+          snapshot: snapshot,
+          expandedKeys: expandedKeys,
+          onToggle: onToggle,
+        ),
+      ],
+    );
+  }
+}
+
+class _PaymentChart extends StatelessWidget {
+  const _PaymentChart({required this.snapshot, required this.onToggle});
+
+  final StatisticsSnapshot snapshot;
+  final ValueChanged<String> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = snapshot.paymentMethods;
+    return Container(
+      key: const Key('stats-payment-chart'),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0x0D1A1D26)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Chi tiêu theo phương thức thanh toán',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
+          if (rows.isEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Chưa có chi tiêu tháng này.',
+              key: const Key('stats-payment-empty'),
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 12),
+            for (var i = 0; i < rows.length; i++) ...[
+              if (i > 0) const SizedBox(height: 14),
+              _LollipopRow(
+                row: rows[i],
+                maxAmount: snapshot.maxPaymentAmount,
+                onTap: () => onToggle(rows[i].token),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _LollipopRow extends StatelessWidget {
+  const _LollipopRow({
+    required this.row,
+    required this.maxAmount,
+    required this.onTap,
+  });
+
+  final PaymentSpend row;
+  final int maxAmount;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final look = paymentLook(
+      sourceId: row.sourceId,
+      name: row.displayName,
+      method: row.method,
+    );
+    final fraction = StatisticsQuery.markerFraction(row.amount, maxAmount);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: Key('stats-payment-bar-${row.token}'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: look.background,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(look.icon, color: look.color, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                row.displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: constraints.maxWidth * 0.46,
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  formatVnd(row.amount),
+                                  key: Key('stats-payment-amount-${row.token}'),
+                                  maxLines: 1,
+                                  textAlign: TextAlign.right,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 4),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Row(
+                          children: [
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: constraints.maxWidth * 0.62,
+                              ),
+                              child: Text(
+                                '${row.percent}% tổng chi tiêu',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: false,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _LollipopTrack(
+                                trackKey: row.token,
+                                fraction: fraction,
+                                color: look.color,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LollipopTrack extends StatelessWidget {
+  const _LollipopTrack({
+    required this.trackKey,
+    required this.fraction,
+    required this.color,
+  });
+
+  final String trackKey;
+  final double fraction;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      key: Key('lollipop-$trackKey'),
+      height: 16,
+      width: double.infinity,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const marker = 12.0;
+          final width = constraints.maxWidth;
+          final travel = (width - marker).clamp(0.0, width);
+          final dx = fraction.clamp(0.0, 1.0) * travel;
+          final reached = dx + marker / 2;
+          return Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.centerLeft,
+            children: [
+              Positioned(
+                left: 0,
+                right: 0,
+                child: Container(
+                  height: 2,
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                width: reached.clamp(0.0, width),
+                child: Container(
+                  height: 2,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: dx,
+                child: Container(
+                  key: Key('lollipop-marker-$trackKey'),
+                  width: marker,
+                  height: marker,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.32),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _PaymentRanking extends StatelessWidget {
+  const _PaymentRanking({
+    required this.snapshot,
+    required this.expandedKeys,
+    required this.onToggle,
+  });
+
+  final StatisticsSnapshot snapshot;
+  final Set<String> expandedKeys;
+  final ValueChanged<String> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    if (snapshot.paymentMethods.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Text(
+          'Chưa có dữ liệu.',
+          key: const Key('stats-payment-rank-empty'),
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+      );
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0x0D1A1D26)),
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < snapshot.paymentMethods.length; i++)
+            _PaymentRankRow(
+              index: i,
+              row: snapshot.paymentMethods[i],
+              expanded: expandedKeys.contains(snapshot.paymentMethods[i].token),
+              onToggle: () => onToggle(snapshot.paymentMethods[i].token),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PaymentRankRow extends StatelessWidget {
+  const _PaymentRankRow({
+    required this.index,
+    required this.row,
+    required this.expanded,
+    required this.onToggle,
+  });
+
+  final int index;
+  final PaymentSpend row;
+  final bool expanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final look = paymentLook(
+      sourceId: row.sourceId,
+      name: row.displayName,
+      method: row.method,
+    );
+    final rankBg = switch (index) {
+      0 => const Color(0xFFFFF3E0),
+      1 => const Color(0xFFECEFF1),
+      2 => const Color(0xFFFBE9E7),
+      _ => AppColors.surfaceVariant,
+    };
+    final rankColor = switch (index) {
+      0 => const Color(0xFFF57C00),
+      1 => const Color(0xFF546E7A),
+      2 => const Color(0xFFD84315),
+      _ => AppColors.textSecondary,
+    };
+    return Column(
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            key: Key('stats-payment-rank-${row.token}'),
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final amountMax = (constraints.maxWidth - 168).clamp(
+                    0.0,
+                    140.0,
+                  );
+                  return Row(
+                    children: [
+                      Container(
+                        width: 26,
+                        height: 26,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: rankBg,
+                          borderRadius: BorderRadius.circular(9),
+                        ),
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: rankColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: look.background,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(look.icon, color: look.color, size: 18),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              row.displayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              '${row.percent}% chi tiêu',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: amountMax),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            formatVnd(row.amount),
+                            maxLines: 1,
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              color: AppColors.expense,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      AnimatedRotation(
+                        turns: expanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 180),
+                        curve: Curves.easeOut,
+                        child: Icon(
+                          Icons.expand_more_rounded,
+                          key: Key('stats-payment-expand-${row.token}'),
+                          size: 22,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+        if (expanded)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: DecoratedBox(
+              key: Key('stats-payment-txs-${row.token}'),
+              decoration: BoxDecoration(
+                color: Color.lerp(
+                  AppColors.card,
+                  AppColors.surfaceVariant,
+                  0.4,
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Column(
+                  children: [
+                    for (final tx in row.transactions)
+                      _PaymentTransactionRow(transaction: tx),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _PaymentTransactionRow extends StatelessWidget {
+  const _PaymentTransactionRow({required this.transaction});
+
+  final Transaction transaction;
+
+  @override
+  Widget build(BuildContext context) {
+    final category = TransactionCatalogScope.maybeOf(
+      context,
+    )?.categoryById(transaction.categoryId);
+    final look = categoryLook(
+      transaction.categoryId,
+      name: category?.name,
+      visualKey: category?.visualKey,
+    );
+    final title = transactionTitle(transaction, categoryName: look.name);
+    final date = formatDayMonth(transaction.occurredOn);
+    final subtitle = title == look.name ? date : '${look.name} · $date';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: look.background,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(look.icon, color: look.color, size: 15),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  key: Key('stats-payment-tx-${transaction.id}'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            formatVnd(transaction.amount),
+            maxLines: 1,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.expense,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -92,7 +92,7 @@ class _TransactionDateCarouselState extends State<TransactionDateCarousel> {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 72,
+      height: 64,
       child: Row(
         children: [
           _ArrowButton(
