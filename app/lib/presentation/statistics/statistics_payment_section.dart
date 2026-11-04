@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../application/statistics_query.dart';
@@ -85,6 +87,7 @@ class _PaymentChart extends StatelessWidget {
             for (var i = 0; i < rows.length; i++) ...[
               if (i > 0) const SizedBox(height: 14),
               _LollipopRow(
+                index: i,
                 row: rows[i],
                 maxAmount: snapshot.maxPaymentAmount,
                 onTap: () => onToggle(rows[i].token),
@@ -99,11 +102,13 @@ class _PaymentChart extends StatelessWidget {
 
 class _LollipopRow extends StatelessWidget {
   const _LollipopRow({
+    required this.index,
     required this.row,
     required this.maxAmount,
     required this.onTap,
   });
 
+  final int index;
   final PaymentSpend row;
   final int maxAmount;
   final VoidCallback onTap;
@@ -204,6 +209,7 @@ class _LollipopRow extends StatelessWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: _LollipopTrack(
+                                index: index,
                                 trackKey: row.token,
                                 fraction: fraction,
                                 color: look.color,
@@ -224,21 +230,89 @@ class _LollipopRow extends StatelessWidget {
   }
 }
 
-class _LollipopTrack extends StatelessWidget {
+class _LollipopTrack extends StatefulWidget {
   const _LollipopTrack({
+    required this.index,
     required this.trackKey,
     required this.fraction,
     required this.color,
   });
 
+  final int index;
   final String trackKey;
   final double fraction;
   final Color color;
 
   @override
+  State<_LollipopTrack> createState() => _LollipopTrackState();
+}
+
+class _LollipopTrackState extends State<_LollipopTrack>
+    with SingleTickerProviderStateMixin {
+  static const _duration = Duration(milliseconds: 360);
+  static const _stagger = Duration(milliseconds: 40);
+
+  late final AnimationController _draw;
+  Timer? _delay;
+  var _tickerEnabled = true;
+  var _boundTicker = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _draw = AnimationController(vsync: this, duration: _duration);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final enabled = TickerMode.of(context);
+    final first = !_boundTicker;
+    final resumed = enabled && !_tickerEnabled;
+    _boundTicker = true;
+    _tickerEnabled = enabled;
+    if (enabled && (first || resumed)) {
+      _play();
+    } else if (!enabled) {
+      _delay?.cancel();
+      _draw.stop();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _LollipopTrack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final changed =
+        oldWidget.fraction != widget.fraction ||
+        oldWidget.trackKey != widget.trackKey;
+    if (changed && _tickerEnabled) _play();
+  }
+
+  void _play() {
+    _delay?.cancel();
+    _draw.value = 0;
+    final delay = _stagger * widget.index;
+    if (delay == Duration.zero) {
+      _draw.forward();
+      return;
+    }
+    _delay = Timer(delay, () {
+      if (!mounted || !_tickerEnabled) return;
+      _draw.forward(from: 0);
+    });
+  }
+
+  @override
+  void dispose() {
+    _delay?.cancel();
+    _draw.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SizedBox(
-      key: Key('lollipop-$trackKey'),
+      key: Key('lollipop-${widget.trackKey}'),
       height: 16,
       width: double.infinity,
       child: LayoutBuilder(
@@ -246,55 +320,62 @@ class _LollipopTrack extends StatelessWidget {
           const marker = 12.0;
           final width = constraints.maxWidth;
           final travel = (width - marker).clamp(0.0, width);
-          final dx = fraction.clamp(0.0, 1.0) * travel;
-          final reached = dx + marker / 2;
-          return Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.centerLeft,
-            children: [
-              Positioned(
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: 2,
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 0,
-                width: reached.clamp(0.0, width),
-                child: Container(
-                  height: 2,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: dx,
-                child: Container(
-                  key: Key('lollipop-marker-$trackKey'),
-                  width: marker,
-                  height: marker,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.32),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
+          return AnimatedBuilder(
+            animation: _draw,
+            builder: (context, _) {
+              final progress = Curves.easeOutCubic.transform(_draw.value);
+              final shown = widget.fraction.clamp(0.0, 1.0) * progress;
+              final dx = shown * travel;
+              final reached = dx + marker / 2;
+              return Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.centerLeft,
+                children: [
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 2,
+                      decoration: BoxDecoration(
+                        color: AppColors.divider,
+                        borderRadius: BorderRadius.circular(99),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ],
+                  Positioned(
+                    left: 0,
+                    width: reached.clamp(0.0, width),
+                    child: Container(
+                      height: 2,
+                      decoration: BoxDecoration(
+                        color: widget.color,
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: dx,
+                    child: Container(
+                      key: Key('lollipop-marker-${widget.trackKey}'),
+                      width: marker,
+                      height: marker,
+                      decoration: BoxDecoration(
+                        color: widget.color,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: widget.color.withValues(alpha: 0.32),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),

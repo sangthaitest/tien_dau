@@ -636,78 +636,143 @@ class _CategoryGrid extends StatelessWidget {
   }
 }
 
-class _Pie extends StatelessWidget {
+class _Pie extends StatefulWidget {
   const _Pie({required this.snapshot, required this.size});
 
   final StatisticsSnapshot snapshot;
   final double size;
 
   @override
+  State<_Pie> createState() => _PieState();
+}
+
+class _PieState extends State<_Pie> with SingleTickerProviderStateMixin {
+  static const _duration = Duration(milliseconds: 360);
+
+  late final AnimationController _draw;
+  var _tickerEnabled = true;
+  var _boundTicker = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _draw = AnimationController(vsync: this, duration: _duration);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final enabled = TickerMode.of(context);
+    final first = !_boundTicker;
+    final resumed = enabled && !_tickerEnabled;
+    _boundTicker = true;
+    _tickerEnabled = enabled;
+    if (enabled && (first || resumed)) {
+      _draw.forward(from: 0);
+    } else if (!enabled) {
+      _draw.stop();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _Pie oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_tickerEnabled &&
+        _chartKey(oldWidget.snapshot) != _chartKey(widget.snapshot)) {
+      _draw.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _draw.dispose();
+    super.dispose();
+  }
+
+  String _chartKey(StatisticsSnapshot snapshot) {
+    final parts = snapshot.categories
+        .map((row) => '${row.categoryId}:${row.amount}')
+        .join('|');
+    return '${snapshot.month.year}-${snapshot.month.month}-${snapshot.totalExpense}|$parts';
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final snapshot = widget.snapshot;
     final slices = [
       for (final row in snapshot.categories)
         (
           color: _catalogLook(context, row.categoryId).color,
-          fraction: row.amount / snapshot.totalExpense,
+          fraction: snapshot.totalExpense == 0
+              ? 0.0
+              : row.amount / snapshot.totalExpense,
         ),
     ];
-    final hole = size * 0.59;
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          CustomPaint(
-            size: Size.square(size),
-            painter: _PiePainter(slices: slices),
-          ),
-          Container(
-            width: hole,
-            height: hole,
-            decoration: BoxDecoration(
-              color: AppColors.card,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.divider),
-            ),
+    final hole = widget.size * 0.59;
+    return AnimatedBuilder(
+      animation: _draw,
+      builder: (context, child) {
+        final progress = Curves.easeOutCubic.transform(_draw.value);
+        return SizedBox(
+          width: widget.size,
+          height: widget.size,
+          child: Stack(
             alignment: Alignment.center,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Tổng chi',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
-                  Text(
-                    formatVndShort(snapshot.totalExpense),
-                    key: const Key('pie-total'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+            children: [
+              CustomPaint(
+                size: Size.square(widget.size),
+                painter: _PiePainter(slices: slices, progress: progress),
               ),
-            ),
+              child!,
+            ],
           ),
-        ],
+        );
+      },
+      child: Container(
+        width: hole,
+        height: hole,
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.divider),
+        ),
+        alignment: Alignment.center,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Tổng chi',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textTertiary,
+                ),
+              ),
+              Text(
+                formatVndShort(snapshot.totalExpense),
+                key: const Key('pie-total'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
 class _PiePainter extends CustomPainter {
-  _PiePainter({required this.slices});
+  _PiePainter({required this.slices, required this.progress});
 
   final List<({Color color, double fraction})> slices;
+  final double progress;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -716,9 +781,11 @@ class _PiePainter extends CustomPainter {
       canvas.drawOval(rect, Paint()..color = AppColors.surfaceVariant);
       return;
     }
+    final turn = progress.clamp(0.0, 1.0);
     var start = -math.pi / 2;
     for (final slice in slices) {
-      final sweep = slice.fraction.clamp(0, 1) * 2 * math.pi;
+      final sweep = slice.fraction.clamp(0.0, 1.0) * turn * 2 * math.pi;
+      if (sweep <= 0) continue;
       canvas.drawArc(
         rect,
         start,
@@ -735,7 +802,7 @@ class _PiePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _PiePainter oldDelegate) =>
-      oldDelegate.slices != slices;
+      oldDelegate.progress != progress || oldDelegate.slices != slices;
 }
 
 class _LegendRow extends StatelessWidget {
