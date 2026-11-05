@@ -3,16 +3,12 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../application/statistics_query.dart';
-import '../../domain/entities/transaction.dart';
-import '../../domain/time/clock_format.dart';
-import '../../domain/transaction_display.dart';
 import '../finance/finance_month_picker.dart';
 import '../format/money_format.dart';
 import '../catalog/transaction_catalog_scope.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_progress.dart';
 import '../theme/category_look.dart';
-import '../theme/payment_look.dart';
 import '../tutorial/tutorial_targets.dart';
 import 'statistics_controller.dart';
 import 'statistics_payment_section.dart';
@@ -21,13 +17,15 @@ class StatisticsPage extends StatelessWidget {
   const StatisticsPage({
     super.key,
     required this.controller,
-    required this.onSeeAllCategory,
+    required this.onOpenCategory,
+    required this.onOpenPayment,
     this.insightTargetKey,
     this.chartTargetKey,
   });
 
   final StatisticsController controller;
-  final ValueChanged<String> onSeeAllCategory;
+  final void Function(String categoryId, String title) onOpenCategory;
+  final void Function(String paymentKey, String title) onOpenPayment;
   final GlobalKey? insightTargetKey;
   final GlobalKey? chartTargetKey;
 
@@ -80,7 +78,8 @@ class StatisticsPage extends StatelessWidget {
                   _StatisticsBody(
                     snapshot: snap,
                     chartTargetKey: chartTargetKey,
-                    onSeeAllCategory: onSeeAllCategory,
+                    onOpenCategory: onOpenCategory,
+                    onOpenPayment: onOpenPayment,
                   ),
                 ],
               ],
@@ -322,12 +321,14 @@ class _StatisticsBody extends StatefulWidget {
   const _StatisticsBody({
     required this.snapshot,
     required this.chartTargetKey,
-    required this.onSeeAllCategory,
+    required this.onOpenCategory,
+    required this.onOpenPayment,
   });
 
   final StatisticsSnapshot snapshot;
   final GlobalKey? chartTargetKey;
-  final ValueChanged<String> onSeeAllCategory;
+  final void Function(String categoryId, String title) onOpenCategory;
+  final void Function(String paymentKey, String title) onOpenPayment;
 
   @override
   State<_StatisticsBody> createState() => _StatisticsBodyState();
@@ -335,22 +336,6 @@ class _StatisticsBody extends StatefulWidget {
 
 class _StatisticsBodyState extends State<_StatisticsBody> {
   _StatsTab _tab = _StatsTab.categories;
-  final Set<String> _expandedPayments = {};
-  final Set<String> _expandedCategories = {};
-
-  void _togglePayment(String token) {
-    setState(() {
-      if (!_expandedPayments.add(token)) _expandedPayments.remove(token);
-    });
-  }
-
-  void _toggleCategory(String categoryId) {
-    setState(() {
-      if (!_expandedCategories.add(categoryId)) {
-        _expandedCategories.remove(categoryId);
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -392,15 +377,12 @@ class _StatisticsBodyState extends State<_StatisticsBody> {
                   key: const ValueKey('stats-categories'),
                   snapshot: widget.snapshot,
                   chartTargetKey: widget.chartTargetKey,
-                  expandedKeys: _expandedCategories,
-                  onToggle: _toggleCategory,
-                  onSeeAllCategory: widget.onSeeAllCategory,
+                  onOpenCategory: widget.onOpenCategory,
                 )
               : StatisticsPaymentSection(
                   key: const ValueKey('stats-payments'),
                   snapshot: widget.snapshot,
-                  expandedKeys: _expandedPayments,
-                  onToggle: _togglePayment,
+                  onOpen: widget.onOpenPayment,
                 ),
         ),
       ],
@@ -512,16 +494,12 @@ class _CategorySection extends StatelessWidget {
     super.key,
     required this.snapshot,
     required this.chartTargetKey,
-    required this.expandedKeys,
-    required this.onToggle,
-    required this.onSeeAllCategory,
+    required this.onOpenCategory,
   });
 
   final StatisticsSnapshot snapshot;
   final GlobalKey? chartTargetKey;
-  final Set<String> expandedKeys;
-  final ValueChanged<String> onToggle;
-  final ValueChanged<String> onSeeAllCategory;
+  final void Function(String categoryId, String title) onOpenCategory;
 
   @override
   Widget build(BuildContext context) {
@@ -538,12 +516,7 @@ class _CategorySection extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
         ),
         const SizedBox(height: 4),
-        _TopSpending(
-          snapshot: snapshot,
-          expandedKeys: expandedKeys,
-          onToggle: onToggle,
-          onSeeAll: onSeeAllCategory,
-        ),
+        _TopSpending(snapshot: snapshot, onOpen: onOpenCategory),
       ],
     );
   }
@@ -877,17 +850,10 @@ class _LegendRow extends StatelessWidget {
 }
 
 class _TopSpending extends StatelessWidget {
-  const _TopSpending({
-    required this.snapshot,
-    required this.expandedKeys,
-    required this.onToggle,
-    required this.onSeeAll,
-  });
+  const _TopSpending({required this.snapshot, required this.onOpen});
 
   final StatisticsSnapshot snapshot;
-  final Set<String> expandedKeys;
-  final ValueChanged<String> onToggle;
-  final ValueChanged<String> onSeeAll;
+  final void Function(String categoryId, String title) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -915,15 +881,7 @@ class _TopSpending extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < snapshot.topCategories.length; i++)
-            _RankRow(
-              index: i,
-              row: snapshot.topCategories[i],
-              expanded: expandedKeys.contains(
-                snapshot.topCategories[i].categoryId,
-              ),
-              onToggle: () => onToggle(snapshot.topCategories[i].categoryId),
-              onSeeAll: () => onSeeAll(snapshot.topCategories[i].categoryId),
-            ),
+            _RankRow(index: i, row: snapshot.topCategories[i], onOpen: onOpen),
         ],
       ),
     );
@@ -934,16 +892,12 @@ class _RankRow extends StatelessWidget {
   const _RankRow({
     required this.index,
     required this.row,
-    required this.expanded,
-    required this.onToggle,
-    required this.onSeeAll,
+    required this.onOpen,
   });
 
   final int index;
   final CategorySpend row;
-  final bool expanded;
-  final VoidCallback onToggle;
-  final VoidCallback onSeeAll;
+  final void Function(String categoryId, String title) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -960,244 +914,102 @@ class _RankRow extends StatelessWidget {
       2 => const Color(0xFFD84315),
       _ => AppColors.textSecondary,
     };
-    final canExpand = row.transactions.isNotEmpty;
-    return Column(
-      children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            key: Key('stats-category-rank-${row.categoryId}'),
-            onTap: canExpand ? onToggle : null,
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final amountMax = (constraints.maxWidth - 168).clamp(
-                    0.0,
-                    140.0,
-                  );
-                  return Row(
-                    children: [
-                      Container(
-                        width: 26,
-                        height: 26,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: rankBg,
-                          borderRadius: BorderRadius.circular(9),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: Key('stats-category-rank-${row.categoryId}'),
+        onTap: () => onOpen(row.categoryId, look.name),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final amountMax = (constraints.maxWidth - 168).clamp(0.0, 140.0);
+              return Row(
+                children: [
+                  Container(
+                    width: 26,
+                    height: 26,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: rankBg,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: rankColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: look.background,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(look.icon, color: look.color, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          look.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
-                        child: Text(
-                          '${index + 1}',
+                        Text(
+                          '${row.percent}% chi tiêu',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: rankColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: look.background,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(look.icon, color: look.color, size: 18),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              look.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            Text(
-                              '${row.percent}% chi tiêu',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: amountMax),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            formatVnd(row.amount),
-                            maxLines: 1,
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                              color: AppColors.expense,
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (canExpand) ...[
-                        const SizedBox(width: 4),
-                        AnimatedRotation(
-                          turns: expanded ? 0.5 : 0,
-                          duration: const Duration(milliseconds: 180),
-                          curve: Curves.easeOut,
-                          child: Icon(
-                            Icons.expand_more_rounded,
-                            key: Key('stats-category-expand-${row.categoryId}'),
-                            size: 22,
-                            color: AppColors.textTertiary,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
-                    ],
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-        if (expanded && canExpand)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: DecoratedBox(
-              key: Key('stats-category-txs-${row.categoryId}'),
-              decoration: BoxDecoration(
-                color: Color.lerp(
-                  AppColors.card,
-                  AppColors.surfaceVariant,
-                  0.4,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Column(
-                  children: [
-                    for (final tx in row.transactions)
-                      _CategoryTransactionRow(transaction: tx),
-                    Align(
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: amountMax),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
                       alignment: Alignment.centerRight,
-                      child: TextButton(
-                        key: Key('stats-top-see-all-${row.categoryId}'),
-                        onPressed: onSeeAll,
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          minimumSize: const Size(0, 32),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Text(
-                          'Xem tất cả',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                          ),
+                      child: Text(
+                        formatVnd(row.amount),
+                        maxLines: 1,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppColors.expense,
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _CategoryTransactionRow extends StatelessWidget {
-  const _CategoryTransactionRow({required this.transaction});
-
-  final Transaction transaction;
-
-  @override
-  Widget build(BuildContext context) {
-    final category = TransactionCatalogScope.maybeOf(
-      context,
-    )?.categoryById(transaction.categoryId);
-    final categoryName = categoryLook(
-      transaction.categoryId,
-      name: category?.name,
-      visualKey: category?.visualKey,
-    ).name;
-    final pay = paymentLook(
-      sourceId: transaction.paymentSourceId,
-      name: transaction.paymentSourceName,
-      method: transaction.paymentMethod,
-    );
-    final title = transactionTitle(transaction, categoryName: categoryName);
-    final date = formatDayMonth(transaction.occurredOn);
-    final payName = transaction.paymentSourceName.trim();
-    final subtitle = payName.isEmpty ? date : '$payName · $date';
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: pay.background,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(pay.icon, color: pay.color, size: 15),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  key: Key('stats-category-tx-${transaction.id}'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
                   ),
-                ),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 22,
+                    color: AppColors.textTertiary,
                   ),
-                ),
-              ],
-            ),
+                ],
+              );
+            },
           ),
-          const SizedBox(width: 8),
-          Text(
-            formatVnd(transaction.amount),
-            maxLines: 1,
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.expense,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

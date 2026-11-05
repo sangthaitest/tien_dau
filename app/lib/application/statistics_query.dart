@@ -53,6 +53,13 @@ class PaymentSpend {
 
   /// Stable token safe to use in widget keys.
   String get token => key.replaceAll('\u0000', '|');
+
+  /// Same grouping key used for a stored expense.
+  static String keyFor(Transaction transaction) {
+    final sourceId = transaction.paymentSourceId.trim();
+    final sourceName = transaction.paymentSourceName.trim();
+    return '$sourceId\u0000$sourceName\u0000${transaction.paymentMethod.name}';
+  }
 }
 
 class StatisticsSnapshot {
@@ -219,7 +226,7 @@ class StatisticsQuery {
       if (!seen.add(tx.id)) continue;
       final sourceId = tx.paymentSourceId.trim();
       final sourceName = tx.paymentSourceName.trim();
-      final key = '$sourceId\u0000$sourceName\u0000${tx.paymentMethod.name}';
+      final key = PaymentSpend.keyFor(tx);
       final group = groups.putIfAbsent(
         key,
         () => _PaymentGroup(

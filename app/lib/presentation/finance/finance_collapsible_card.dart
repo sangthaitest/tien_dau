@@ -20,6 +20,8 @@ class FinanceLine {
     required this.dateLabel,
     required this.amount,
     this.note,
+    this.icon,
+    this.iconColor,
     this.onTap,
   });
 
@@ -28,6 +30,8 @@ class FinanceLine {
   final String dateLabel;
   final int amount;
   final String? note;
+  final IconData? icon;
+  final Color? iconColor;
   final VoidCallback? onTap;
 
   String get displayTitle {
@@ -43,7 +47,7 @@ class FinanceLine {
   }
 }
 
-class FinanceCollapsibleCard extends StatefulWidget {
+class FinanceCollapsibleCard extends StatelessWidget {
   const FinanceCollapsibleCard({
     super.key,
     required this.sectionKey,
@@ -55,17 +59,20 @@ class FinanceCollapsibleCard extends StatefulWidget {
     required this.amount,
     required this.amountColor,
     required this.amountKey,
-    required this.viewMonth,
     required this.lines,
     required this.managedCount,
-    required this.manageLabel,
     required this.manageKey,
     required this.onManage,
+    required this.onAdd,
+    required this.addLabel,
+    required this.addKey,
     required this.rowKeyPrefix,
     this.emptyMessage,
+    this.emptyHint,
     this.monthEmptyMessage,
     this.emptyKey,
     this.showAmountWhenEmpty = false,
+    this.previewLimit = 3,
   });
 
   final Key sectionKey;
@@ -77,52 +84,31 @@ class FinanceCollapsibleCard extends StatefulWidget {
   final int amount;
   final Color amountColor;
   final Key amountKey;
-  final DateTime viewMonth;
   final List<FinanceLine> lines;
   final int managedCount;
   final String? emptyMessage;
+  final String? emptyHint;
   final String? monthEmptyMessage;
   final Key? emptyKey;
-  final String manageLabel;
   final Key manageKey;
   final VoidCallback onManage;
+  final VoidCallback onAdd;
+  final String addLabel;
+  final Key addKey;
   final String rowKeyPrefix;
   final bool showAmountWhenEmpty;
+  final int previewLimit;
 
-  @override
-  State<FinanceCollapsibleCard> createState() => _FinanceCollapsibleCardState();
-}
+  bool get _hasLines => lines.isNotEmpty;
 
-class _FinanceCollapsibleCardState extends State<FinanceCollapsibleCard> {
-  bool _expanded = false;
-
-  bool get _canToggle => widget.lines.length >= 2;
-
-  bool get _showLines => widget.lines.length == 1 || (_canToggle && _expanded);
-
-  bool get _showManage => widget.lines.isEmpty || _showLines;
-
-  @override
-  void didUpdateWidget(covariant FinanceCollapsibleCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    final next = widget.viewMonth;
-    final previous = oldWidget.viewMonth;
-    if (next.year != previous.year || next.month != previous.month) {
-      _expanded = false;
-    }
-  }
-
-  void _toggle() {
-    if (!_canToggle) return;
-    setState(() => _expanded = !_expanded);
-  }
+  List<FinanceLine> get _preview => lines.take(previewLimit).toList();
 
   @override
   Widget build(BuildContext context) {
     final hidden = SettingsScope.hideMoney(context);
-    final showFigures = widget.lines.isNotEmpty || widget.showAmountWhenEmpty;
+    final showAmount = _hasLines || showAmountWhenEmpty;
     return DecoratedBox(
-      key: widget.sectionKey,
+      key: sectionKey,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
@@ -137,174 +123,245 @@ class _FinanceCollapsibleCardState extends State<FinanceCollapsibleCard> {
         color: AppColors.card,
         borderRadius: BorderRadius.circular(24),
         clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            InkWell(
-              key: widget.summaryKey,
-              onTap: _canToggle ? _toggle : null,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        _Badge(
-                          icon: widget.icon,
-                          foreground: widget.iconColor,
-                          background: widget.iconBackground,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            widget.title,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                            ),
+        child: InkWell(
+          onTap: onManage,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _HeaderTap(
+                  summaryKey: summaryKey,
+                  manageKey: _hasLines ? null : manageKey,
+                  onTap: onManage,
+                  child: Row(
+                    children: [
+                      _Badge(
+                        icon: icon,
+                        foreground: iconColor,
+                        background: iconBackground,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
                           ),
-                        ),
-                        if (_canToggle && _expanded)
-                          const _DetailAffordance(expanded: true),
-                      ],
-                    ),
-                    if (showFigures) ...[
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 56),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                displayVnd(widget.amount, hidden: hidden),
-                                key: widget.amountKey,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: moneyStyle(
-                                  size: 24,
-                                  color: widget.amountColor,
-                                  weight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                            if (_canToggle && !_expanded)
-                              const _DetailAffordance(expanded: false),
-                          ],
                         ),
                       ),
-                      if (widget.lines.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 56, top: 2),
+                      const SizedBox(width: 8),
+                      if (_hasLines)
+                        _AddChip(key: addKey, label: 'Thêm', onPressed: onAdd)
+                      else
+                        Icon(
+                          Icons.chevron_right,
+                          color: AppColors.textTertiary,
+                        ),
+                    ],
+                  ),
+                ),
+                if (showAmount) ...[
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 56),
+                    child: Text(
+                      displayVnd(amount, hidden: hidden),
+                      key: amountKey,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: moneyStyle(
+                        size: 24,
+                        color: amountColor,
+                        weight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+                if (!_hasLines) ...[
+                  if (_emptyText != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      _emptyText!,
+                      key: emptyKey,
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                  if (_showHint) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 14,
+                          color: AppColors.textTertiary,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
                           child: Text(
-                            '${widget.lines.length} khoản',
+                            emptyHint!,
                             style: TextStyle(
                               fontSize: 12,
+                              height: 1.3,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
+                              color: AppColors.textTertiary,
                             ),
                           ),
                         ),
-                    ],
+                      ],
+                    ),
                   ],
-                ),
-              ),
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-              alignment: Alignment.topCenter,
-              child: _showLines || widget.lines.isEmpty
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (widget.lines.isEmpty && _emptyText != null)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  const SizedBox(height: 10),
+                  _EmptyAddButton(
+                    key: addKey,
+                    label: addLabel,
+                    onPressed: onAdd,
+                  ),
+                ] else ...[
+                  const SizedBox(height: 4),
+                  for (var i = 0; i < _preview.length; i++) ...[
+                    if (i > 0) Divider(height: 1, color: AppColors.divider),
+                    _LineRow(
+                      line: _preview[i],
+                      rowKey: Key('$rowKeyPrefix-${_preview[i].id}'),
+                      hidden: hidden,
+                    ),
+                  ],
+                  Divider(height: 1, color: AppColors.divider),
+                  InkWell(
+                    key: manageKey,
+                    onTap: onManage,
+                    child: SizedBox(
+                      height: 44,
+                      child: Row(
+                        children: [
+                          Expanded(
                             child: Text(
-                              _emptyText!,
-                              key: widget.emptyKey,
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
+                              'Xem tất cả (${lines.length})',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
                               ),
                             ),
                           ),
-                        if (_showLines) ...[
-                          Divider(height: 1, color: AppColors.divider),
-                          for (var i = 0; i < widget.lines.length; i++) ...[
-                            if (i > 0)
-                              Divider(height: 1, color: AppColors.divider),
-                            _LineRow(
-                              line: widget.lines[i],
-                              rowKey: Key(
-                                '${widget.rowKeyPrefix}-${widget.lines[i].id}',
-                              ),
-                              hidden: hidden,
-                            ),
-                          ],
-                          Divider(height: 1, color: AppColors.divider),
+                          Icon(
+                            Icons.chevron_right,
+                            color: AppColors.textSecondary,
+                          ),
                         ],
-                        if (_showManage)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton(
-                              key: widget.manageKey,
-                              onPressed: widget.onManage,
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.primary,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                minimumSize: const Size(48, 40),
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              ),
-                              child: Text(
-                                widget.manageLabel,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          const SizedBox(height: 2),
-                      ],
-                    )
-                  : const SizedBox(width: double.infinity, height: 0),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
+  bool get _showHint =>
+      lines.isEmpty &&
+      managedCount == 0 &&
+      (emptyHint?.trim().isNotEmpty ?? false);
+
   String? get _emptyText {
-    if (widget.lines.isNotEmpty) return null;
-    if (widget.managedCount == 0) return widget.emptyMessage;
-    return widget.monthEmptyMessage ?? widget.emptyMessage;
+    if (lines.isNotEmpty) return null;
+    if (managedCount == 0) return emptyMessage;
+    return monthEmptyMessage ?? emptyMessage;
   }
 }
 
-class _DetailAffordance extends StatelessWidget {
-  const _DetailAffordance({required this.expanded});
+class _HeaderTap extends StatelessWidget {
+  const _HeaderTap({
+    required this.summaryKey,
+    required this.manageKey,
+    required this.onTap,
+    required this.child,
+  });
 
-  final bool expanded;
+  final Key summaryKey;
+  final Key? manageKey;
+  final VoidCallback onTap;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: Text(
-        expanded ? 'Chi tiết ↑' : 'Chi tiết →',
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          color: AppColors.primary,
-          fontSize: 13,
+    final well = InkWell(
+      key: summaryKey,
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: child,
+    );
+    if (manageKey == null) return well;
+    return KeyedSubtree(key: manageKey, child: well);
+  }
+}
+
+class _AddChip extends StatelessWidget {
+  const _AddChip({super.key, required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.add, size: 18),
+      label: Text(label),
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.primary,
+        backgroundColor: AppColors.primaryContainer,
+        side: BorderSide(color: AppColors.primary.withValues(alpha: 0.45)),
+        minimumSize: const Size(44, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+        shape: const StadiumBorder(),
+      ),
+    );
+  }
+}
+
+class _EmptyAddButton extends StatelessWidget {
+  const _EmptyAddButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      width: double.infinity,
+      child: TextButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(Icons.add, size: 18),
+        label: Text(label),
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          backgroundColor: AppColors.primaryContainer,
+          side: BorderSide(color: AppColors.primary.withValues(alpha: 0.45)),
+          minimumSize: const Size.fromHeight(44),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          shape: const StadiumBorder(),
         ),
       ),
     );
@@ -346,44 +403,40 @@ class _LineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final row = Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  line.displayTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
+    final row = ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 44),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            if (line.icon != null) ...[
+              Icon(
+                line.icon,
+                size: 20,
+                color: line.iconColor ?? AppColors.textSecondary,
+              ),
+              const SizedBox(width: 10),
+            ],
+            Expanded(
+              child: Text(
+                line.displayTitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  line.metaLabel,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            displayVnd(line.amount, hidden: hidden),
-            maxLines: 1,
-            textAlign: TextAlign.right,
-            style: moneyStyle(size: 15, color: AppColors.text),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Text(
+              displayVnd(line.amount, hidden: hidden),
+              maxLines: 1,
+              textAlign: TextAlign.right,
+              style: moneyStyle(size: 15, color: AppColors.text),
+            ),
+          ],
+        ),
       ),
     );
     if (line.onTap == null) {

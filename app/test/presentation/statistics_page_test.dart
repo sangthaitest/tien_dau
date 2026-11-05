@@ -542,7 +542,7 @@ void main() {
     expect(find.text('Cafe'), findsWidgets);
   });
 
-  testWidgets('category ranks expand to the expenses in that category', (
+  testWidgets('category rank opens its expense list and returns', (
     tester,
   ) async {
     _phone(tester);
@@ -554,35 +554,53 @@ void main() {
     );
     await _openStats(tester);
 
-    expect(find.byKey(const Key('stats-category-tx-cash')), findsNothing);
     await tester.ensureVisible(
       find.byKey(const Key('stats-category-rank-breakfast')),
     );
     await tester.tap(find.byKey(const Key('stats-category-rank-breakfast')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('stats-category-tx-cash')), findsOneWidget);
-    expect(find.byKey(const Key('stats-category-tx-card')), findsNothing);
-    expect(find.byKey(const Key('stats-category-tx-income')), findsNothing);
+    expect(find.byKey(const Key('stats-breakdown-page')), findsOneWidget);
+    expect(find.byKey(const Key('stats-breakdown-title')), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.byKey(const Key('stats-breakdown-title'))).data,
+      'Ăn sáng',
+    );
+    expect(find.byKey(const Key('tx-tile-cash')), findsOneWidget);
+    expect(find.byKey(const Key('tx-date-cash')), findsOneWidget);
+    expect(find.text('CN, 02/08'), findsOneWidget);
+    expect(find.byKey(const Key('tx-tile-card')), findsNothing);
+    expect(find.byKey(const Key('tx-tile-income')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('tx-tile-cash')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('btn-close-detail')), findsOneWidget);
+    expect(find.byKey(const Key('btn-detail-edit')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('btn-detail-edit')));
+    await tester.pumpAndSettle();
+    expect(find.text('Sửa giao dịch'), findsOneWidget);
+    await tester.tap(find.byTooltip('Quay lại'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('btn-close-detail')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('btn-close-detail')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('stats-breakdown-back')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('stats-breakdown-page')), findsNothing);
+    expect(find.text('Danh mục chi nhiều nhất'), findsOneWidget);
 
     await tester.ensureVisible(
       find.byKey(const Key('stats-category-rank-market')),
     );
     await tester.tap(find.byKey(const Key('stats-category-rank-market')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('stats-category-tx-cash')), findsOneWidget);
-    expect(find.byKey(const Key('stats-category-tx-card')), findsOneWidget);
-
-    await tester.ensureVisible(
-      find.byKey(const Key('stats-category-rank-breakfast')),
-    );
-    await tester.tap(find.byKey(const Key('stats-category-rank-breakfast')));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('stats-category-tx-cash')), findsNothing);
-    expect(find.byKey(const Key('stats-category-tx-card')), findsOneWidget);
+    expect(find.byKey(const Key('tx-tile-card')), findsOneWidget);
+    expect(find.text('Th 2, 03/08'), findsOneWidget);
+    expect(find.byKey(const Key('tx-tile-cash')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('payment rows expand independently and follow the month', (
+  testWidgets('payment rank opens its expense list and follows the month', (
     tester,
   ) async {
     _phone(tester);
@@ -596,7 +614,6 @@ void main() {
     await tester.tap(find.byKey(const Key('stats-tab-payments')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('stats-payment-tx-cash')), findsNothing);
     await tester.ensureVisible(
       find.byKey(const Key('stats-payment-rank-cash|Tiền mặt|cash')),
     );
@@ -604,42 +621,44 @@ void main() {
       find.byKey(const Key('stats-payment-rank-cash|Tiền mặt|cash')),
     );
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('stats-payment-tx-cash')), findsOneWidget);
-    expect(find.byKey(const Key('stats-payment-tx-card')), findsNothing);
+    expect(find.byKey(const Key('stats-breakdown-page')), findsOneWidget);
+    expect(
+      tester.widget<Text>(find.byKey(const Key('stats-breakdown-title'))).data,
+      'Tiền mặt',
+    );
+    expect(find.byKey(const Key('tx-tile-cash')), findsOneWidget);
+    expect(find.byKey(const Key('tx-tile-card')), findsNothing);
+    expect(find.byKey(const Key('tx-tile-income')), findsNothing);
 
-    await tester.ensureVisible(
-      find.byKey(const Key('stats-payment-rank-card|Thẻ ngân hàng|creditCard')),
-    );
-    await tester.tap(
-      find.byKey(const Key('stats-payment-rank-card|Thẻ ngân hàng|creditCard')),
-    );
+    await tester.tap(find.byKey(const Key('stats-breakdown-back')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('stats-payment-tx-cash')), findsOneWidget);
-    expect(find.byKey(const Key('stats-payment-tx-card')), findsOneWidget);
-
-    await tester.ensureVisible(
-      find.byKey(const Key('stats-payment-rank-cash|Tiền mặt|cash')),
-    );
-    await tester.tap(
-      find.byKey(const Key('stats-payment-rank-cash|Tiền mặt|cash')),
-    );
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('stats-payment-tx-cash')), findsNothing);
-    expect(find.byKey(const Key('stats-payment-tx-card')), findsOneWidget);
+    expect(find.byKey(const Key('stats-breakdown-page')), findsNothing);
+    expect(find.text('Phương thức chi nhiều nhất'), findsOneWidget);
 
     await tester.ensureVisible(find.byKey(const Key('stats-month-prev')));
     await tester.tap(find.byKey(const Key('stats-month-prev')));
     await tester.pumpAndSettle();
     expect(find.text('ZaloPay'), findsWidgets);
     expect(find.text('Tiền mặt'), findsNothing);
-    expect(find.text('Quẹt thẻ'), findsNothing);
 
+    await tester.ensureVisible(
+      find.byKey(const Key('stats-payment-rank-zalo|ZaloPay|eWallet')),
+    );
+    await tester.tap(
+      find.byKey(const Key('stats-payment-rank-zalo|ZaloPay|eWallet')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('tx-tile-july')), findsOneWidget);
+    expect(find.byKey(const Key('tx-tile-cash')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('stats-breakdown-back')));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('stats-month-next')));
     await tester.tap(find.byKey(const Key('stats-month-next')));
     await tester.pumpAndSettle();
     expect(find.text('Tiền mặt'), findsWidgets);
-    expect(find.byKey(const Key('stats-payment-tx-card')), findsOneWidget);
-    expect(find.byKey(const Key('stats-payment-tx-cash')), findsNothing);
+    expect(find.byKey(const Key('stats-breakdown-page')), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('blank and zero payment methods stay out of cash', (
@@ -719,11 +738,7 @@ void main() {
           body: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              StatisticsPaymentSection(
-                snapshot: snapshot,
-                expandedKeys: const {},
-                onToggle: (_) {},
-              ),
+              StatisticsPaymentSection(snapshot: snapshot, onOpen: (_, _) {}),
             ],
           ),
         ),

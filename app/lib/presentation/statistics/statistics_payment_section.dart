@@ -3,54 +3,43 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../application/statistics_query.dart';
-import '../../domain/entities/transaction.dart';
-import '../../domain/time/clock_format.dart';
-import '../../domain/transaction_display.dart';
-import '../catalog/transaction_catalog_scope.dart';
 import '../format/money_format.dart';
 import '../theme/app_colors.dart';
-import '../theme/category_look.dart';
 import '../theme/payment_look.dart';
 
 class StatisticsPaymentSection extends StatelessWidget {
   const StatisticsPaymentSection({
     super.key,
     required this.snapshot,
-    required this.expandedKeys,
-    required this.onToggle,
+    required this.onOpen,
   });
 
   final StatisticsSnapshot snapshot;
-  final Set<String> expandedKeys;
-  final ValueChanged<String> onToggle;
+  final void Function(String paymentKey, String title) onOpen;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _PaymentChart(snapshot: snapshot, onToggle: onToggle),
+        _PaymentChart(snapshot: snapshot, onOpen: onOpen),
         const SizedBox(height: 10),
         const Text(
           'Phương thức chi nhiều nhất',
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
         ),
         const SizedBox(height: 4),
-        _PaymentRanking(
-          snapshot: snapshot,
-          expandedKeys: expandedKeys,
-          onToggle: onToggle,
-        ),
+        _PaymentRanking(snapshot: snapshot, onOpen: onOpen),
       ],
     );
   }
 }
 
 class _PaymentChart extends StatelessWidget {
-  const _PaymentChart({required this.snapshot, required this.onToggle});
+  const _PaymentChart({required this.snapshot, required this.onOpen});
 
   final StatisticsSnapshot snapshot;
-  final ValueChanged<String> onToggle;
+  final void Function(String paymentKey, String title) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +79,7 @@ class _PaymentChart extends StatelessWidget {
                 index: i,
                 row: rows[i],
                 maxAmount: snapshot.maxPaymentAmount,
-                onTap: () => onToggle(rows[i].token),
+                onTap: () => onOpen(rows[i].key, rows[i].displayName),
               ),
             ],
           ],
@@ -384,15 +373,10 @@ class _LollipopTrackState extends State<_LollipopTrack>
 }
 
 class _PaymentRanking extends StatelessWidget {
-  const _PaymentRanking({
-    required this.snapshot,
-    required this.expandedKeys,
-    required this.onToggle,
-  });
+  const _PaymentRanking({required this.snapshot, required this.onOpen});
 
   final StatisticsSnapshot snapshot;
-  final Set<String> expandedKeys;
-  final ValueChanged<String> onToggle;
+  final void Function(String paymentKey, String title) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -424,8 +408,10 @@ class _PaymentRanking extends StatelessWidget {
             _PaymentRankRow(
               index: i,
               row: snapshot.paymentMethods[i],
-              expanded: expandedKeys.contains(snapshot.paymentMethods[i].token),
-              onToggle: () => onToggle(snapshot.paymentMethods[i].token),
+              onOpen: () => onOpen(
+                snapshot.paymentMethods[i].key,
+                snapshot.paymentMethods[i].displayName,
+              ),
             ),
         ],
       ),
@@ -437,14 +423,12 @@ class _PaymentRankRow extends StatelessWidget {
   const _PaymentRankRow({
     required this.index,
     required this.row,
-    required this.expanded,
-    required this.onToggle,
+    required this.onOpen,
   });
 
   final int index;
   final PaymentSpend row;
-  final bool expanded;
-  final VoidCallback onToggle;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -465,215 +449,102 @@ class _PaymentRankRow extends StatelessWidget {
       2 => const Color(0xFFD84315),
       _ => AppColors.textSecondary,
     };
-    return Column(
-      children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            key: Key('stats-payment-rank-${row.token}'),
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(12),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final amountMax = (constraints.maxWidth - 168).clamp(
-                    0.0,
-                    140.0,
-                  );
-                  return Row(
-                    children: [
-                      Container(
-                        width: 26,
-                        height: 26,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: rankBg,
-                          borderRadius: BorderRadius.circular(9),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: Key('stats-payment-rank-${row.token}'),
+        onTap: onOpen,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final amountMax = (constraints.maxWidth - 168).clamp(0.0, 140.0);
+              return Row(
+                children: [
+                  Container(
+                    width: 26,
+                    height: 26,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: rankBg,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: rankColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: look.background,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(look.icon, color: look.color, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          row.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
-                        child: Text(
-                          '${index + 1}',
+                        Text(
+                          '${row.percent}% chi tiêu',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: rankColor,
+                            color: AppColors.textSecondary,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: look.background,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(look.icon, color: look.color, size: 18),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              row.displayName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            Text(
-                              '${row.percent}% chi tiêu',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: amountMax),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        formatVnd(row.amount),
+                        maxLines: 1,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppColors.expense,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: amountMax),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            formatVnd(row.amount),
-                            maxLines: 1,
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                              color: AppColors.expense,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      AnimatedRotation(
-                        turns: expanded ? 0.5 : 0,
-                        duration: const Duration(milliseconds: 180),
-                        curve: Curves.easeOut,
-                        child: Icon(
-                          Icons.expand_more_rounded,
-                          key: Key('stats-payment-expand-${row.token}'),
-                          size: 22,
-                          color: AppColors.textTertiary,
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 22,
+                    color: AppColors.textTertiary,
+                  ),
+                ],
+              );
+            },
           ),
         ),
-        if (expanded)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: DecoratedBox(
-              key: Key('stats-payment-txs-${row.token}'),
-              decoration: BoxDecoration(
-                color: Color.lerp(
-                  AppColors.card,
-                  AppColors.surfaceVariant,
-                  0.4,
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Column(
-                  children: [
-                    for (final tx in row.transactions)
-                      _PaymentTransactionRow(transaction: tx),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _PaymentTransactionRow extends StatelessWidget {
-  const _PaymentTransactionRow({required this.transaction});
-
-  final Transaction transaction;
-
-  @override
-  Widget build(BuildContext context) {
-    final category = TransactionCatalogScope.maybeOf(
-      context,
-    )?.categoryById(transaction.categoryId);
-    final look = categoryLook(
-      transaction.categoryId,
-      name: category?.name,
-      visualKey: category?.visualKey,
-    );
-    final title = transactionTitle(transaction, categoryName: look.name);
-    final date = formatDayMonth(transaction.occurredOn);
-    final subtitle = title == look.name ? date : '${look.name} · $date';
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: look.background,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(look.icon, color: look.color, size: 15),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  key: Key('stats-payment-tx-${transaction.id}'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            formatVnd(transaction.amount),
-            maxLines: 1,
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: AppColors.expense,
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -293,7 +293,8 @@ void main() {
       expect(find.byKey(const Key('btn-edit-budget')), findsNothing);
       expect(find.text('22.500.000 ₫'), findsWidgets);
       expect(find.text('15.000.000 ₫'), findsWidgets);
-      expect(find.text('7.500.000 ₫'), findsOneWidget);
+      expect(find.text('7.500.000 ₫'), findsWidgets);
+      expect(find.text('Ngân sách ban đầu'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.byKey(const Key('finance-remaining-amount')),
         80,
@@ -302,11 +303,12 @@ void main() {
           matching: find.byType(Scrollable),
         ),
       );
-      expect(find.text('6.619.557 ₫'), findsOneWidget);
-      expect(find.text('880.443 ₫'), findsOneWidget);
+      expect(find.text('6.619.557 ₫'), findsWidgets);
+      expect(find.text('880.443 ₫'), findsWidgets);
       expect(find.text('Tiền có thể chi'), findsOneWidget);
-      expect(find.text('Đã chi tiêu'), findsOneWidget);
-      expect(find.text('Còn lại'), findsOneWidget);
+      expect(find.text('Đã chi tiêu'), findsWidgets);
+      expect(find.text('Còn lại'), findsWidgets);
+      expect(find.byKey(const Key('finance-spendable-guidance')), findsNothing);
       expect(find.text('Còn lại dự kiến'), findsNothing);
       expect(tester.takeException(), isNull);
     },
@@ -430,7 +432,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('Thẻ tín dụng'), findsOneWidget);
-    expect(find.text('25/08/2026'), findsOneWidget);
+    expect(find.text('Xem tất cả (1)'), findsOneWidget);
     expect(find.text('5.000.000 ₫'), findsWidgets);
     expect(find.byKey(const Key('finance-upcoming-total')), findsOneWidget);
     expect(find.textContaining('Chưa có khoản định kỳ'), findsNothing);
@@ -779,31 +781,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.text('Tiền nhà'), findsOneWidget);
-    expect(find.text('Thưởng'), findsNothing);
-    expect(find.text('Chi tiết →'), findsOneWidget);
+    expect(find.text('Thưởng'), findsOneWidget);
+    expect(find.text('Xem tất cả (2)'), findsWidgets);
     expect(find.text('Quản lý thu nhập →'), findsNothing);
     expect(find.text('Tháng 08/2026'), findsOneWidget);
     expect(find.text('21.000.000 ₫'), findsOneWidget);
     expect(find.text('Sửa'), findsNothing);
-
-    await tester.tap(find.byKey(const Key('finance-income-summary')));
-    await tester.pumpAndSettle();
-    expect(find.text('Thưởng'), findsOneWidget);
-    expect(find.text('Chi tiết ↑'), findsOneWidget);
-    expect(find.text('Quản lý thu nhập →'), findsOneWidget);
-    expect(find.text('01/08/2026'), findsWidgets);
-    expect(find.text('10/08/2026'), findsOneWidget);
     final salaryAmount = tester.getRect(find.text('20.000.000 ₫'));
     final bonusAmount = tester.getRect(find.text('1.000.000 ₫'));
     expect(salaryAmount.right, bonusAmount.right);
 
-    await tester.tap(find.text('Chi tiết ↑'));
-    await tester.pumpAndSettle();
-    expect(find.text('Thưởng'), findsNothing);
-    expect(find.text('Quản lý thu nhập →'), findsNothing);
-
-    await tester.tap(find.byKey(const Key('finance-income-summary')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('finance-income-manage')));
     await tester.pumpAndSettle();
     expect(find.text('Quản lý thu nhập'), findsOneWidget);
@@ -884,7 +871,7 @@ void main() {
     expect(find.text('Chưa có khoản. Nhấn + để thêm.'), findsOneWidget);
     await tester.tap(find.byKey(const Key('finance-income-add')));
     await tester.pumpAndSettle();
-    expect(find.text('Thêm thu nhập'), findsOneWidget);
+    expect(find.text('Thêm thu nhập'), findsWidgets);
     expect(find.byKey(const Key('upcoming-due-input')), findsOneWidget);
     expect(find.text('2026-08-18'), findsOneWidget);
     await tester.enterText(
@@ -1056,16 +1043,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(find.text('Tháng 08/2026'), findsOneWidget);
-      expect(find.text('Tiền nhà'), findsNothing);
-      expect(find.text('Wifi gia đình rất dài'), findsNothing);
-      expect(find.text('Chi tiết →'), findsOneWidget);
+      expect(find.text('Tiền nhà'), findsOneWidget);
+      expect(find.text('Wifi gia đình rất dài'), findsOneWidget);
+      expect(find.text('Xem tất cả (2)'), findsOneWidget);
       expect(find.text('Quản lý khoản định kỳ →'), findsNothing);
-
-      await tester.tap(find.byKey(const Key('finance-upcoming-summary')));
-      await tester.pumpAndSettle();
-      expect(find.text('27/08/2026'), findsOneWidget);
-      expect(find.text('15/08/2026'), findsOneWidget);
-      expect(find.text('Quản lý khoản định kỳ →'), findsOneWidget);
       final rentAmount = tester.getRect(find.text('2.790.000 ₫'));
       final wifiAmount = tester.getRect(find.text('8.555 ₫'));
       expect(rentAmount.right, wifiAmount.right);
@@ -1078,11 +1059,11 @@ void main() {
       await tester.tap(find.byKey(const Key('finance-month-cell-2026-9')));
       await tester.pump();
       expect(find.text('Tháng 08/2026'), findsOneWidget);
-      expect(find.text('27/08/2026'), findsOneWidget);
+      expect(find.text('Tiền nhà'), findsOneWidget);
       await tester.tap(find.byKey(const Key('finance-month-close')));
       await tester.pumpAndSettle();
       expect(find.text('Tháng 08/2026'), findsOneWidget);
-      expect(find.text('27/08/2026'), findsOneWidget);
+      expect(find.text('Tiền nhà'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('finance-month-label')));
       await tester.pumpAndSettle();
@@ -1090,17 +1071,9 @@ void main() {
       await tester.tap(find.byKey(const Key('finance-month-confirm')));
       await tester.pumpAndSettle();
       expect(find.text('Tháng 09/2026'), findsOneWidget);
-      expect(find.text('27/08/2026'), findsNothing);
       expect(find.text('Tiền nhà'), findsNothing);
-
-      await tester.tap(find.byKey(const Key('finance-upcoming-summary')));
-      await tester.pumpAndSettle();
-      expect(find.text('27/09/2026'), findsNothing);
-      expect(find.text('15/09/2026'), findsNothing);
-      expect(
-        find.text('Chưa có khoản định kỳ. Quản lý để thêm.'),
-        findsOneWidget,
-      );
+      expect(find.text('Wifi gia đình rất dài'), findsNothing);
+      expect(find.text('Chưa có khoản định kỳ.'), findsOneWidget);
 
       final rules = (await harness.recurring.listAll()).unwrapOrThrow();
       expect(
@@ -1116,18 +1089,95 @@ void main() {
       await tester.tap(find.byKey(const Key('finance-month-prev')));
       await tester.pumpAndSettle();
       expect(find.text('Tháng 08/2026'), findsOneWidget);
-      expect(find.text('27/09/2026'), findsNothing);
-      await tester.tap(find.byKey(const Key('finance-upcoming-summary')));
-      await tester.pumpAndSettle();
-      expect(find.text('27/08/2026'), findsOneWidget);
+      expect(find.text('Tiền nhà'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('finance-month-next')));
       await tester.pumpAndSettle();
       expect(find.text('Tháng 09/2026'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('finance-upcoming-summary')));
-      await tester.pumpAndSettle();
-      expect(find.text('27/09/2026'), findsNothing);
-      expect(find.text('15/09/2026'), findsNothing);
+      expect(find.text('Tiền nhà'), findsNothing);
+      expect(find.text('Wifi gia đình rất dài'), findsNothing);
     },
   );
+
+  testWidgets('finance cards show empty actions and keep zero rows as data', (
+    tester,
+  ) async {
+    _phone(tester);
+    final service = TransactionService(MemoryTransactionRepository());
+    final home = HomeController(
+      HomeQuery(service, clock: () => DateTime(2026, 8, 18, 9)),
+    );
+    final harness = buildShell(
+      transactions: service,
+      home: home,
+      clock: () => DateTime(2026, 8, 18, 9),
+    );
+    final now = DateTime.utc(2026, 8, 18);
+    expect(
+      (await harness.recurring.create(
+        RecurringTransaction(
+          id: 'zero-income',
+          name: 'Thu nhập 0',
+          kind: RecurringKind.income,
+          amount: 0,
+          frequency: RecurringFrequency.monthly,
+          intervalCount: 1,
+          direction: RecurringDirection.add,
+          startDate: DateTime(2026, 8, 1),
+          isActive: true,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      )).isOk,
+      isTrue,
+    );
+    await harness.access.setupPin('5820');
+    await harness.access.unlock('5820');
+    await tester.pumpWidget(MaterialApp(home: harness.shell));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.byKey(const Key('nav-settings')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('settings-finance')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Thu nhập 0'), findsOneWidget);
+    expect(find.text('Bạn chưa có khoản thu nhập nào.'), findsNothing);
+    expect(find.text('Chưa có khoản định kỳ.'), findsOneWidget);
+    expect(
+      find.text('Ví dụ: Tiền nhà, điện, nước, internet, trả góp...'),
+      findsOneWidget,
+    );
+    expect(find.text('Thiết lập tài chính'), findsNothing);
+    expect(find.byKey(const Key('finance-spendable-guidance')), findsNothing);
+    expect(find.byKey(const Key('finance-spendable-bar')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('finance-upcoming-create')));
+    await tester.pumpAndSettle();
+    expect(find.text('Thêm khoản định kỳ'), findsWidgets);
+    expect(find.text('Quản lý khoản định kỳ'), findsNothing);
+    Navigator.of(
+      tester.element(find.byKey(const Key('upcoming-name-input'))),
+    ).pop();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('finance-income-row-zero-income')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('finance-upcoming-detail-zero-income')),
+      findsOneWidget,
+    );
+    expect(find.text('Sửa'), findsOneWidget);
+    Navigator.of(
+      tester.element(
+        find.byKey(const Key('finance-upcoming-detail-zero-income')),
+      ),
+    ).pop();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('finance-upcoming-summary')));
+    await tester.pumpAndSettle();
+    expect(find.text('Quản lý khoản định kỳ'), findsOneWidget);
+  });
 }

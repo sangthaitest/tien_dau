@@ -23,6 +23,8 @@ import '../profile/profile_page.dart';
 import '../profile/user_profile_scope.dart';
 import '../settings/settings_page.dart';
 import '../settings/settings_scope.dart';
+import '../statistics/statistics_breakdown_controller.dart';
+import '../statistics/statistics_breakdown_page.dart';
 import '../statistics/statistics_controller.dart';
 import '../statistics/statistics_page.dart';
 import '../theme/app_colors.dart';
@@ -71,6 +73,8 @@ class _MainShellState extends State<MainShell> {
   bool _showFinance = false;
   bool _showProfile = false;
   bool _showBackupRestore = false;
+  StatisticsBreakdownRequest? _breakdown;
+  bool _breakdownDirty = false;
   bool _showAdd = false;
   bool _openingAdd = false;
   bool _openingSensitive = false;
@@ -398,14 +402,41 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
-  Future<void> _openCategoryTransactions(String categoryId) async {
-    if (_tutorialActive) return;
-    await _listController.showCategoryMonth(
-      categoryId: categoryId,
-      month: _statsController.selectedMonth,
+  void _openCategoryBreakdown(String categoryId, String title) {
+    _openBreakdown(
+      StatisticsBreakdownRequest(
+        title: title,
+        month: _statsController.selectedMonth,
+        filter: CategoryBreakdownFilter(categoryId),
+      ),
     );
-    if (!mounted) return;
-    _selectTab(AppTab.transactions);
+  }
+
+  void _openPaymentBreakdown(String paymentKey, String title) {
+    _openBreakdown(
+      StatisticsBreakdownRequest(
+        title: title,
+        month: _statsController.selectedMonth,
+        filter: PaymentBreakdownFilter(paymentKey),
+      ),
+    );
+  }
+
+  void _openBreakdown(StatisticsBreakdownRequest request) {
+    if (_tutorialActive) return;
+    setState(() {
+      _breakdown = request;
+      _breakdownDirty = false;
+    });
+  }
+
+  void _closeBreakdown() {
+    final dirty = _breakdownDirty;
+    setState(() {
+      _breakdown = null;
+      _breakdownDirty = false;
+    });
+    if (dirty) _refresh();
   }
 
   void _selectTab(AppTab tab) {
@@ -520,11 +551,15 @@ class _MainShellState extends State<MainShell> {
     SettingsScope.maybeOf(context);
     UserProfileScope.maybeOf(context);
     return PopScope(
-      canPop: !_showAdd && !_tutorialActive,
+      canPop: !_showAdd && !_tutorialActive && _breakdown == null,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         if (_tutorialActive) {
           _finishTutorial(completed: false);
+          return;
+        }
+        if (_breakdown != null) {
+          _closeBreakdown();
           return;
         }
         if (!_showAdd) return;
@@ -586,6 +621,25 @@ class _MainShellState extends State<MainShell> {
                   ),
               ],
             ),
+            if (_breakdown case final breakdown?)
+              Positioned.fill(
+                child: StatisticsBreakdownPage(
+                  key: ValueKey(
+                    '${breakdown.month.year}-${breakdown.month.month}-${breakdown.token}',
+                  ),
+                  title: breakdown.title,
+                  month: breakdown.month,
+                  filter: breakdown.filter,
+                  service: widget.transactionService,
+                  catalogController: widget.catalogController,
+                  clock: widget.clock,
+                  onBack: () {
+                    if (_tutorialActive) return;
+                    _closeBreakdown();
+                  },
+                  onChanged: () => _breakdownDirty = true,
+                ),
+              ),
             _PaintWarmSlot(
               visible: _showAdd,
               paintWarm: _paintWarm,
@@ -654,7 +708,8 @@ class _MainShellState extends State<MainShell> {
         controller: _statsController,
         insightTargetKey: _tutorialTargets.statsMonth,
         chartTargetKey: _tutorialTargets.statsCategories,
-        onSeeAllCategory: _openCategoryTransactions,
+        onOpenCategory: _openCategoryBreakdown,
+        onOpenPayment: _openPaymentBreakdown,
       ),
       AppTab.settings => SettingsPage(
         onOpenFinance: _openFinance,

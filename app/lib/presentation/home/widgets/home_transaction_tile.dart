@@ -16,11 +16,15 @@ class HomeTransactionTile extends StatelessWidget {
     required this.transaction,
     this.onTap,
     this.unsignedNeutralAmount = false,
+    this.dateLabel,
   });
 
   final Transaction transaction;
   final VoidCallback? onTap;
   final bool unsignedNeutralAmount;
+
+  /// Shown under the amount. Omitted on lists that already group by day.
+  final String? dateLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -121,24 +125,73 @@ class HomeTransactionTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: MediaQuery.sizeOf(context).width * 0.42,
-                ),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    amountText,
-                    maxLines: 1,
-                    textAlign: TextAlign.right,
-                    style: moneyStyle(size: 15, color: amountColor),
-                  ),
-                ),
+              _AmountColumn(
+                amountText: amountText,
+                amountColor: amountColor,
+                dateLabel: dateLabel,
+                dateKey: dateLabel == null
+                    ? null
+                    : Key('tx-date-${transaction.id}'),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _AmountColumn extends StatelessWidget {
+  const _AmountColumn({
+    required this.amountText,
+    required this.amountColor,
+    required this.dateLabel,
+    required this.dateKey,
+  });
+
+  final String amountText;
+  final Color amountColor;
+  final String? dateLabel;
+  final Key? dateKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final amount = Text(
+      amountText,
+      maxLines: 1,
+      textAlign: TextAlign.right,
+      style: moneyStyle(size: 15, color: amountColor),
+    );
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width * 0.42,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: amount,
+          ),
+          if (dateLabel != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              dateLabel!,
+              key: dateKey,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.3,
+                fontWeight: AppTypography.metadataWeight,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

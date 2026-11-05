@@ -111,7 +111,6 @@ class FinancePage extends StatelessWidget {
                               amount: snap.recurringIncomeTotal,
                               amountColor: AppColors.income,
                               amountKey: const Key('salary-amount'),
-                              viewMonth: controller.selectedMonth,
                               lines: [
                                 for (final rule in snap.managedIncome)
                                   if (rule.isActive)
@@ -124,18 +123,36 @@ class FinancePage extends StatelessWidget {
                                       ),
                                       amount: rule.amount,
                                       note: rule.note,
+                                      icon: rule.isSalary
+                                          ? Icons
+                                                .account_balance_wallet_outlined
+                                          : Icons.payments_outlined,
+                                      iconColor: AppColors.income,
+                                      onTap: () => RecurringWorkspace(
+                                        controller: controller,
+                                        kind: RecurringKind.income,
+                                      ).openDetail(context, rule),
                                     ),
                               ],
                               managedCount: snap.managedIncome.length,
                               showAmountWhenEmpty: true,
-                              manageLabel: 'Quản lý thu nhập →',
+                              emptyMessage: 'Bạn chưa có khoản thu nhập nào.',
+                              emptyHint:
+                                  'Ví dụ: Lương, thưởng, thu nhập phụ...',
+                              emptyKey: const Key('finance-income-empty'),
                               manageKey: const Key('finance-income-manage'),
+                              addKey: const Key('finance-income-create'),
+                              addLabel: 'Thêm thu nhập',
                               rowKeyPrefix: 'finance-income-row',
                               onManage: () => showRecurringManager(
                                 context: context,
                                 controller: controller,
                                 kind: RecurringKind.income,
                               ),
+                              onAdd: () => RecurringWorkspace(
+                                controller: controller,
+                                kind: RecurringKind.income,
+                              ).openEditor(context),
                             ),
                           ),
                           const _FlowConnector(
@@ -147,7 +164,16 @@ class FinancePage extends StatelessWidget {
                             child: RecurringSection(controller: controller),
                           ),
                           const _FlowConnector(symbol: '='),
-                          _SpendableCard(amount: snap.spendableAmount),
+                          _SpendableCard(
+                            amount: snap.spendableAmount,
+                            spent: snap.used,
+                            remaining: snap.projectedRemaining,
+                            hasInputs:
+                                snap.managedIncome.any(
+                                  (rule) => rule.isActive,
+                                ) ||
+                                snap.recurringItems.isNotEmpty,
+                          ),
                           const _FlowConnector(
                             symbol: '−',
                             label: 'Trừ chi tiêu',
@@ -494,17 +520,30 @@ class _FinanceBadge extends StatelessWidget {
 }
 
 class _SpendableCard extends StatelessWidget {
-  const _SpendableCard({required this.amount});
+  const _SpendableCard({
+    required this.amount,
+    required this.spent,
+    required this.remaining,
+    required this.hasInputs,
+  });
 
   final int amount;
+  final int spent;
+  final int remaining;
+  final bool hasInputs;
 
   @override
   Widget build(BuildContext context) {
     final hidden = SettingsScope.hideMoney(context);
+    final showUsage = hasInputs && spent > 0;
+    final fraction = amount <= 0 ? 1.0 : (spent / amount).clamp(0.0, 1.0);
+    final percent = amount <= 0
+        ? 100
+        : ((spent / amount) * 100).round().clamp(0, 100);
     return Container(
       key: const Key('finance-spendable-card'),
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
       decoration: BoxDecoration(
         color: AppColors.primaryContainer,
         borderRadius: BorderRadius.circular(24),
@@ -552,7 +591,7 @@ class _SpendableCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 56),
             child: Text(
-              displayVnd(amount, hidden: hidden),
+              displayVnd(hasInputs ? amount : 0, hidden: hidden),
               key: const Key('finance-spendable-amount'),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -561,6 +600,129 @@ class _SpendableCard extends StatelessWidget {
                 color: AppColors.primary,
                 weight: FontWeight.w800,
               ),
+            ),
+          ),
+          if (!hasInputs) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Hãy thêm thu nhập và các khoản định kỳ để tính ngân sách của bạn.',
+              key: const Key('finance-spendable-guidance'),
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                height: 1.35,
+              ),
+            ),
+          ] else if (showUsage) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Chi tiêu tháng này',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                ),
+                Text(
+                  '$percent%',
+                  key: const Key('finance-spendable-percent'),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(99),
+              child: SizedBox(
+                key: const Key('finance-spendable-bar'),
+                height: 8,
+                width: double.infinity,
+                child: ColoredBox(
+                  color: AppColors.card,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      widthFactor: fraction,
+                      heightFactor: 1,
+                      child: ColoredBox(color: AppColors.primary),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            _UsageLine(
+              label: 'Ngân sách ban đầu',
+              amount: amount,
+              amountKey: const Key('finance-budget-initial'),
+              hidden: hidden,
+            ),
+            _UsageLine(
+              label: 'Đã chi tiêu',
+              amount: spent,
+              amountKey: const Key('finance-budget-spent'),
+              hidden: hidden,
+            ),
+            _UsageLine(
+              label: 'Còn lại',
+              amount: remaining,
+              amountKey: const Key('finance-budget-remaining'),
+              hidden: hidden,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _UsageLine extends StatelessWidget {
+  const _UsageLine({
+    required this.label,
+    required this.amount,
+    required this.amountKey,
+    required this.hidden,
+  });
+
+  final String label;
+  final int amount;
+  final Key amountKey;
+  final bool hidden;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              displayVnd(amount, hidden: hidden),
+              key: amountKey,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: moneyStyle(size: 13, color: AppColors.text),
             ),
           ),
         ],

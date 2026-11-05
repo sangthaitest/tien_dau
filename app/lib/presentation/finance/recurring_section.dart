@@ -140,57 +140,8 @@ class RecurringWorkspace {
       ).showSnackBar(SnackBar(content: Text(result.failure.message)));
     }
   }
-}
 
-class RecurringSection extends StatelessWidget {
-  const RecurringSection({super.key, required this.controller});
-
-  final FinanceController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    final snap = controller.snapshot;
-    final items = snap.recurringItems;
-    return FinanceCollapsibleCard(
-      sectionKey: const Key('finance-upcoming-section'),
-      summaryKey: const Key('finance-upcoming-summary'),
-      icon: Icons.calendar_month_outlined,
-      iconColor: AppColors.warning,
-      iconBackground: AppColors.warningContainer,
-      title: 'Khoản định kỳ',
-      amount: snap.recurringExpenseTotal,
-      amountColor: AppColors.text,
-      amountKey: const Key('finance-upcoming-total'),
-      viewMonth: controller.selectedMonth,
-      lines: [
-        for (final rule in items)
-          FinanceLine(
-            id: rule.id,
-            name: rule.name,
-            dateLabel: financeOccurrenceDate(rule, snap.month),
-            amount: rule.amount,
-            note: rule.note,
-            onTap: () => _openDetail(context, rule),
-          ),
-      ],
-      managedCount: snap.managedRecurring.length,
-      emptyMessage: 'Chưa có khoản định kỳ. Quản lý để thêm.',
-      monthEmptyMessage: 'Không có khoản định kỳ trong tháng này.',
-      emptyKey: const Key('finance-upcoming-empty'),
-      manageLabel: 'Quản lý khoản định kỳ →',
-      manageKey: const Key('finance-upcoming-manage'),
-      rowKeyPrefix: 'finance-upcoming-row',
-      onManage: () => RecurringWorkspace(
-        controller: controller,
-        kind: RecurringKind.expense,
-      ).openManager(context),
-    );
-  }
-
-  RecurringWorkspace get _expenses =>
-      RecurringWorkspace(controller: controller, kind: RecurringKind.expense);
-
-  Future<void> _openDetail(
+  Future<void> openDetail(
     BuildContext context,
     RecurringTransaction rule,
   ) async {
@@ -203,8 +154,11 @@ class RecurringSection extends StatelessWidget {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
+        final source = isIncome
+            ? controller.snapshot.managedIncome
+            : controller.snapshot.recurringItems;
         final current = [
-          for (final item in controller.snapshot.recurringItems)
+          for (final item in source)
             if (item.id == rule.id) item,
         ];
         final item = current.isEmpty ? rule : current.first;
@@ -257,7 +211,7 @@ class RecurringSection extends StatelessWidget {
                           Navigator.pop(ctx);
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             if (!context.mounted) return;
-                            _expenses.openEditor(context, rule: item);
+                            openEditor(context, rule: item);
                           });
                         },
                         child: const Text('Sửa'),
@@ -271,7 +225,7 @@ class RecurringSection extends StatelessWidget {
                           Navigator.pop(ctx);
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             if (!context.mounted) return;
-                            _expenses.delete(context, item);
+                            delete(context, item);
                           });
                         },
                         child: Text(
@@ -287,6 +241,57 @@ class RecurringSection extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class RecurringSection extends StatelessWidget {
+  const RecurringSection({super.key, required this.controller});
+
+  final FinanceController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final snap = controller.snapshot;
+    final items = snap.recurringItems;
+    final workspace = RecurringWorkspace(
+      controller: controller,
+      kind: RecurringKind.expense,
+    );
+    return FinanceCollapsibleCard(
+      sectionKey: const Key('finance-upcoming-section'),
+      summaryKey: const Key('finance-upcoming-summary'),
+      icon: Icons.calendar_month_outlined,
+      iconColor: AppColors.warning,
+      iconBackground: AppColors.warningContainer,
+      title: 'Khoản định kỳ',
+      amount: snap.recurringExpenseTotal,
+      amountColor: AppColors.text,
+      amountKey: const Key('finance-upcoming-total'),
+      lines: [
+        for (final rule in items)
+          FinanceLine(
+            id: rule.id,
+            name: rule.name,
+            dateLabel: financeOccurrenceDate(rule, snap.month),
+            amount: rule.amount,
+            note: rule.note,
+            icon: categoryLook(rule.categoryId ?? 'other').icon,
+            iconColor: categoryLook(rule.categoryId ?? 'other').color,
+            onTap: () => workspace.openDetail(context, rule),
+          ),
+      ],
+      managedCount: snap.managedRecurring.length,
+      emptyMessage: 'Chưa có khoản định kỳ.',
+      emptyHint: 'Ví dụ: Tiền nhà, điện, nước, internet, trả góp...',
+      monthEmptyMessage: 'Không có khoản định kỳ trong tháng này.',
+      emptyKey: const Key('finance-upcoming-empty'),
+      manageKey: const Key('finance-upcoming-manage'),
+      addKey: const Key('finance-upcoming-create'),
+      addLabel: 'Thêm khoản định kỳ',
+      rowKeyPrefix: 'finance-upcoming-row',
+      onManage: () => workspace.openManager(context),
+      onAdd: () => workspace.openEditor(context),
     );
   }
 }
