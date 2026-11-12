@@ -618,20 +618,34 @@ class _ChiChoGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 4,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 0.72,
+    const columns = 4;
+    return Column(
       children: [
-        for (final category in categories)
-          _CatOption(
-            category: category,
-            selected: selectedId == category.id,
-            onTap: () => onSelect(category.id),
+        for (var start = 0; start < categories.length; start += columns) ...[
+          if (start > 0) const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var column = 0; column < columns; column++) ...[
+                if (column > 0) const SizedBox(width: 10),
+                Expanded(
+                  child: start + column < categories.length
+                      ? Align(
+                          alignment: Alignment.topCenter,
+                          child: _CatOption(
+                            category: categories[start + column],
+                            selected:
+                                selectedId == categories[start + column].id,
+                            onTap: () =>
+                                onSelect(categories[start + column].id),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ],
           ),
+        ],
       ],
     );
   }
@@ -670,9 +684,9 @@ class _CatOption extends StatelessWidget {
               width: 2,
             ),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+          padding: const EdgeInsets.all(10),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 width: 44,
