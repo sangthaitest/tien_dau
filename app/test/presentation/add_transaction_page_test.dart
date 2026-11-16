@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tien_day/application/home_query.dart';
 import 'package:tien_day/application/transaction_service.dart';
+import 'package:tien_day/domain/entities/payment_method_kind.dart';
+import 'package:tien_day/domain/entities/transaction.dart';
+import 'package:tien_day/domain/entities/transaction_type.dart';
 import 'package:tien_day/presentation/add_transaction/add_transaction_controller.dart';
 import 'package:tien_day/presentation/add_transaction/add_transaction_page.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
@@ -48,10 +51,14 @@ Future<void> _openAdd(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _scrollAddTo(WidgetTester tester, Finder finder) async {
+Future<void> _scrollAddTo(
+  WidgetTester tester,
+  Finder finder, {
+  double delta = 300,
+}) async {
   await tester.scrollUntilVisible(
     finder,
-    300,
+    delta,
     scrollable: find
         .descendant(
           of: find.byType(AddTransactionPage),
@@ -176,7 +183,8 @@ void main() {
     expect(saved.paymentSourceId, 'cash');
     expect(saved.paymentMethod.toString(), contains('cash'));
     expect(saved.note, 'đi làm');
-    expect(find.text('Grab'), findsOneWidget);
+    expect(find.text('đi làm'), findsOneWidget);
+    expect(find.textContaining('Grab'), findsOneWidget);
   });
 
   testWidgets('persistence failure keeps the sheet and the entered amount', (
@@ -273,4 +281,156 @@ void main() {
     expect(repository.items.single.detail, 'Hạt');
     expect(repository.items.single.paymentSourceName, 'Ví gia đình');
   });
+
+  testWidgets(
+    'detail chip shows a real amount and fills it without closing the keyboard',
+    (tester) async {
+      _phone(tester);
+      final repo = MemoryTransactionRepository(
+        seed: [
+          _expense(
+            id: '1',
+            categoryId: 'cafe',
+            detail: 'Highlands',
+            amount: 29000,
+          ),
+          _expense(id: '2', categoryId: 'lunch', detail: 'Cơm', amount: 27000),
+          _expense(
+            id: '3',
+            categoryId: 'lunch',
+            detail: 'Cơm',
+            amount: 27000,
+            occurredOn: DateTime(2026, 8, 2),
+          ),
+          _expense(
+            id: '4',
+            categoryId: 'lunch',
+            detail: 'Cơm',
+            amount: 35000,
+            occurredOn: DateTime(2026, 8, 9),
+          ),
+          _expense(id: '5', categoryId: 'lunch', detail: 'Bún', amount: 30000),
+        ],
+      );
+      final controller = AddTransactionController(
+        service: TransactionService(repo),
+        catalogController: buildTestCatalogController(),
+        clock: () => DateTime(2026, 8, 18, 9, 15),
+      );
+      await tester.pumpWidget(
+        MaterialApp(home: AddTransactionPage(controller: controller)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('detail-amount-Highlands')), findsOneWidget);
+      expect(find.text('29.000 ₫'), findsOneWidget);
+      expect(find.byKey(const Key('detail-amount-Ô Bầu')), findsNothing);
+
+      await _scrollAddTo(tester, find.text('Highlands'));
+      await tester.tap(find.text('Highlands'));
+      await tester.pump();
+      expect(controller.draft.detail, 'Highlands');
+      expect(controller.draft.amount, 29000);
+      expect(tester.testTextInput.isVisible, isTrue);
+      await _scrollAddTo(
+        tester,
+        find.byKey(const Key('input-amount')),
+        delta: -300,
+      );
+      expect(find.text('29.000'), findsWidgets);
+
+      await tester.enterText(find.byKey(const Key('input-amount')), '31000');
+      await tester.pump();
+      controller.notifyListeners();
+      await tester.pump();
+      expect(controller.draft.amount, 31000);
+
+      await tester.ensureVisible(find.text('Ô Bầu'));
+      await tester.drag(
+        find
+            .descendant(
+              of: find.byType(AddTransactionPage),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+        const Offset(0, -160),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ô Bầu'));
+      await tester.pump();
+      expect(controller.draft.detail, 'Ô Bầu');
+      expect(controller.draft.amount, 31000);
+
+      controller.selectCategory('lunch');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('detail-amount-Cơm')), findsOneWidget);
+      expect(find.text('27.000 ₫'), findsOneWidget);
+      expect(find.byKey(const Key('detail-amount-Highlands')), findsNothing);
+
+      await _scrollAddTo(tester, find.text('Bún'));
+      await tester.tap(find.text('Bún'));
+      await tester.pump();
+      expect(controller.draft.detail, 'Bún');
+      expect(controller.draft.amount, 30000);
+      expect(tester.testTextInput.isVisible, isTrue);
+    },
+  );
+
+  testWidgets(
+    'saving without a detail still persists and updates the next suggestion',
+    (tester) async {
+      _phone(tester);
+      final repo = MemoryTransactionRepository();
+      final service = TransactionService(repo);
+      final controller = AddTransactionController(
+        service: service,
+        catalogController: buildTestCatalogController(),
+        clock: () => DateTime(2026, 8, 18, 9, 15),
+      );
+      await tester.pumpWidget(
+        MaterialApp(home: AddTransactionPage(controller: controller)),
+      );
+      await tester.pumpAndSettle();
+
+      controller.applyShortcut(20000);
+      expect((await controller.save()).isOk, isTrue);
+      expect(repo.items.single.detail, isNull);
+      expect(repo.items.single.amount, 20000);
+
+      controller.reset(now: DateTime(2026, 8, 19, 8));
+      controller.selectCategory('cafe');
+      await controller.refreshDetailSuggestions();
+      controller.toggleDetail('Highlands');
+      controller.applyShortcut(29000);
+      expect((await controller.save()).isOk, isTrue);
+
+      controller.reset(now: DateTime(2026, 8, 20, 8));
+      await controller.refreshDetailSuggestions();
+      expect(controller.detailSuggestions['Highlands'], 29000);
+    },
+  );
+}
+
+Transaction _expense({
+  required String id,
+  required String categoryId,
+  required String detail,
+  required int amount,
+  DateTime? occurredOn,
+}) {
+  final on = occurredOn ?? DateTime(2026, 8, 1);
+  return Transaction(
+    id: id,
+    amount: amount,
+    type: TransactionType.expense,
+    categoryId: categoryId,
+    detail: detail,
+    occurredOn: on,
+    occurredTime: '12:00',
+    paymentSourceId: 'cash',
+    paymentSourceName: 'Tiền mặt',
+    paymentMethod: PaymentMethodKind.cash,
+    createdAt: DateTime.utc(on.year, on.month, on.day),
+    updatedAt: DateTime.utc(on.year, on.month, on.day),
+  );
 }

@@ -1,3 +1,4 @@
+import '../../domain/entities/detail_amount_bucket.dart';
 import '../../domain/entities/new_transaction.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/entities/transaction_query.dart';
@@ -98,6 +99,21 @@ class TransactionRepositoryImpl implements TransactionRepository {
       return Err(e);
     } catch (e) {
       return Err(PersistenceFailure('Failed to summarize expenses', cause: e));
+    }
+  }
+
+  @override
+  Future<Result<List<DetailAmountBucket>>> detailAmountBuckets(
+    String categoryId,
+  ) async {
+    try {
+      return Ok(await _local.detailAmountBuckets(categoryId));
+    } on PersistenceFailure catch (e) {
+      return Err(e);
+    } catch (e) {
+      return Err(
+        PersistenceFailure('Failed to read detail suggestions', cause: e),
+      );
     }
   }
 

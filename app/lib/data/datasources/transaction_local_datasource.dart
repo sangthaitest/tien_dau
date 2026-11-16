@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart' hide Transaction;
 
+import '../../domain/entities/detail_amount_bucket.dart';
 import '../../domain/entities/transaction.dart';
 import '../../domain/entities/transaction_query.dart';
 import '../../domain/entities/transaction_type.dart';
@@ -124,6 +125,46 @@ GROUP BY category_id
     } catch (e, st) {
       Error.throwWithStackTrace(
         PersistenceFailure('Failed to summarize expenses', cause: e),
+        st,
+      );
+    }
+  }
+
+  Future<List<DetailAmountBucket>> detailAmountBuckets(
+    String categoryId,
+  ) async {
+    try {
+      final rows = await _db.rawQuery(
+        '''
+SELECT
+  TRIM(detail) AS detail,
+  amount,
+  COUNT(*) AS uses,
+  MAX(
+    occurred_date || ' ' || COALESCE(occurred_time, '') || ' ' || created_at
+  ) AS latest_key
+FROM ${TransactionMapper.table}
+WHERE type = ?
+  AND category_id = ?
+  AND detail IS NOT NULL
+  AND TRIM(detail) != ''
+  AND amount > 0
+GROUP BY TRIM(detail), amount
+''',
+        [TransactionType.expense.storageValue, categoryId],
+      );
+      return [
+        for (final row in rows)
+          DetailAmountBucket(
+            detail: row['detail']! as String,
+            amount: (row['amount']! as num).toInt(),
+            uses: (row['uses']! as num).toInt(),
+            latestKey: row['latest_key']! as String,
+          ),
+      ];
+    } catch (e, st) {
+      Error.throwWithStackTrace(
+        PersistenceFailure('Failed to read detail suggestions', cause: e),
         st,
       );
     }

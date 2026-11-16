@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../application/add_transaction_draft.dart';
+import '../../application/detail_suggestions.dart';
 import '../../application/transaction_service.dart';
 import '../../domain/catalog/chi_cho_catalog.dart';
 import '../../domain/catalog/payment_option_catalog.dart';
@@ -26,6 +27,7 @@ class AddTransactionController extends ChangeNotifier {
                ? AddTransactionDraft.fromTransaction(existing)
                : AddTransactionDraft(now: clock())) {
     catalogController.addListener(_onCatalogChanged);
+    refreshDetailSuggestions();
   }
 
   final TransactionService _service;
@@ -37,6 +39,9 @@ class AddTransactionController extends ChangeNotifier {
 
   bool saving = false;
   String? error;
+  Map<String, int> detailSuggestions = const {};
+  int _suggestionRequest = 0;
+  bool _disposed = false;
 
   List<ChiChoCategory> get categories {
     final active = catalogController.categories;
@@ -83,10 +88,30 @@ class AddTransactionController extends ChangeNotifier {
   void selectCategory(String id) {
     draft.selectCategory(id);
     notifyListeners();
+    refreshDetailSuggestions();
   }
 
   void toggleDetail(String name) {
+    final selecting = draft.detail != name;
     draft.toggleDetail(name);
+    if (selecting) {
+      final suggested = lookupDetailSuggestion(name, detailSuggestions);
+      if (suggested != null) draft.setAmount(suggested);
+    }
+    error = null;
+    notifyListeners();
+  }
+
+  Future<void> refreshDetailSuggestions() async {
+    final request = ++_suggestionRequest;
+    final categoryId = draft.categoryId;
+    final result = await _service.detailSuggestions(categoryId);
+    if (_disposed || request != _suggestionRequest) return;
+    if (draft.categoryId != categoryId) return;
+    detailSuggestions = switch (result) {
+      Ok(:final value) => value,
+      Err() => const {},
+    };
     notifyListeners();
   }
 
@@ -120,6 +145,7 @@ class AddTransactionController extends ChangeNotifier {
     saving = false;
     error = null;
     notifyListeners();
+    refreshDetailSuggestions();
   }
 
   Future<Result<Transaction>> save() async {
@@ -216,6 +242,7 @@ class AddTransactionController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     catalogController.removeListener(_onCatalogChanged);
     super.dispose();
   }

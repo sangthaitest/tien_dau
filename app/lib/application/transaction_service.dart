@@ -3,6 +3,7 @@ import '../domain/entities/transaction.dart';
 import '../domain/entities/transaction_query.dart';
 import '../domain/failures/result.dart';
 import '../domain/repositories/transaction_repository.dart';
+import 'detail_suggestions.dart';
 
 /// Application layer: single entry for transaction writes so UI never talks to SQLite.
 class TransactionService {
@@ -38,5 +39,13 @@ class TransactionService {
 
   Future<Result<void>> remove(String id) {
     return _repository.delete(id);
+  }
+
+  Future<Result<Map<String, int>>> detailSuggestions(String categoryId) async {
+    final result = await _repository.detailAmountBuckets(categoryId);
+    return switch (result) {
+      Ok(:final value) => Ok(suggestDetailAmounts(value)),
+      Err(:final failure) => Err(failure),
+    };
   }
 }

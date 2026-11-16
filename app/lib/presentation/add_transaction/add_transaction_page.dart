@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../application/detail_suggestions.dart';
 import '../../domain/amount/amount_input.dart';
 import '../../domain/catalog/chi_cho_catalog.dart';
 import '../../domain/catalog/payment_option_catalog.dart';
 import '../../domain/failures/result.dart';
 import '../../domain/time/clock_format.dart';
+import '../format/money_format.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../theme/category_look.dart';
@@ -119,6 +121,13 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
     }
     _routeAnimation = null;
     _routeListener = null;
+  }
+
+  void _keepAmountFocus() {
+    _amountFocus.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _amountFocus.requestFocus();
+    });
   }
 
   void _syncFields() {
@@ -277,7 +286,11 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                     _DetailChips(
                       options: _c.detailOptions,
                       selected: _c.draft.detail,
-                      onToggle: _c.toggleDetail,
+                      suggestions: _c.detailSuggestions,
+                      onToggle: (name) {
+                        _c.toggleDetail(name);
+                        _keepAmountFocus();
+                      },
                     ),
                     const SizedBox(height: 20),
                     _ManagedFieldLabel(
@@ -722,11 +735,13 @@ class _DetailChips extends StatelessWidget {
   const _DetailChips({
     required this.options,
     required this.selected,
+    required this.suggestions,
     required this.onToggle,
   });
 
   final List<String> options;
   final String? selected;
+  final Map<String, int> suggestions;
   final ValueChanged<String> onToggle;
 
   @override
@@ -736,40 +751,75 @@ class _DetailChips extends StatelessWidget {
       runSpacing: 8,
       children: [
         for (final name in options)
-          Material(
-            color: selected == name ? AppColors.primary : AppColors.card,
-            borderRadius: BorderRadius.circular(999),
-            child: InkWell(
-              onTap: () => onToggle(name),
-              borderRadius: BorderRadius.circular(999),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: selected == name
-                        ? AppColors.primary
-                        : AppColors.divider,
-                    width: 1.5,
-                  ),
-                ),
-                child: Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: selected == name
-                        ? AppColors.onPrimary
-                        : AppColors.textSecondary,
-                  ),
-                ),
-              ),
-            ),
+          _DetailChip(
+            name: name,
+            amount: lookupDetailSuggestion(name, suggestions),
+            selected: selected == name,
+            onTap: () => onToggle(name),
           ),
       ],
+    );
+  }
+}
+
+class _DetailChip extends StatelessWidget {
+  const _DetailChip({
+    required this.name,
+    required this.amount,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String name;
+  final int? amount;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? AppColors.onPrimary : AppColors.textSecondary;
+    return Material(
+      color: selected ? AppColors.primary : AppColors.card,
+      borderRadius: BorderRadius.circular(999),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: selected ? AppColors.primary : AppColors.divider,
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                name,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+              if (amount != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  formatVnd(amount!),
+                  key: Key('detail-amount-$name'),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

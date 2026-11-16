@@ -1,3 +1,4 @@
+import 'package:tien_day/domain/entities/detail_amount_bucket.dart';
 import 'package:tien_day/domain/entities/new_transaction.dart';
 import 'package:tien_day/domain/entities/transaction.dart';
 import 'package:tien_day/domain/entities/transaction_query.dart';
@@ -122,6 +123,45 @@ class MemoryTransactionRepository implements TransactionRepository {
         byCategory: byCategory,
       ),
     );
+  }
+
+  @override
+  Future<Result<List<DetailAmountBucket>>> detailAmountBuckets(
+    String categoryId,
+  ) async {
+    if (failList || failQuery) {
+      return const Err(PersistenceFailure('read failed'));
+    }
+    final grouped = <String, DetailAmountBucket>{};
+    for (final tx in _items) {
+      final detail = tx.detail?.trim() ?? '';
+      if (tx.type != TransactionType.expense ||
+          tx.categoryId != categoryId ||
+          detail.isEmpty ||
+          tx.amount <= 0) {
+        continue;
+      }
+      final latestKey =
+          '${_dateKey(tx.occurredOn)} ${tx.occurredTime ?? ''} ${tx.createdAt.toUtc().toIso8601String()}';
+      final key = '$detail|${tx.amount}';
+      final current = grouped[key];
+      grouped[key] = DetailAmountBucket(
+        detail: detail,
+        amount: tx.amount,
+        uses: (current?.uses ?? 0) + 1,
+        latestKey: current == null || latestKey.compareTo(current.latestKey) > 0
+            ? latestKey
+            : current.latestKey,
+      );
+    }
+    return Ok(grouped.values.toList(growable: false));
+  }
+
+  String _dateKey(DateTime date) {
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
   }
 
   @override
