@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tien_day/application/home_query.dart';
 import 'package:tien_day/application/transaction_service.dart';
+import 'package:tien_day/domain/entities/detail_amount_bucket.dart';
 import 'package:tien_day/domain/entities/payment_method_kind.dart';
 import 'package:tien_day/domain/entities/transaction.dart';
 import 'package:tien_day/domain/entities/transaction_type.dart';
+import 'package:tien_day/domain/failures/result.dart';
 import 'package:tien_day/presentation/add_transaction/add_transaction_controller.dart';
 import 'package:tien_day/presentation/add_transaction/add_transaction_page.dart';
 import 'package:tien_day/presentation/home/home_controller.dart';
@@ -409,6 +413,101 @@ void main() {
       expect(controller.detailSuggestions['Highlands'], 29000);
     },
   );
+
+  testWidgets('a detail tapped before history loads fills when it arrives', (
+    tester,
+  ) async {
+    _phone(tester);
+    final gate = Completer<void>();
+    final repo = _SlowSuggestionsRepository(
+      release: gate.future,
+      seed: [
+        _expense(
+          id: '1',
+          categoryId: 'cafe',
+          detail: 'Highlands',
+          amount: 29000,
+        ),
+      ],
+    );
+    final controller = AddTransactionController(
+      service: TransactionService(repo),
+      catalogController: buildTestCatalogController(),
+      clock: () => DateTime(2026, 8, 18, 9, 15),
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: AddTransactionPage(controller: controller)),
+    );
+    await tester.pump();
+    await _scrollAddTo(tester, find.text('Highlands'));
+    await tester.tap(find.text('Highlands'));
+    await tester.pump();
+
+    expect(controller.draft.detail, 'Highlands');
+    expect(controller.draft.amount, 0);
+    expect(find.byKey(const Key('detail-amount-Highlands')), findsNothing);
+
+    gate.complete();
+    await tester.pumpAndSettle();
+
+    expect(controller.draft.amount, 29000);
+    expect(find.text('29.000 ₫'), findsWidgets);
+  });
+
+  testWidgets('typing after that tap keeps the manual amount', (tester) async {
+    _phone(tester);
+    final gate = Completer<void>();
+    final repo = _SlowSuggestionsRepository(
+      release: gate.future,
+      seed: [
+        _expense(
+          id: '1',
+          categoryId: 'cafe',
+          detail: 'Highlands',
+          amount: 29000,
+        ),
+      ],
+    );
+    final controller = AddTransactionController(
+      service: TransactionService(repo),
+      catalogController: buildTestCatalogController(),
+      clock: () => DateTime(2026, 8, 18, 9, 15),
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: AddTransactionPage(controller: controller)),
+    );
+    await tester.pump();
+    await _scrollAddTo(tester, find.text('Highlands'));
+    await tester.tap(find.text('Highlands'));
+    await tester.pump();
+    await _scrollAddTo(
+      tester,
+      find.byKey(const Key('input-amount')),
+      delta: -300,
+    );
+    await tester.enterText(find.byKey(const Key('input-amount')), '31000');
+    await tester.pump();
+
+    gate.complete();
+    await tester.pumpAndSettle();
+
+    expect(controller.draft.amount, 31000);
+    expect(find.text('31.000'), findsOneWidget);
+  });
+}
+
+class _SlowSuggestionsRepository extends MemoryTransactionRepository {
+  _SlowSuggestionsRepository({required this.release, super.seed});
+
+  final Future<void> release;
+
+  @override
+  Future<Result<List<DetailAmountBucket>>> detailAmountBuckets(
+    String categoryId,
+  ) async {
+    await release;
+    return super.detailAmountBuckets(categoryId);
+  }
 }
 
 Transaction _expense({

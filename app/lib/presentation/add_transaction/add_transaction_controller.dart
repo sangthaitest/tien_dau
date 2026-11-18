@@ -41,6 +41,9 @@ class AddTransactionController extends ChangeNotifier {
   String? error;
   Map<String, int> detailSuggestions = const {};
   int _suggestionRequest = 0;
+  String? _pendingSuggestionDetail;
+  bool _amountEditedSinceDetailTap = false;
+  bool _suggestionsReady = false;
   bool _disposed = false;
 
   List<ChiChoCategory> get categories {
@@ -75,18 +78,26 @@ class AddTransactionController extends ChangeNotifier {
 
   void applyShortcut(int value) {
     draft.applyShortcut(value);
+    _amountEditedSinceDetailTap = true;
     error = null;
     notifyListeners();
   }
 
   void setAmountFromRaw(String raw) {
     draft.setAmountFromRaw(raw);
+    _amountEditedSinceDetailTap = true;
     error = null;
     notifyListeners();
   }
 
   void selectCategory(String id) {
+    final categoryChanged = draft.categoryId != id;
     draft.selectCategory(id);
+    if (categoryChanged) {
+      _pendingSuggestionDetail = null;
+      detailSuggestions = const {};
+      _suggestionsReady = false;
+    }
     notifyListeners();
     refreshDetailSuggestions();
   }
@@ -94,9 +105,19 @@ class AddTransactionController extends ChangeNotifier {
   void toggleDetail(String name) {
     final selecting = draft.detail != name;
     draft.toggleDetail(name);
-    if (selecting) {
+    if (!selecting) {
+      _pendingSuggestionDetail = null;
+    } else {
+      _amountEditedSinceDetailTap = false;
       final suggested = lookupDetailSuggestion(name, detailSuggestions);
-      if (suggested != null) draft.setAmount(suggested);
+      if (suggested != null) {
+        draft.setAmount(suggested);
+        _pendingSuggestionDetail = null;
+      } else if (!_suggestionsReady) {
+        _pendingSuggestionDetail = name;
+      } else {
+        _pendingSuggestionDetail = null;
+      }
     }
     error = null;
     notifyListeners();
@@ -112,6 +133,17 @@ class AddTransactionController extends ChangeNotifier {
       Ok(:final value) => value,
       Err() => const {},
     };
+    _suggestionsReady = true;
+    final pending = _pendingSuggestionDetail;
+    if (pending != null &&
+        !_amountEditedSinceDetailTap &&
+        draft.detail == pending) {
+      final suggested = lookupDetailSuggestion(pending, detailSuggestions);
+      if (suggested != null) {
+        draft.setAmount(suggested);
+        _pendingSuggestionDetail = null;
+      }
+    }
     notifyListeners();
   }
 
@@ -144,6 +176,10 @@ class AddTransactionController extends ChangeNotifier {
     draft.setOccurredTime(formatHHmm(now));
     saving = false;
     error = null;
+    _pendingSuggestionDetail = null;
+    _amountEditedSinceDetailTap = false;
+    detailSuggestions = const {};
+    _suggestionsReady = false;
     notifyListeners();
     refreshDetailSuggestions();
   }
@@ -195,6 +231,7 @@ class AddTransactionController extends ChangeNotifier {
   }
 
   void reconcileSelections() {
+    final previousCategory = draft.categoryId;
     final selectedCategory = catalogController.categoryById(draft.categoryId);
     final keepsHistoricalCategory =
         existing?.categoryId == selectedCategory?.id;
@@ -204,6 +241,7 @@ class AddTransactionController extends ChangeNotifier {
     } else if (draft.detail != null &&
         !selectedCategory.details.contains(draft.detail)) {
       draft.detail = null;
+      _pendingSuggestionDetail = null;
     }
 
     final selectedPayment = catalogController.paymentById(
@@ -214,6 +252,12 @@ class AddTransactionController extends ChangeNotifier {
     if (selectedPayment == null ||
         (selectedPayment.archived && !keepsHistoricalPayment)) {
       draft.selectPayment(catalogController.payments.first.source.id);
+    }
+    if (draft.categoryId != previousCategory) {
+      _pendingSuggestionDetail = null;
+      detailSuggestions = const {};
+      _suggestionsReady = false;
+      refreshDetailSuggestions();
     }
     notifyListeners();
   }

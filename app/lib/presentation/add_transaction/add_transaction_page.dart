@@ -283,14 +283,16 @@ class _AddTransactionPageState extends State<AddTransactionPage> {
                       manageKey: const Key('manage-details'),
                       onManage: _manageDetails,
                     ),
-                    _DetailChips(
-                      options: _c.detailOptions,
-                      selected: _c.draft.detail,
-                      suggestions: _c.detailSuggestions,
-                      onToggle: (name) {
-                        _c.toggleDetail(name);
-                        _keepAmountFocus();
-                      },
+                    TextFieldTapRegion(
+                      child: _DetailChips(
+                        options: _c.detailOptions,
+                        selected: _c.draft.detail,
+                        suggestions: _c.detailSuggestions,
+                        onToggle: (name) {
+                          _c.toggleDetail(name);
+                          _keepAmountFocus();
+                        },
+                      ),
                     ),
                     const SizedBox(height: 20),
                     _ManagedFieldLabel(
@@ -782,6 +784,8 @@ class _DetailChip extends StatelessWidget {
       color: selected ? AppColors.primary : AppColors.card,
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
+        key: Key('detail-chip-$name'),
+        canRequestFocus: false,
         onTap: onTap,
         borderRadius: BorderRadius.circular(999),
         child: Container(
